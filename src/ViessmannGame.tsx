@@ -158,27 +158,25 @@ export default function ViessmannGame() {
     coal: 0, pellet: 0, gas: 0, floor: 0, thermostat: 0, heatpump: 0, inverter: 0, grid: 0, solar: 0, echarger: 0, forest: 0,
   });
 
-  const deviceItems: ShopItem[] = [
-    { key: "coal", name: "Kocioł węglowy", description: "Legacy heating. Zwiększa zanieczyszczenie (🏭). Postaw na domu.", icon: "🪨", cost: { coins: 0 } },
-    { key: "pellet", name: "Kocioł na pellet (Vitoligno)", description: "Czystszy niż węgiel. Zastępuje kocioł węglowy.", icon: "🔥🌲", cost: { coins: 10 }, requires: ["coal"] },
-    { key: "gas", name: "Kocioł gazowy (Vitodens)", description: "Kup za ☀️ + 💧 + 🌬️. Zastępuje kocioł na pellet.", icon: "🔥", cost: { sun: 30, water: 20, wind: 20 }, requires: ["pellet"] },
-    { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort + niższa temp. zasilania.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["gas"],
-      onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
+// --- Shop items przeniesione poza komponent, by nie powodowały ostrzeżeń Reacta ---
+const deviceItems: ShopItem[] = [
+  { key: "coal", name: "Kocioł węglowy", description: "Legacy heating. Zwiększa zanieczyszczenie (🏭). Postaw na domu.", icon: "🪨", cost: { coins: 0 } },
+  { key: "pellet", name: "Kocioł na pellet (Vitoligno)", description: "Czystszy niż węgiel. Zastępuje kocioł węglowy.", icon: "🔥🌲", cost: { coins: 10 }, requires: ["coal"] },
+  { key: "gas", name: "Kocioł gazowy (Vitodens)", description: "Kup za ☀️ + 💧 + 🌬️. Zastępuje kocioł na pellet.", icon: "🔥", cost: { sun: 30, water: 20, wind: 20 }, requires: ["pellet"] },
+  { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort + niższa temp. zasilania.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["gas"],
+    onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
   { key: "thermostat", name: "Termostaty SRC", description: "Lepsza kontrola.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["gas"],
-      onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
-    { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Odblokowuje OZE.", icon: "🌀", cost: { sun: 50, water: 40, wind: 40 }, requires: ["gas", "floor", "thermostat"],
-      onPurchaseEffects: ({ addRate }) => { addRate("coins", 0.5); setBaseRates(r => ({ ...r, sun: r.sun + 0.5, wind: r.wind + 0.3, water: r.water + 0.2 })); } },
-    { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Lepsza monetyzacja.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"],
-      onPurchaseEffects: ({ addRate }) => addRate("coins", 0.2) },
-    { key: "grid", name: "Grid", description: "Przyłącze sieciowe.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["inverter"],
-      onPurchaseEffects: ({ addRate }) => addRate("coins", 0.2) },
-  ];
+    onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
+  { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Odblokowuje OZE.", icon: "🌀", cost: { sun: 50, water: 40, wind: 40 }, requires: ["gas", "floor", "thermostat"] },
+  { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Lepsza monetyzacja.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
+  { key: "grid", name: "Grid", description: "Przyłącze sieciowe.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["inverter"] },
+];
 
-  const productionItems: ShopItem[] = [
-  { key: "forest", name: "Las", description: "Silnie redukuje zanieczyszczenie (−0.5/s). Koszt: 10 ☀️ + 10 💧.", icon: "🌲", cost: { sun: 10, water: 10 }, onPurchaseEffects: () => addPollutionRate(-0.5) },
-    { key: "solar", name: "Fotowoltaika (Vitovolt)", description: "Więcej ☀️.", icon: "🔆", cost: { sun: 20, wind: 10 }, requires: ["heatpump"], onPurchaseEffects: ({ addRate }) => addRate("sun", 0.3) },
-    { key: "echarger", name: "E-Charger", description: "+5 💰/min.", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
-  ];
+const productionItems: ShopItem[] = [
+  { key: "forest", name: "Las", description: "Silnie redukuje zanieczyszczenie (−0.5/s). Koszt: 10 ☀️ + 10 💧.", icon: "🌲", cost: { sun: 10, water: 10 } },
+  { key: "solar", name: "Fotowoltaika (Vitovolt)", description: "Więcej ☀️.", icon: "🔆", cost: { sun: 20, wind: 10 }, requires: ["heatpump"] },
+  { key: "echarger", name: "E-Charger", description: "+5 💰/min.", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
+];
 
   const [shopTab, setShopTab] = useState<"devices" | "production">("devices");
   const isSinglePurchase = (k: EntityType) => !["solar", "echarger", "forest"].includes(k);
@@ -189,7 +187,7 @@ export default function ViessmannGame() {
   const [lastPlacedKey, setLastPlacedKey] = useState<string | null>(null);
 
   // Helpers
-  const canAfford = (c: Cost) => Object.entries(c).every(([k, v]) => (resources as any)[k] >= (v ?? 0));
+  const canAfford = (c: Cost) => Object.entries(c).every(([k, v]) => (resources as Record<string, number>)[k] >= (v ?? 0));
   const discountedCost = (cost: Cost): Cost => {
     if (!priceDiscountPct) return cost; const out: Cost = {};
     for (const [k, v] of Object.entries(cost)) if (typeof v === "number") out[k as ResKey] = Math.ceil(v * (1 - priceDiscountPct / 100));
@@ -234,11 +232,11 @@ export default function ViessmannGame() {
       // Hide pellet if gas is owned
       if (it.key === "pellet" && owned.gas > 0) return false;
       if (!it.requires) return true;
-      return it.requires.every(k => (owned as any)[k] > 0);
+      return it.requires.every(k => owned[k] > 0);
     });
   }, [owned]);
 
-  const visibleProduction = useMemo(() => productionItems.filter(it => !it.requires || it.requires.every(k => (owned as any)[k] > 0)), [owned]);
+  const visibleProduction = useMemo(() => productionItems.filter(it => !it.requires || it.requires.every(k => owned[k] > 0)), [owned]);
 
   // Zakup
   const handleBuy = (item: ShopItem) => {
