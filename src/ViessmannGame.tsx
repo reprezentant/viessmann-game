@@ -15,7 +15,7 @@ type EntityType =
   | "gas"
   | "floor"
   | "thermostat"
-  | "heatpump"
+  | "heatpump";
 
 export default function ViessmannGame() {
   // ---------- Resources ----------
