@@ -34,16 +34,16 @@ type EffectsContext = {
 
 // --- Shop items (module scope for stability) ---
 const deviceItems: ShopItem[] = [
-  { key: "coal", name: "Kocioł węglowy", description: "Legacy heating. Zwiększa zanieczyszczenie (🏭). Postaw na domu.", icon: "🪨", cost: { coins: 0 } },
-  { key: "pellet", name: "Kocioł na pellet (Vitoligno)", description: "Czystszy niż węgiel. Zastępuje kocioł węglowy.", icon: "🔥🌲", cost: { coins: 10 }, requires: ["coal"] },
-  { key: "gas", name: "Kocioł gazowy (Vitodens)", description: "Kup za ☀️ + 💧 + 🌬️. Zastępuje kocioł na pellet.", icon: "🔥", cost: { sun: 30, water: 20, wind: 20 }, requires: ["pellet"] },
-  { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort + niższa temp. zasilania.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["gas"],
+  { key: "coal", name: "Kocioł węglowy", description: "Tradycyjne źródło ciepła. Zwiększa zanieczyszczenie (🏭). Umieść na domu, aby go ogrzać.", icon: "🪨", cost: { coins: 0 } },
+  { key: "pellet", name: "Kocioł na pellet (Vitoligno)", description: "Ekologiczniejsza alternatywa dla węgla. Zastępuje kocioł węglowy i zmniejsza emisje.", icon: "🔥🌲", cost: { coins: 10 }, requires: ["coal"] },
+  { key: "gas", name: "Kocioł gazowy (Vitodens)", description: "Wydajny i nowoczesny. Zastępuje kocioł na pellet; niższe emisje i koszty eksploatacji.", icon: "🔥", cost: { sun: 30, water: 20, wind: 20 }, requires: ["pellet"] },
+  { key: "floor", name: "Ogrzewanie podłogowe", description: "Większy komfort przy niższej temperaturze zasilania (lepsza efektywność).", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["gas"],
     onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
-  { key: "thermostat", name: "Termostaty SRC", description: "Lepsza kontrola.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["gas"],
+  { key: "thermostat", name: "Termostaty SRC", description: "Inteligentne sterowanie. Dokładniejsza regulacja temperatury i oszczędności.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["gas"],
     onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
-  { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Odblokowuje OZE.", icon: "🌀", cost: { sun: 50, water: 40, wind: 40 }, requires: ["gas", "floor", "thermostat"] },
-  { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Lepsza monetyzacja.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
-  { key: "grid", name: "Grid", description: "Przyłącze sieciowe.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["inverter"] },
+  { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Wysoka efektywność i OZE. Odblokowuje zielone instalacje w grze.", icon: "🌀", cost: { sun: 50, water: 40, wind: 40 }, requires: ["gas", "floor", "thermostat"] },
+  { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Magazynowanie i zarządzanie energią. Lepsze wykorzystanie produkcji.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
+  { key: "grid", name: "Grid", description: "Przyłącze do sieci elektroenergetycznej. Umożliwia wymianę energii.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["inverter"] },
 ];
 
 const productionItems: ShopItem[] = [
@@ -94,29 +94,29 @@ type AchCtx = { owned: Record<EntityType | "coal", number> };
 const achievementDefs: AchievementDef[] = [
   {
     id: "first-steps",
-    name: "First Steps",
-    description: "Place your first building",
+  name: "Pierwsze kroki",
+  description: "Postaw swój pierwszy budynek",
     icon: "🏠",
     check: ({ owned }) => Object.values(owned).reduce((a, b) => a + (b || 0), 0) >= 1,
   },
   {
     id: "heat-source",
-    name: "Heat Source",
-    description: "Own a heating device",
+  name: "Źródło ciepła",
+  description: "Posiadaj urządzenie grzewcze",
     icon: "🔥",
     check: ({ owned }) => (owned.coal ?? 0) > 0 || (owned.pellet ?? 0) > 0 || (owned.gas ?? 0) > 0 || (owned.heatpump ?? 0) > 0,
   },
   {
     id: "going-green",
-    name: "Going Green",
-    description: "Install renewable energy",
+  name: "Zielona energia",
+  description: "Zainstaluj odnawialne źródło energii",
     icon: "🌿",
     check: ({ owned }) => (owned.solar ?? 0) > 0 || (owned.forest ?? 0) > 0 || (owned.heatpump ?? 0) > 0,
   },
   {
     id: "power-up",
-    name: "Power Up",
-    description: "Build energy infrastructure",
+  name: "Moc w sieci",
+  description: "Zbuduj infrastrukturę energetyczną",
     icon: "⚡",
     check: ({ owned }) => (owned.inverter ?? 0) > 0 && (owned.grid ?? 0) > 0,
   },
@@ -281,9 +281,17 @@ export default function ViessmannGame() {
     return 'other';
   };
   const [log, setLog] = useState<LogEntry[]>([]);
+  // Dedup map for logs: key => last timestamp
+  const logDedupRef = useRef<Record<string, number>>({});
   const pushLog = (entry: Omit<LogEntry, "id" | "at"> & { at?: number }) => {
+    const now = Date.now();
+    const key = `${entry.type}|${entry.title}`;
+    const last = logDedupRef.current[key] || 0;
+    // Skip if a same-type+title log was added very recently (dev StrictMode double effects)
+    if (now - last < 1500) return;
+    logDedupRef.current[key] = now;
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const at = entry.at ?? Date.now();
+    const at = entry.at ?? now;
     setLog(prev => [
       { id, at, icon: entry.icon, title: entry.title, description: entry.description, type: entry.type },
       ...prev
@@ -387,7 +395,15 @@ export default function ViessmannGame() {
 
   // Log newly unlocked achievements
   const prevAchRef = useRef<Record<string, number>>({});
+  // Skip first run after hydration to avoid logging already-unlocked achievements on dev remount
+  const achHydratedOnceRef = useRef(false);
   useEffect(() => {
+    if (!achHydratedOnceRef.current) {
+      achHydratedOnceRef.current = true;
+      // Treat current state as baseline
+      prevAchRef.current = { ...achUnlocked };
+      return;
+    }
     const prev = prevAchRef.current || {};
     const added = Object.keys(achUnlocked).filter(id => !prev[id]);
     if (added.length) {
@@ -405,8 +421,14 @@ export default function ViessmannGame() {
   // Toasts
   type Toast = { id: string; icon?: string; text: string };
   const [toasts, setToasts] = useState<Toast[]>([]);
+  // Dedup map for toasts: text => last timestamp
+  const toastDedupRef = useRef<Record<string, number>>({});
   const pushToast = ({ icon, text }: { icon?: string; text: string }) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+    const now = Date.now();
+    const last = toastDedupRef.current[text] || 0;
+    if (now - last < 1200) return; // ignore duplicates fired too quickly
+    toastDedupRef.current[text] = now;
+    const id = `${now}-${Math.random().toString(36).slice(2, 6)}`;
     setToasts((prev) => [...prev, { id, icon, text }]);
     setTimeout(() => setToasts((prev) => prev.filter(t => t.id !== id)), 3500);
   };
@@ -593,6 +615,25 @@ export default function ViessmannGame() {
     },
   ]);
 
+  // Persist mission completion in localStorage to avoid duplicate completion effects on remounts
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('vm_missions');
+      if (raw) {
+        const saved = JSON.parse(raw) as Record<string, boolean>;
+        if (saved && typeof saved === 'object') {
+          setMissions(prev => prev.map(m => saved[m.key] ? { ...m, completed: true } : m));
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    try {
+      const map = Object.fromEntries(missions.map(m => [m.key, m.completed]));
+      localStorage.setItem('vm_missions', JSON.stringify(map));
+    } catch { /* ignore */ }
+  }, [missions]);
+
   // Mission completion logic based on placements
   useEffect(() => {
     setMissions(prev => prev.map(m => {
@@ -665,12 +706,12 @@ export default function ViessmannGame() {
         </div>
       )}
       {/* top bar */}
-      <header style={headerStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+  <header style={headerStyle}>
+  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 24, height: 24, borderRadius: 6, background: "#EA580C" }} />
           <span className="font-extrabold text-base font-sans">Viessmann</span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflowX: 'auto', paddingBottom: 2 }}>
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
