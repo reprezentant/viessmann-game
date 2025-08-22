@@ -233,6 +233,19 @@ export default function ViessmannGame() {
     return list;
   });
   const homeTileId = `${CENTER},${CENTER}`;
+  // Liczba faktycznie postawionych obiektów (z mapy), do misji i osiągnięć
+  const placedCounts: Record<EntityType | 'coal', number> = useMemo(() => {
+    const counts: Record<EntityType | 'coal', number> = {
+      coal: 0, pellet: 0, gas: 0, floor: 0, thermostat: 0, heatpump: 0, inverter: 0, grid: 0, solar: 0, echarger: 0, forest: 0,
+    } as Record<EntityType | 'coal', number>;
+    for (const t of tiles) {
+      if (t.entity) {
+        const k = t.entity.type as EntityType;
+        counts[k] = (counts[k] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }, [tiles]);
 
   // ---------- Shop ----------
   const [priceDiscountPct, setPriceDiscountPct] = useState(0);
@@ -337,9 +350,9 @@ export default function ViessmannGame() {
   } catch { /* ignore */ }
   }, []);
 
-  // Recompute unlocks when game state changes (owned)
+  // Recompute unlocks when placed items change (placement-based achievements)
   useEffect(() => {
-    const ctx: AchCtx = { owned };
+    const ctx: AchCtx = { owned: placedCounts };
     const newly = achievementDefs.filter(def => !achUnlocked[def.id] && def.check(ctx));
     if (newly.length === 0) return;
     setAchUnlocked(prev => {
@@ -348,7 +361,7 @@ export default function ViessmannGame() {
       newly.forEach((def, i) => { n[def.id] = now + i; });
       return n;
     });
-  }, [owned, achUnlocked]);
+  }, [placedCounts, achUnlocked]);
 
   // Derived achievements for UI
   const achievements: Achievement[] = useMemo(() => (
@@ -467,8 +480,7 @@ export default function ViessmannGame() {
   pushLog({ type: 'purchase', icon: item.icon, title: `Zakupiono: ${item.name}`, description: `Koszt: ${costStr}` });
     if (item.key === "coal" || item.key === "pellet" || item.key === "gas") { setPendingPlacement(item); return; }
     setOwned(o => ({ ...o, [item.key]: (o[item.key] ?? 0) + 1 }));
-    if (item.key === "echarger") setHasECharger(true);
-    item.onPurchaseEffects?.(effectsCtx);
+    // E-Charger i efekty przeniesione na moment umieszczenia na mapie
     setPendingPlacement(item);
   };
 
@@ -512,6 +524,9 @@ export default function ViessmannGame() {
 
     const instance: EntityInstance = { type: pendingPlacement.key, label: pendingPlacement.name, icon: pendingPlacement.icon };
     setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
+    if (pendingPlacement.key === 'echarger') setHasECharger(true);
+    // Zastosuj efekty po ustawieniu
+    pendingPlacement.onPurchaseEffects?.(effectsCtx);
   pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
     setPendingPlacement(null); setLastPlacedKey(tile.id);
   };
@@ -578,24 +593,24 @@ export default function ViessmannGame() {
     },
   ]);
 
-  // Mission completion logic
+  // Mission completion logic based on placements
   useEffect(() => {
     setMissions(prev => prev.map(m => {
-      if (m.key === "first-steps" && !m.completed && owned.coal > 0) {
+      if (m.key === "first-steps" && !m.completed && placedCounts.coal > 0) {
         // Reward: +10 ViCoins
         setResources(r => ({ ...r, coins: r.coins + 10 }));
   pushLog({ type: 'mission', icon: "💰", title: `Ukończono misję: ${m.title}`, description: m.reward });
   pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
         return { ...m, completed: true };
       }
-      if (m.key === "eco-choice" && !m.completed && owned.pellet > 0) {
+      if (m.key === "eco-choice" && !m.completed && placedCounts.pellet > 0) {
         // Reward: -20 pollution
         setPollution(p => Math.max(0, p - 20));
   pushLog({ type: 'mission', icon: "🌱", title: `Ukończono misję: ${m.title}`, description: m.reward });
   pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
         return { ...m, completed: true };
       }
-      if (m.key === "green-investment" && !m.completed && owned.forest > 0) {
+      if (m.key === "green-investment" && !m.completed && placedCounts.forest > 0) {
         // Reward: -30 pollution
         setPollution(p => Math.max(0, p - 30));
   pushLog({ type: 'mission', icon: "🌱", title: `Ukończono misję: ${m.title}`, description: m.reward });
@@ -604,7 +619,7 @@ export default function ViessmannGame() {
       }
       return m;
     }));
-  }, [owned]);
+  }, [placedCounts]);
 
   // Log start of weather events
   useEffect(() => {
