@@ -1,18 +1,29 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
+// Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
 type EntityType =
-  | "coal"
-  | "pellet"
-  | "gas"
+  // Upgrade na domu (zastępują poprzednie)
+  | "coal"                 // mapowane: Kocioł tradycyjny żeliwny (start)
+  | "pellet"               // mapowane: Stalowy kocioł grzewczy (1917–1928)
+  | "gas"                  // mapowane: Kocioł Triola (1957)
+  | "parola1965"
+  | "stainless1972"
+  | "heatpump1978"
+  | "vitola1978"
+  | "vitodens1989"
+  | "heatpump"            // Pompa ciepła (Vitocal)
+  // Stawiane osobno
+  | "forest"
+  | "collector1972"
+  | "inoxRadial"
   | "floor"
   | "thermostat"
-  | "heatpump"
   | "inverter"
   | "grid"
-  | "forest"
   | "solar"
-  | "echarger";
+  | "echarger"
+  | "vitovalor2014";
 // --- Typy pomocnicze (przeniesione z poprzednich wersji) ---
 type Tile = { id: string; x: number; y: number; entity?: EntityInstance | null; isHome?: boolean };
 type EntityInstance = { type: EntityType; label: string; icon: string };
@@ -32,23 +43,63 @@ type EffectsContext = {
   discountNextPurchasesPct: (pct: number) => void;
 };
 
+// --- Klucze pomocnicze ---
+const houseUpgradeKeys: EntityType[] = [
+  "coal",
+  "pellet",
+  "gas",
+  "parola1965",
+  "stainless1972",
+  "heatpump1978",
+  "vitola1978",
+  "vitodens1989",
+  "heatpump",
+];
+
+const entityKeys: EntityType[] = [
+  ...houseUpgradeKeys,
+  "forest",
+  "collector1972",
+  "inoxRadial",
+  "floor",
+  "thermostat",
+  "inverter",
+  "grid",
+  "solar",
+  "echarger",
+  "vitovalor2014",
+];
+
+const makeOwnedInit = (): Record<EntityType, number> => {
+  const out: Partial<Record<EntityType, number>> = {};
+  for (const k of entityKeys) out[k] = 0;
+  return out as Record<EntityType, number>;
+};
+
 // --- Shop items (module scope for stability) ---
+// Urządzenia (zakładka Urządzenia): wyłącznie łańcuch upgrade'ów na domu
 const deviceItems: ShopItem[] = [
-  { key: "coal", name: "Kocioł węglowy", description: "Tradycyjne źródło ciepła. Zwiększa zanieczyszczenie (🏭). Umieść na domu, aby go ogrzać.", icon: "🪨", cost: { coins: 0 } },
-  { key: "pellet", name: "Kocioł na pellet (Vitoligno)", description: "Ekologiczniejsza alternatywa dla węgla. Zastępuje kocioł węglowy i zmniejsza emisje.", icon: "🔥🌲", cost: { coins: 10 }, requires: ["coal"] },
-  { key: "gas", name: "Kocioł gazowy (Vitodens)", description: "Wydajny i nowoczesny. Zastępuje kocioł na pellet; niższe emisje i koszty eksploatacji.", icon: "🔥", cost: { sun: 30, water: 20, wind: 20 }, requires: ["pellet"] },
-  { key: "floor", name: "Ogrzewanie podłogowe", description: "Większy komfort przy niższej temperaturze zasilania (lepsza efektywność).", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["gas"],
-    onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
-  { key: "thermostat", name: "Termostaty SRC", description: "Inteligentne sterowanie. Dokładniejsza regulacja temperatury i oszczędności.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["gas"],
-    onPurchaseEffects: ({ addRate }) => addRate("coins", 0.1) },
-  { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Wysoka efektywność i OZE. Odblokowuje zielone instalacje w grze.", icon: "🌀", cost: { sun: 50, water: 40, wind: 40 }, requires: ["gas", "floor", "thermostat"] },
-  { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Magazynowanie i zarządzanie energią. Lepsze wykorzystanie produkcji.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
-  { key: "grid", name: "Grid", description: "Przyłącze do sieci elektroenergetycznej. Umożliwia wymianę energii.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["inverter"] },
+  { key: "coal", name: "Kocioł tradycyjny żeliwny", description: "Duże zanieczyszczenie, wysoka wydajność. Umieść na domu, aby go ogrzać.", icon: "🏚️", cost: { coins: 0 } },
+  { key: "pellet", name: "Stalowy kocioł grzewczy (1917–1928)", description: "Trwalszy, szybciej się nagrzewa, mniejsze zużycie paliwa.", icon: "🔩", cost: { coins: 10 }, requires: ["coal"] },
+  { key: "gas", name: "Kocioł Triola (1957)", description: "Stalowy piec z podgrzewaczem. Konwersja z koksu na olej.", icon: "🔥", cost: { sun: 20, water: 10, wind: 10 }, requires: ["pellet"] },
+  { key: "parola1965", name: "Kocioł na olej Parola (1965)", description: "Niższe emisje i wysoka sprawność.", icon: "🛢️", cost: { sun: 25, water: 15, wind: 15 }, requires: ["gas"] },
+  { key: "stainless1972", name: "Pierwszy kocioł ze stali nierdzewnej (1972)", description: "Lżejszy i wydajniejszy; prekursor kondensacji.", icon: "🧪", cost: { sun: 30, water: 20, wind: 20 }, requires: ["parola1965"] },
+  { key: "heatpump1978", name: "Pierwsza pompa ciepła (1978)", description: "Wykorzystuje energię z otoczenia.", icon: "🌀", cost: { sun: 35, water: 25, wind: 25 }, requires: ["stainless1972"] },
+  { key: "vitola1978", name: "Kocioł niskotemperaturowy Vitola (1978)", description: "Praca przy niższej temp. wody (większa efektywność).", icon: "♨️", cost: { sun: 15, water: 10, wind: 10 }, requires: ["heatpump1978"] },
+  { key: "vitodens1989", name: "Kocioł gazowy Vitodens (1989)", description: "Kondensacja pary, wyższa sprawność, niższe emisje.", icon: "🔥💧", cost: { sun: 40, water: 25, wind: 25 }, requires: ["vitola1978"] },
+  { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Wysoka efektywność i OZE. Odblokowuje zielone instalacje.", icon: "🔋", cost: { sun: 60, water: 40, wind: 40 }, requires: ["vitodens1989"] },
 ];
 
 const productionItems: ShopItem[] = [
   { key: "forest", name: "Las", description: "Silnie redukuje zanieczyszczenie (−0.5/s). Koszt: 10 ☀️ + 10 💧.", icon: "🌲", cost: { sun: 10, water: 10 } },
+  { key: "collector1972", name: "Pierwszy kolektor słoneczny (1972)", description: "Więcej ☀️, mniej zanieczyszczeń, krótszy Mróz.", icon: "☀️", cost: { sun: 25, water: 10 }, requires: ["stainless1972"] },
+  { key: "inoxRadial", name: "Technologia kondensacyjna (Inox‑Radial)", description: "Zmniejsza generowanie zanieczyszczeń.", icon: "🧰", cost: { sun: 20, water: 10, wind: 10 }, requires: ["vitodens1989"] },
+  { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort. Skraca czas trwania Mrozu.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["vitodens1989"] },
+  { key: "thermostat", name: "Termostaty SRC", description: "Inteligentna regulacja – więcej zasobów.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["vitodens1989"] },
   { key: "solar", name: "Fotowoltaika (Vitovolt)", description: "Więcej ☀️.", icon: "🔆", cost: { sun: 20, wind: 10 }, requires: ["heatpump"] },
+  { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Lepsza monetyzacja – więcej 💰.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
+  { key: "grid", name: "Grid", description: "Wymiana energii – więcej 💰.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["heatpump"] },
+  { key: "vitovalor2014", name: "Vitovalor (2014)", description: "Ogniwo paliwowe – silnie redukuje zanieczyszczenie.", icon: "🧫", cost: { sun: 35, water: 20, wind: 20 }, requires: ["heatpump"] },
   { key: "echarger", name: "E-Charger", description: "+5 💰/min.", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
 ];
 
@@ -249,9 +300,7 @@ export default function ViessmannGame() {
 
   // ---------- Shop ----------
   const [priceDiscountPct, setPriceDiscountPct] = useState(0);
-  const [owned, setOwned] = useState<Record<EntityType | "coal", number>>({
-    coal: 0, pellet: 0, gas: 0, floor: 0, thermostat: 0, heatpump: 0, inverter: 0, grid: 0, solar: 0, echarger: 0, forest: 0,
-  });
+  const [owned, setOwned] = useState<Record<EntityType | "coal", number>>(() => makeOwnedInit());
 
 
   const [shopTab, setShopTab] = useState<"devices" | "production">("devices");
@@ -267,6 +316,9 @@ export default function ViessmannGame() {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [logFilter, setLogFilter] = useState<'all' | LogType>('all');
+  // Weather legend fixed overlay state
+  const [legendOpen, setLegendOpen] = useState(false);
+  const [legendPos, setLegendPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
 
   // Activity log
   const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
@@ -474,15 +526,18 @@ export default function ViessmannGame() {
 
   // Widoki list
   const visibleDevices = useMemo(() => {
+    const home = tiles.find(t => t.isHome);
+    const currentKey = home?.entity && houseUpgradeKeys.includes(home.entity.type as EntityType)
+      ? (home.entity.type as EntityType)
+      : undefined;
+    const currentIdx = currentKey ? houseUpgradeKeys.indexOf(currentKey) : -1;
+    // Show only the next immediate upgrade in the house chain
     return deviceItems.filter(it => {
-      // Hide coal if pellet or gas is owned
-      if (it.key === "coal" && (owned.pellet > 0 || owned.gas > 0)) return false;
-      // Hide pellet if gas is owned
-      if (it.key === "pellet" && owned.gas > 0) return false;
-      if (!it.requires) return true;
-      return it.requires.every(k => owned[k] > 0);
+      const idx = houseUpgradeKeys.indexOf(it.key);
+      if (currentIdx < 0) return idx === 0; // no device yet -> show first
+      return idx === currentIdx + 1; // show only the next stage
     });
-  }, [owned]);
+  }, [tiles]);
 
   const visibleProduction = useMemo(() => productionItems.filter(it => !it.requires || it.requires.every(k => owned[k] > 0)), [owned]);
 
@@ -510,46 +565,53 @@ export default function ViessmannGame() {
   const placeOnTile = (tile: Tile) => {
     if (!pendingPlacement) return;
 
-    if (pendingPlacement.key === "coal") {
-  if (tile.id !== homeTileId || tile.entity) return;
-  const instance: EntityInstance = { type: "coal", label: pendingPlacement.name, icon: pendingPlacement.icon };
-  setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
-  addPollutionRate(+0.4); // even stronger pollution for coal
-      setOwned(o => ({ ...o, coal: (o.coal ?? 0) + 1 }));
-  pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
-      setPendingPlacement(null); setLastPlacedKey(tile.id); return;
-    }
-    if (pendingPlacement.key === "pellet") {
-  if (tile.id !== homeTileId) return;
-  const instance: EntityInstance = { type: "pellet", label: pendingPlacement.name, icon: pendingPlacement.icon };
-  setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
-  setOwned(o => ({ ...o, coal: 0, pellet: (o.pellet ?? 0) + 1 }));
-  addPollutionRate(-0.25); // even stronger cleaning for pellet
-      setRenewablesUnlocked(true);
-      setBaseRates(r => ({ ...r, sun: Math.max(r.sun, 1 / 12), wind: Math.max(r.wind, 1 / 16), water: Math.max(r.water, 1 / 18), coins: 0.03 }));
-  pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
-      setPendingPlacement(null); setLastPlacedKey(tile.id); return;
-    }
-    if (pendingPlacement.key === "gas") {
-      if (tile.id !== homeTileId) return;
-      const instance: EntityInstance = { type: "gas", label: pendingPlacement.name, icon: pendingPlacement.icon };
-      setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
-      setOwned(o => ({ ...o, pellet: 0, gas: (o.gas ?? 0) + 1 }));
-      addPollutionRate(-0.1);
-      setBaseRates(r => ({ ...r, coins: Math.min(r.coins, 0.03) }));
-  pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
-      setPendingPlacement(null); setLastPlacedKey(tile.id); return;
-    }
+    const isHouse = houseUpgradeKeys.includes(pendingPlacement.key);
 
-    if (!tile.isHome && tile.entity) return;
-    if (tile.isHome && tiles.find(t => t.id === homeTileId)?.entity) return;
+    // Ograniczenia miejsca
+    if (isHouse) {
+      if (tile.id !== homeTileId) return; // upgrade domu tylko na domu
+      // Dla 'coal' wymagaj pustego domu (start gry)
+      if (pendingPlacement.key === 'coal') {
+        const home = tiles.find(t => t.id === homeTileId);
+        if (home?.entity) return;
+      }
+    } else {
+      // inne obiekty: nie można nadpisać innego obiektu na polu
+      if (!tile.isHome && tile.entity) return;
+      // jeśli to pole domu i coś stoi, nie pozwalaj (dom zarezerwowany dla upgrade'ów)
+      if (tile.isHome && tiles.find(t => t.id === homeTileId)?.entity) return;
+    }
 
     const instance: EntityInstance = { type: pendingPlacement.key, label: pendingPlacement.name, icon: pendingPlacement.icon };
+    // Ustaw/Podmień na kafelku
     setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
-    if (pendingPlacement.key === 'echarger') setHasECharger(true);
-    // Zastosuj efekty po ustawieniu
-    pendingPlacement.onPurchaseEffects?.(effectsCtx);
-  pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
+
+    // Licznik posiadanych
+    if (isHouse) {
+      setOwned(o => {
+        const n: Record<EntityType | 'coal', number> = { ...(o as Record<EntityType | 'coal', number>) };
+        houseUpgradeKeys.forEach(k => { n[k] = 0; });
+        n[pendingPlacement.key] = 1;
+        return n;
+      });
+      // Proste efekty przejściowe dla wczesnych etapów
+      if (pendingPlacement.key === 'coal') {
+        addPollutionRate(+0.4);
+      } else if (pendingPlacement.key === 'pellet') {
+        addPollutionRate(-0.25);
+        setRenewablesUnlocked(true);
+        setBaseRates(r => ({ ...r, sun: Math.max(r.sun, 1 / 12), wind: Math.max(r.wind, 1 / 16), water: Math.max(r.water, 1 / 18), coins: 0.03 }));
+      } else if (pendingPlacement.key === 'gas') {
+        addPollutionRate(-0.1);
+        setBaseRates(r => ({ ...r, coins: Math.min(r.coins, 0.03) }));
+      }
+    } else {
+      setOwned(o => ({ ...o, [pendingPlacement.key]: (o[pendingPlacement.key] ?? 0) + 1 }));
+      if (pendingPlacement.key === 'echarger') setHasECharger(true);
+      pendingPlacement.onPurchaseEffects?.(effectsCtx);
+    }
+
+    pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
     setPendingPlacement(null); setLastPlacedKey(tile.id);
   };
 
@@ -589,30 +651,33 @@ export default function ViessmannGame() {
     accent?: "emerald" | "red";
   };
   const [missions, setMissions] = useState<Mission[]>([
-    {
-      key: "first-steps",
-      title: "Pierwsze kroki",
-      description: "Postaw kocioł węglowy na domu.",
-      completed: false,
-      reward: "+10 ViCoins",
-      accent: "emerald",
-    },
-    {
-      key: "eco-choice",
-      title: "Ekologiczny wybór",
-      description: "Zamień kocioł węglowy na pelletowy.",
-      completed: false,
-      reward: "-20 zanieczyszczenia",
-      accent: "emerald",
-    },
-    {
-      key: "green-investment",
-      title: "Zielona inwestycja",
-      description: "Posadź las.",
-      completed: false,
-      reward: "-30 zanieczyszczenia",
-      accent: "emerald",
-    },
+    // Ścieżka domu (historyczna)
+    { key: "first-steps", title: "Rozpalamy dom", description: "Umieść kocioł żeliwny na domu.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "eco-choice", title: "Stalowy krok naprzód", description: "Zastąp kocioł żeliwny stalowym (1917–1928).", completed: false, reward: "-20 zanieczyszczenia", accent: "emerald" },
+    { key: "triola-gas", title: "Triola – wygoda gazu", description: "Ulepsz do kotła gazowego Triola (1957).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "parola-1965", title: "Parola 1965", description: "Zainstaluj kocioł olejowy Parola (1965).", completed: false, reward: "-10 zanieczyszczenia", accent: "emerald" },
+    { key: "stainless-1972", title: "Nierdzewna rewolucja", description: "Pierwszy kocioł ze stali nierdzewnej (1972).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "heatpump-1978", title: "Pierwsza pompa ciepła", description: "Uruchom pompę ciepła (1978).", completed: false, reward: "-15 zanieczyszczenia", accent: "emerald" },
+    { key: "vitola-1978", title: "Niskotemperaturowy komfort", description: "Kocioł Vitola (1978) – niższa temp. zasilania.", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "vitodens-1989", title: "Kondensacja po raz pierwszy", description: "Zainstaluj Vitodens (1989).", completed: false, reward: "-20 zanieczyszczenia", accent: "emerald" },
+    { key: "vitocal-modern", title: "Nowoczesna pompa ciepła", description: "Przejdź na Vitocal (pompa ciepła).", completed: false, reward: "+30 ViCoins", accent: "emerald" },
+
+    // Zielona energia
+    { key: "green-investment", title: "Zielona inwestycja", description: "Posadź las.", completed: false, reward: "-30 zanieczyszczenia", accent: "emerald" },
+    { key: "collector-1972", title: "Kolektor 1972", description: "Zainstaluj pierwszy kolektor słoneczny (1972).", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "pv-vitovolt", title: "Fotowoltaika na dachu", description: "Zainstaluj PV (Vitovolt).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "vitocharge-inverter", title: "Magazyn energii", description: "Dodaj inverter/magazyn (Vitocharge).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "grid-connect", title: "Do sieci!", description: "Podłącz instalację do sieci (Grid).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "vitovalor-2014", title: "Ogniwo paliwowe", description: "Uruchom Vitovalor (2014).", completed: false, reward: "-25 zanieczyszczenia", accent: "emerald" },
+
+    // Komfort i sterowanie
+    { key: "floor-heat", title: "Ciepła podłoga", description: "Dodaj ogrzewanie podłogowe.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "thermostats-src", title: "Mądre termostaty", description: "Zainstaluj termostaty SRC.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "inox-radial", title: "Kondensacja Inox‑Radial", description: "Włącz technologię Inox‑Radial.", completed: false, reward: "-15 zanieczyszczenia", accent: "emerald" },
+
+    // Integracja i cele łączone
+    { key: "future-home", title: "Dom przyszłości", description: "Miej pompę ciepła + PV + Grid jednocześnie.", completed: false, reward: "+40 ViCoins", accent: "emerald" },
+    { key: "zero-smog", title: "Zero smogu", description: "Obniż zanieczyszczenie do 10 lub mniej.", completed: false, reward: "+50 ViCoins", accent: "emerald" },
   ]);
 
   // Persist mission completion in localStorage to avoid duplicate completion effects on remounts
@@ -634,33 +699,60 @@ export default function ViessmannGame() {
     } catch { /* ignore */ }
   }, [missions]);
 
-  // Mission completion logic based on placements
+  // Sprawdzenia misji: warunki ukończenia
+  const missionChecks: Record<string, () => boolean> = useMemo(() => ({
+    // Dom/upgrade
+    'first-steps': () => placedCounts.coal > 0,
+    'eco-choice': () => placedCounts.pellet > 0,
+    'triola-gas': () => placedCounts.gas > 0,
+    'parola-1965': () => placedCounts.parola1965 > 0,
+    'stainless-1972': () => placedCounts.stainless1972 > 0,
+    'heatpump-1978': () => placedCounts.heatpump1978 > 0,
+    'vitola-1978': () => placedCounts.vitola1978 > 0,
+    'vitodens-1989': () => placedCounts.vitodens1989 > 0,
+    'vitocal-modern': () => placedCounts.heatpump > 0,
+    // Zielona energia
+    'green-investment': () => placedCounts.forest > 0,
+    'collector-1972': () => placedCounts.collector1972 > 0,
+    'pv-vitovolt': () => placedCounts.solar > 0,
+    'vitocharge-inverter': () => placedCounts.inverter > 0,
+    'grid-connect': () => placedCounts.grid > 0,
+    'vitovalor-2014': () => placedCounts.vitovalor2014 > 0,
+    // Komfort i sterowanie
+    'floor-heat': () => placedCounts.floor > 0,
+    'thermostats-src': () => placedCounts.thermostat > 0,
+    'inox-radial': () => placedCounts.inoxRadial > 0,
+    // Integracja / łączone
+    'future-home': () => placedCounts.heatpump > 0 && placedCounts.solar > 0 && placedCounts.grid > 0,
+  'zero-smog': () => (placedCounts.heatpump > 0 && placedCounts.inoxRadial > 0 && placedCounts.solar > 0 && placedCounts.grid > 0 && pollution <= 10),
+  }), [placedCounts, pollution]);
+
+  // Aplikacja nagród misji: +ViCoins lub -zanieczyszczenia
+  const applyMissionReward = useCallback((m: Mission) => {
+    const numMatch = m.reward.match(/([+-]?\d+)/);
+    const n = numMatch ? parseInt(numMatch[1], 10) : 0;
+    if (/ViCoins/i.test(m.reward)) {
+      setResources(r => ({ ...r, coins: r.coins + n }));
+    } else if (/zanieczyszczenia/i.test(m.reward)) {
+      setPollution(p => Math.max(0, p + n)); // n może być ujemne
+    }
+  }, [setResources, setPollution]);
+
+  // Mission completion logic (placement- and state-based)
   useEffect(() => {
     setMissions(prev => prev.map(m => {
-      if (m.key === "first-steps" && !m.completed && placedCounts.coal > 0) {
-        // Reward: +10 ViCoins
-        setResources(r => ({ ...r, coins: r.coins + 10 }));
-  pushLog({ type: 'mission', icon: "💰", title: `Ukończono misję: ${m.title}`, description: m.reward });
-  pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
-        return { ...m, completed: true };
-      }
-      if (m.key === "eco-choice" && !m.completed && placedCounts.pellet > 0) {
-        // Reward: -20 pollution
-        setPollution(p => Math.max(0, p - 20));
-  pushLog({ type: 'mission', icon: "🌱", title: `Ukończono misję: ${m.title}`, description: m.reward });
-  pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
-        return { ...m, completed: true };
-      }
-      if (m.key === "green-investment" && !m.completed && placedCounts.forest > 0) {
-        // Reward: -30 pollution
-        setPollution(p => Math.max(0, p - 30));
-  pushLog({ type: 'mission', icon: "🌱", title: `Ukończono misję: ${m.title}`, description: m.reward });
-  pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
-        return { ...m, completed: true };
+      if (!m.completed) {
+        const check = missionChecks[m.key];
+        if (check && check()) {
+          applyMissionReward(m);
+          pushLog({ type: 'mission', icon: "�", title: `Ukończono misję: ${m.title}`, description: m.reward });
+          pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
+          return { ...m, completed: true };
+        }
       }
       return m;
     }));
-  }, [placedCounts]);
+  }, [missionChecks, applyMissionReward]);
 
   // Log start of weather events
   useEffect(() => {
@@ -711,7 +803,7 @@ export default function ViessmannGame() {
           <div style={{ width: 24, height: 24, borderRadius: 6, background: "#EA580C" }} />
           <span className="font-extrabold text-base font-sans">Viessmann</span>
         </div>
-    <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflowX: 'auto', paddingBottom: 2 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2 }}>
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
@@ -796,55 +888,24 @@ export default function ViessmannGame() {
             {weatherEvent.type !== "none" && (
               <span style={{ fontSize: 13, fontWeight: 600, marginLeft: 8, color: isDay ? "#0ea5e9" : "#bae6fd" }}>{weatherEvent.remaining}s</span>
             )}
-            {/* Infotip z legendą wydarzeń pogodowych - przejrzysty układ, inna ikona */}
-            <span style={{ marginLeft: 10, cursor: 'pointer', position: 'relative', display: 'inline-block' }} tabIndex={0}>
+            {/* Weather legend trigger (fixed overlay renders outside header) */}
+            <span
+              style={{ marginLeft: 10, cursor: 'pointer', position: 'relative', display: 'inline-block' }}
+              tabIndex={0}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setLegendOpen(true);
+              }}
+              onMouseLeave={() => setLegendOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setLegendOpen(true);
+              }}
+              onBlur={() => setLegendOpen(false)}
+            >
               <span style={{ fontSize: 17, color: isDay ? '#0ea5e9' : '#bae6fd', fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
-              <div style={{
-                display: 'none',
-                position: 'absolute',
-                left: '50%',
-                top: '120%',
-                transform: 'translateX(-50%)',
-                minWidth: 220,
-                background: isDay ? '#fff' : '#1e293b',
-                color: isDay ? '#0f172a' : '#e0f2fe',
-                border: '1px solid #bae6fd',
-                borderRadius: 10,
-                boxShadow: '0 4px 16px rgba(30,64,175,0.10)',
-                padding: '14px 18px',
-                fontSize: 13,
-                zIndex: 100,
-                pointerEvents: 'none',
-              }} className="weather-legend-tip">
-                <div style={{ fontWeight: 700, marginBottom: 8 }}>Legenda wydarzeń pogodowych:</div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>☁️</span><span style={{ fontWeight: 700 }}>Chmury</span></span>
-                  <span style={{ color: '#64748b', fontSize: 12, marginLeft: 28 }}>brak produkcji ☀️</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌞</span><span style={{ fontWeight: 700 }}>Słońce</span></span>
-                  <span style={{ color: '#fbbf24', fontSize: 12, marginLeft: 28 }}>x2 produkcja ☀️</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌧️</span><span style={{ fontWeight: 700 }}>Deszcz</span></span>
-                  <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 💧</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌬️</span><span style={{ fontWeight: 700 }}>Wiatr</span></span>
-                  <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 🌬️, -50% ☀️, -30% 💧</span>
-                </div>
-                <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>❄️</span><span style={{ fontWeight: 700 }}>Mróz</span></span>
-                  <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>wszystkie produkcje zatrzymane na 30s</span>
-                </div>
-              </div>
-              <style>{`
-                .weather-legend-tip, .weather-legend-tip:focus, .weather-legend-tip:active { pointer-events: none; }
-                span[tabindex]:hover .weather-legend-tip, span[tabindex]:focus .weather-legend-tip {
-                  display: block !important;
-                  pointer-events: auto;
-                }
-              `}</style>
             </span>
           </div>
           <div style={{
@@ -984,11 +1045,87 @@ export default function ViessmannGame() {
           )}
         </div>
       </header>
+      {/* Fixed weather legend overlay (outside scroll containers) */}
+      {legendOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: legendPos.left,
+            top: legendPos.top,
+            transform: 'translateX(-50%)',
+            minWidth: 220,
+            maxWidth: '90vw',
+            background: isDay ? '#fff' : '#1e293b',
+            color: isDay ? '#0f172a' : '#e0f2fe',
+            border: '1px solid #bae6fd',
+            borderRadius: 10,
+            boxShadow: '0 8px 24px rgba(30,64,175,0.18)',
+            padding: '14px 18px',
+            fontSize: 13,
+            zIndex: 1200,
+            pointerEvents: 'none',
+          }}
+          aria-hidden
+        >
+          <div style={{ fontWeight: 700, marginBottom: 8 }}>Legenda wydarzeń pogodowych:</div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>☁️</span><span style={{ fontWeight: 700 }}>Chmury</span></span>
+            <span style={{ color: '#64748b', fontSize: 12, marginLeft: 28 }}>brak produkcji ☀️</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌞</span><span style={{ fontWeight: 700 }}>Słońce</span></span>
+            <span style={{ color: '#fbbf24', fontSize: 12, marginLeft: 28 }}>x2 produkcja ☀️</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌧️</span><span style={{ fontWeight: 700 }}>Deszcz</span></span>
+            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 💧</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌬️</span><span style={{ fontWeight: 700 }}>Wiatr</span></span>
+            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 🌬️, -50% ☀️, -30% 💧</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>❄️</span><span style={{ fontWeight: 700 }}>Mróz</span></span>
+            <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>wszystkie produkcje zatrzymane na 30s</span>
+          </div>
+        </div>
+      )}
 
       {/* body */}
       <main style={gridWrap}>
         {/* shop */}
         <aside style={card}>
+          {/* Home device info card */}
+          {(() => {
+            const home = tiles.find(t => t.id === homeTileId);
+            const ent = home?.entity && (houseUpgradeKeys.includes(home.entity.type as EntityType) ? home.entity : null);
+            return (
+              <div
+                style={{
+                  borderRadius: 12,
+                  padding: 14,
+                  marginBottom: 16,
+                  background: isDay ? '#fff' : '#0b1220',
+                  color: isDay ? '#0f172a' : '#e5e7eb',
+                  border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
+                  borderLeft: isDay ? '4px solid #f59e0b' : '4px solid #60a5fa',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                }}
+              >
+                <span style={{ fontSize: 20 }}>{ent ? ent.icon : '🏠'}</span>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                  <span className="font-semibold font-sans" style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>
+                    {ent ? 'Na domu:' : 'Brak urządzeń'}
+                  </span>
+                  <span className="font-medium font-sans" style={{ fontSize: 15 }}>
+                    {ent ? ent.label : 'Umieść kocioł na domu, aby rozpocząć.'}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
           <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
             <button className={`font-semibold font-sans ${shopTab === "devices" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "devices")} onClick={() => setShopTab("devices")}>Urządzenia</button>
             <button className={`font-semibold font-sans ${shopTab === "production" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "production")} onClick={() => setShopTab("production")}>Produkcja</button>
@@ -1001,6 +1138,13 @@ export default function ViessmannGame() {
               const done = isSinglePurchase(item.key) && ownedCount > 0;
               const afford = !done && canAfford(cost);
               const isPending = pendingPlacement?.key === item.key;
+              const missingParts: string[] = [];
+              if (!done) {
+                if ((cost.sun ?? 0) > resources.sun) missingParts.push(`${Math.max(0, (cost.sun ?? 0) - resources.sun)} ☀️`);
+                if ((cost.water ?? 0) > resources.water) missingParts.push(`${Math.max(0, (cost.water ?? 0) - resources.water)} 💧`);
+                if ((cost.wind ?? 0) > resources.wind) missingParts.push(`${Math.max(0, (cost.wind ?? 0) - resources.wind)} 🌬️`);
+                if ((cost.coins ?? 0) > resources.coins) missingParts.push(`${Math.max(0, (cost.coins ?? 0) - resources.coins)} 💰`);
+              }
               return (
                 <div
                   key={item.key}
@@ -1010,7 +1154,27 @@ export default function ViessmannGame() {
                     display: "flex",
                     flexDirection: "column",
                     minHeight: 120,
-                    background: isDay ? (card.background ?? "rgba(255,255,255,0.7)") : "#0f172a"
+                    background: isDay ? (card.background ?? "rgba(255,255,255,0.7)") : "#0f172a",
+                    transition: "transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease",
+                    border: isDay ? "1px solid rgba(0,0,0,0.06)" : "1px solid #1f2937",
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    cursor: done ? "default" : "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = isDay ? "0 6px 18px rgba(0,0,0,0.10)" : "0 6px 18px rgba(0,0,0,0.35)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "#d1d5db" : "#334155";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "none";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "rgba(0,0,0,0.06)" : "#1f2937";
+                  }}
+                  onMouseDown={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0) scale(0.995)";
+                  }}
+                  onMouseUp={(e) => {
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
                   }}
                 >
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1032,7 +1196,7 @@ export default function ViessmannGame() {
                       <span className="text-xs font-semibold font-sans text-emerald-600" style={{fontSize:12}}>Zrobione ✓</span>
                     )}
                   </div>
-                  {!done && (
+          {!done && (
                     <button
                       onClick={() => afford && handleBuy(item)}
                       disabled={!afford}
@@ -1046,6 +1210,7 @@ export default function ViessmannGame() {
                         transition: "transform 150ms ease",
                         minHeight: 36,
                       }}
+            title={!afford && missingParts.length ? `Brak zasobów: ${missingParts.join(" + ")}` : undefined}
                     >
                       {afford ? (isPending ? "Kliknij kafelek…" : "Kup") : "Brak zasobów"}
                     </button>
@@ -1073,16 +1238,19 @@ export default function ViessmannGame() {
             lastPlacedKey={lastPlacedKey}
             isPlaceable={(t) => {
               if (!pendingPlacement) return false;
-              if (pendingPlacement.key === "coal" || pendingPlacement.key === "pellet" || pendingPlacement.key === "gas") {
+              const isHouse = houseUpgradeKeys.includes(pendingPlacement.key);
+              if (isHouse) {
                 if (t.id !== homeTileId) return false;
-                if (pendingPlacement.key === "coal") return !t.entity;
+                // coal: tylko na pustym domu, inne mogą nadpisać
+                if (pendingPlacement.key === 'coal') return !t.entity;
                 return true;
+              } else {
+                if (t.isHome) {
+                  const home = tiles.find((x) => x.id === homeTileId);
+                  return !!home && !home.entity;
+                }
+                return !t.entity;
               }
-              if (t.isHome) {
-                const home = tiles.find((x) => x.id === homeTileId);
-                return !!home && !home.entity;
-              }
-              return !t.entity;
             }}
             weatherEvent={weatherEvent}
             isDay={isDay}
