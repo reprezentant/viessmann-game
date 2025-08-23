@@ -1771,7 +1771,7 @@ function IsoGrid({
             const t = hoverInfo.tile;
             const icon = t.isHome ? '🏠' : t.entity ? t.entity.icon : pendingItem ? pendingItem.icon : '⬜';
             const text = t.isHome
-              ? 'Dom'
+              ? (t.entity ? `Dom: ${t.entity.label}` : 'Dom')
               : t.entity
               ? t.entity.label
               : pendingItem
@@ -1830,7 +1830,7 @@ function IsoTile({
       onMouseLeave={() => { setHovered(false); setPressed(false); onHoverChange?.(false); }}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
-      title={isHome ? "Dom" : tile.entity ? tile.entity.label : pendingItem ? `Postaw: ${pendingItem.name}` : "Pusty kafelek"}
+  title={isHome ? (tile.entity ? `Dom: ${tile.entity.label}` : "Dom") : tile.entity ? tile.entity.label : pendingItem ? `Postaw: ${pendingItem.name}` : "Pusty kafelek"}
       style={{
         position: "absolute", left, top, width: w, height: h,
         WebkitClipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
