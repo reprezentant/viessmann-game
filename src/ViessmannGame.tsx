@@ -81,7 +81,7 @@ const makeOwnedInit = (): Record<EntityType, number> => {
 const deviceItems: ShopItem[] = [
   { key: "coal", name: "Kocioł tradycyjny żeliwny", description: "Duże zanieczyszczenie, wysoka wydajność. Umieść na domu, aby go ogrzać.", icon: "🏚️", cost: { coins: 0 } },
   { key: "pellet", name: "Stalowy kocioł grzewczy (1917–1928)", description: "Trwalszy, szybciej się nagrzewa, mniejsze zużycie paliwa.", icon: "🔩", cost: { coins: 10 }, requires: ["coal"] },
-  { key: "gas", name: "Kocioł Triola (1957)", description: "Stalowy piec z podgrzewaczem. Konwersja z koksu na olej.", icon: "🔥", cost: { sun: 20, water: 10, wind: 10 }, requires: ["pellet"] },
+  { key: "gas", name: "Kocioł Triola (1957)", description: "Stalowy piec z podgrzewaczem. Konwersja z koksu na olej.", icon: "🔥", cost: { sun: 15, water: 8, wind: 8 }, requires: ["pellet"] },
   { key: "parola1965", name: "Kocioł na olej Parola (1965)", description: "Niższe emisje i wysoka sprawność.", icon: "🛢️", cost: { sun: 25, water: 15, wind: 15 }, requires: ["gas"] },
   { key: "stainless1972", name: "Pierwszy kocioł ze stali nierdzewnej (1972)", description: "Lżejszy i wydajniejszy; prekursor kondensacji.", icon: "🧪", cost: { sun: 30, water: 20, wind: 20 }, requires: ["parola1965"] },
   { key: "heatpump1978", name: "Pierwsza pompa ciepła (1978)", description: "Wykorzystuje energię z otoczenia.", icon: "🌀", cost: { sun: 35, water: 25, wind: 25 }, requires: ["stainless1972"] },
@@ -91,7 +91,7 @@ const deviceItems: ShopItem[] = [
 ];
 
 const productionItems: ShopItem[] = [
-  { key: "forest", name: "Las", description: "Silnie redukuje zanieczyszczenie (−0.5/s). Koszt: 10 ☀️ + 10 💧.", icon: "🌲", cost: { sun: 10, water: 10 } },
+  { key: "forest", name: "Las", description: "Silnie redukuje zanieczyszczenie (−0.5/s). Każdy kolejny jest droższy.", icon: "🌲", cost: { sun: 10, water: 10 } },
   { key: "collector1972", name: "Pierwszy kolektor słoneczny (1972)", description: "Więcej ☀️, mniej zanieczyszczeń, krótszy Mróz.", icon: "☀️", cost: { sun: 25, water: 10 }, requires: ["stainless1972"] },
   { key: "inoxRadial", name: "Technologia kondensacyjna (Inox‑Radial)", description: "Zmniejsza generowanie zanieczyszczeń.", icon: "🧰", cost: { sun: 20, water: 10, wind: 10 }, requires: ["vitodens1989"] },
   { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort. Skraca czas trwania Mrozu.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["vitodens1989"] },
@@ -103,13 +103,26 @@ const productionItems: ShopItem[] = [
   { key: "echarger", name: "E-Charger", description: "+5 💰/min.", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
 ];
 
+// --- Helper index for entity metadata ---
+const itemByKey: Record<EntityType, ShopItem> = Object.fromEntries(
+  [...deviceItems, ...productionItems].map(i => [i.key, i])
+) as Record<EntityType, ShopItem>;
+const instanceFor = (k: EntityType): EntityInstance => {
+  const it = itemByKey[k];
+  return { type: k, label: it?.name || k, icon: it?.icon || "" };
+};
+
 // --- Typy wydarzeń pogodowych ---
-type WeatherEventType = "none" | "clouds" | "sunny" | "rain" | "frost" | "wind";
+type WeatherEventType = "none" | "clouds" | "sunny" | "rain" | "frost" | "wind" | "storm";
 type WeatherEvent = {
   type: WeatherEventType;
   duration: number; // sekundy
   remaining: number; // sekundy
 };
+
+// --- Sezony ---
+type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter';
+type SeasonState = { type: SeasonType; duration: number; remaining: number };
 
 // --- Profile system types ---
 type Achievement = {
@@ -234,18 +247,55 @@ export default function ViessmannGame() {
   // --- Wszystkie stany i stałe na początek ---
   // Pogoda
   const [weatherEvent, setWeatherEvent] = useState<WeatherEvent>({ type: "none", duration: 0, remaining: 0 });
+  // Sezony: rzadziej zmieniane, wpływają na produkcję i tempo smogu
+  const SEASON_LENGTH = 150; // sekundy
+  const [season, setSeason] = useState<SeasonState>({ type: 'spring', duration: SEASON_LENGTH, remaining: SEASON_LENGTH });
+  // Odliczanie sezonu
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSeason(s => ({ ...s, remaining: Math.max(0, s.remaining - 1) }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+  // Zmiana sezonu po wyczerpaniu czasu
+  useEffect(() => {
+    if (season.remaining > 0) return;
+    const order: SeasonType[] = ['spring','summer','autumn','winter'];
+    const idx = order.indexOf(season.type);
+    const next = order[(idx + 1) % order.length];
+    setSeason({ type: next, duration: SEASON_LENGTH, remaining: SEASON_LENGTH });
+  }, [season.remaining, season.type]);
   const WEATHER_EVENT_INTERVAL = 30; // co ile sekund losować nowe wydarzenie
   const WEATHER_EVENT_DURATION = 25; // ile trwa wydarzenie
   const FROST_EVENT_DURATION = 30; // ile trwa mróz
+  const STORM_EVENT_DURATION = 20; // ile trwa burza (rzadka, ale silna)
   // Zasoby
   const [resources, setResources] = useState<Record<ResKey, number>>({ sun: 0, water: 0, wind: 0, coins: 0 });
-  const [baseRates, setBaseRates] = useState<Record<ResKey, number>>({ sun: 0, wind: 0, water: 0, coins: 0.05 });
+  const [baseRates, setBaseRates] = useState<Record<ResKey, number>>({ sun: 0.02, wind: 0.02, water: 0.02, coins: 0.05 });
   const TICK_MS = 1000;
   // Zanieczyszczenie
   const [pollution, setPollution] = useState(0);
   const [pollutionRate, setPollutionRate] = useState(0);
   const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
-  const addPollutionRate = (d: number) => setPollutionRate((p) => p + d);
+  const addPollutionRate = (d: number) => setPollutionRate((p) => Math.max(-2, p + d));
+  // Sezonowy wkład do pollutionRate (delta vs poprzedni sezon)
+  const seasonDeltaRef = useRef(0);
+  const seasonPollutionFor = (t: SeasonType): number => {
+    switch (t) {
+      case 'spring': return -0.01;
+      case 'summer': return -0.02;
+      case 'autumn': return 0.0;
+      case 'winter': return +0.05;
+    }
+  };
+  useEffect(() => {
+    const next = seasonPollutionFor(season.type);
+    const prev = seasonDeltaRef.current;
+    if (next !== prev) {
+      addPollutionRate(next - prev);
+      seasonDeltaRef.current = next;
+    }
+  }, [season.type]);
   // Dzień/noc
   const DAY_LENGTH = 240; // s
   const DAY_FRACTION = 0.7; // 70% dzień
@@ -277,14 +327,18 @@ export default function ViessmannGame() {
         else if (roll < 0.54) type = "rain";
         else if (roll < 0.68) type = "wind";
         else if (roll < 0.78) type = "frost";
+        else if (roll < 0.83) type = "storm"; // rzadsze
       } else {
         if (roll < 0.225) type = "clouds";
         else if (roll < 0.45) type = "rain";
         else if (roll < 0.65) type = "wind";
         else if (roll < 0.8) type = "frost";
+        else if (roll < 0.85) type = "storm"; // rzadkie w nocy
       }
       if (type === "frost") {
         setWeatherEvent({ type, duration: FROST_EVENT_DURATION, remaining: FROST_EVENT_DURATION });
+      } else if (type === "storm") {
+        setWeatherEvent({ type, duration: STORM_EVENT_DURATION, remaining: STORM_EVENT_DURATION });
       } else if (type !== "none") {
         setWeatherEvent({ type, duration: WEATHER_EVENT_DURATION, remaining: WEATHER_EVENT_DURATION });
       }
@@ -292,14 +346,89 @@ export default function ViessmannGame() {
     return () => clearInterval(interval);
   }, [weatherEvent.type, isDay]);
 
+  // Dev-only: quick weather forcing via keyboard
+  useEffect(() => {
+    // Only active in dev environment
+    const isDev = typeof import.meta !== 'undefined' && (import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV;
+    if (!isDev) return;
+    const onKey = (e: KeyboardEvent) => {
+      const k = e.key;
+      const map: Record<string, WeatherEventType> = { '0': 'none', '1': 'clouds', '2': 'sunny', '3': 'rain', '4': 'wind', '5': 'frost', '6': 'storm' };
+      if (!(k in map)) return;
+      const t = map[k];
+      if (t === 'none') {
+        setWeatherEvent({ type: 'none', duration: 0, remaining: 0 });
+      } else if (t === 'frost') {
+        setWeatherEvent({ type: 'frost', duration: FROST_EVENT_DURATION, remaining: FROST_EVENT_DURATION });
+      } else {
+        setWeatherEvent({ type: t, duration: WEATHER_EVENT_DURATION, remaining: WEATHER_EVENT_DURATION });
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   const weatherMultipliers: Record<ResKey, number> = useMemo(() => {
   if (weatherEvent.type === "clouds") return { sun: 0, water: 1, wind: 1, coins: 1 };
   if (weatherEvent.type === "sunny") return { sun: 2, water: 1, wind: 1, coins: 1 };
   if (weatherEvent.type === "rain") return { sun: 1, water: 2, wind: 1, coins: 1 };
   if (weatherEvent.type === "wind") return { sun: 0.5, water: 0.7, wind: 2, coins: 1 };
+  if (weatherEvent.type === "storm") return { sun: 0, water: 1.5, wind: 3, coins: 1 };
   if (weatherEvent.type === "frost") return { sun: 0, water: 0, wind: 0, coins: 0 };
   return { sun: 1, water: 1, wind: 1, coins: 1 };
   }, [weatherEvent.type]);
+  // Smog pressure: reduce production as pollution grows (never zero; keeps game moving)
+  const smogMultiplier = useMemo(() => {
+    const p = pollution;
+    if (p <= 20) return 1.0;
+    if (p >= 95) return 0.2;
+    if (p >= 80) {
+      // 80 -> 0.3 down to 95 -> 0.2
+      const t = (p - 80) / 15;
+      return +(0.3 - 0.1 * t);
+    }
+    if (p >= 60) return 0.6;
+    if (p >= 40) return 0.9;
+    // 20-40 soft approach from 1.0 to 0.95
+    const t = (p - 20) / 20;
+    return +(1 - 0.05 * t);
+  }, [pollution]);
+  // Clean-air bonus: reward low smog with a small coin boost (stacks after smog multiplier)
+  const ecoBonusMultiplier = useMemo(() => {
+    const p = pollution;
+    if (p <= 10) return 1.15; // +15% when very clean
+    if (p < 25) return +(1.0 + (25 - p) * 0.01); // linearly fades from +15% at 10 to 0% at 25
+    return 1.0;
+  }, [pollution]);
+  // Smog stage change notifications (one-off per stage)
+  const smogStageRef = useRef<number>(-1);
+  const smogHydratedRef = useRef(false);
+  useEffect(() => {
+    // Stages: 0:<40, 1:40-59, 2:60-79, 3:80+
+    const s = pollution < 40 ? 0 : pollution < 60 ? 1 : pollution < 80 ? 2 : 3;
+    if (!smogHydratedRef.current) { smogHydratedRef.current = true; smogStageRef.current = s; return; }
+    if (s !== smogStageRef.current) {
+      const map = [
+        { icon: '🌿', msg: 'Smog niski – pełna produkcja.' },
+        { icon: '⚠️', msg: 'Uwaga: wzrost smogu – niewielka kara produkcji.' },
+        { icon: '🛑', msg: 'Wysoki smog – silna kara produkcji.' },
+        { icon: '⛔', msg: 'Krytyczny smog – produkcja mocno ograniczona.' },
+      ];
+      const info = map[s];
+      pushToast({ icon: info.icon, text: info.msg });
+      pushLog({ type: 'other', icon: info.icon, title: 'Poziom smogu zmieniony', description: info.msg });
+      smogStageRef.current = s;
+    }
+  }, [pollution]);
+  // Mnożniki sezonowe
+  const seasonMultipliers: Record<ResKey, number> = useMemo(() => {
+    switch (season.type) {
+      case 'spring': return { sun: 1.0, water: 1.3, wind: 1.0, coins: 1.0 };
+      case 'summer': return { sun: 1.3, water: 1.1, wind: 0.9, coins: 1.0 };
+      case 'autumn': return { sun: 0.9, water: 1.2, wind: 1.2, coins: 1.0 };
+      case 'winter': return { sun: 0.7, water: 0.9, wind: 1.2, coins: 1.0 };
+    }
+  }, [season.type]);
   const phasePct = useMemo(() => {
     const mod = elapsed % DAY_LENGTH;
     const dayLen = DAY_LENGTH * DAY_FRACTION;
@@ -308,38 +437,42 @@ export default function ViessmannGame() {
     return ((mod - dayLen) / nightLen) * 100;
   }, [elapsed]);
 
-  // --- Mnożniki: dzień/noc * wydarzenie pogodowe ---
+  // --- Mnożniki: dzień/noc * sezon * wydarzenie pogodowe ---
+  const dayNightMultipliers: Record<ResKey, number> = useMemo(() => (
+    isDay ? { sun: 2.0, wind: 1.0, water: 1.0, coins: 1.0 } : { sun: 0.0, wind: 1.2, water: 1.0, coins: 1.0 }
+  ), [isDay]);
   const multipliers: Record<ResKey, number> = useMemo(() => {
-    const dayNight = isDay ? { sun: 2.0, wind: 1.0, water: 1.0, coins: 1.0 } : { sun: 0.0, wind: 1.2, water: 1.0, coins: 1.0 };
-    // Połącz z pogodą
+    // Połącz z sezonem i pogodą
     return {
-      sun: dayNight.sun * weatherMultipliers.sun,
-      wind: dayNight.wind * weatherMultipliers.wind,
-      water: dayNight.water * weatherMultipliers.water,
-      coins: dayNight.coins * weatherMultipliers.coins,
+    sun: dayNightMultipliers.sun * seasonMultipliers.sun * weatherMultipliers.sun * smogMultiplier,
+    wind: dayNightMultipliers.wind * seasonMultipliers.wind * weatherMultipliers.wind * smogMultiplier,
+    water: dayNightMultipliers.water * seasonMultipliers.water * weatherMultipliers.water * smogMultiplier,
+    // coins additionally benefit from ecoBonusMultiplier when air is clean
+    coins: dayNightMultipliers.coins * seasonMultipliers.coins * weatherMultipliers.coins * smogMultiplier * ecoBonusMultiplier,
     };
-  }, [isDay, weatherMultipliers]);
+  }, [dayNightMultipliers, seasonMultipliers, weatherMultipliers, smogMultiplier, ecoBonusMultiplier]);
   const [renewablesUnlocked, setRenewablesUnlocked] = useState(false);
   const effectiveRates = useMemo(
     () => ({
-      sun: renewablesUnlocked ? +(baseRates.sun * multipliers.sun) : 0,
-      wind: renewablesUnlocked ? +(baseRates.wind * multipliers.wind) : 0,
-      water: renewablesUnlocked ? +(baseRates.water * multipliers.water) : 0,
+      sun: +(baseRates.sun * multipliers.sun),
+      wind: +(baseRates.wind * multipliers.wind),
+      water: +(baseRates.water * multipliers.water),
       coins: +(baseRates.coins * multipliers.coins),
     }),
-    [baseRates, multipliers, renewablesUnlocked]
+    [baseRates, multipliers]
   );
 
   // ---------- Map ----------
   const SIZE = 7;
   const CENTER = Math.floor(SIZE / 2);
-  const [tiles, setTiles] = useState<Tile[]>(() => {
+  const createInitialTiles = useCallback((): Tile[] => {
     const list: Tile[] = [];
     for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
       list.push({ id: `${x},${y}`, x, y, entity: null, isHome: x === CENTER && y === CENTER });
     }
     return list;
-  });
+  }, [SIZE, CENTER]);
+  const [tiles, setTiles] = useState<Tile[]>(() => createInitialTiles());
   const homeTileId = `${CENTER},${CENTER}`;
   // Liczba faktycznie postawionych obiektów (z mapy), do misji i osiągnięć
   const placedCounts: Record<EntityType | 'coal', number> = useMemo(() => {
@@ -365,8 +498,188 @@ export default function ViessmannGame() {
 
   const [hasECharger, setHasECharger] = useState(false);
   const echargerBonusRef = useRef(0);
+  // Track house device's pollution contribution to adjust cleanly on upgrades
+  const housePollutionRef = useRef(0);
   const [pendingPlacement, setPendingPlacement] = useState<ShopItem | null>(null);
   const [lastPlacedKey, setLastPlacedKey] = useState<string | null>(null);
+
+  // Keep renewables unlocked in sync based on current tiles (heatpump presence)
+  useEffect(() => {
+    const anyHeatpump = tiles.some(t => t.entity?.type === 'heatpump');
+    if (anyHeatpump !== renewablesUnlocked) setRenewablesUnlocked(anyHeatpump);
+  }, [tiles, renewablesUnlocked]);
+
+  // -------- Save system v1 (tiles/resources/pollution) --------
+  type SaveV1 = {
+    v: 1;
+    resources: Record<ResKey, number>;
+    pollution: number;
+    tiles: Array<{ id: string; x: number; y: number; isHome?: boolean; entity?: EntityType | null }>;
+  season?: { type: SeasonType; remaining: number };
+  };
+  const SAVE_KEY = 'vm_save_v1';
+  // Load once on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return;
+      const data = JSON.parse(raw) as SaveV1;
+      if (!data || data.v !== 1) return;
+      if (data.resources) setResources(r => ({ ...r, ...data.resources }));
+      if (typeof data.pollution === 'number') setPollution(data.pollution);
+      if (data.season && data.season.type) {
+  setSeason({ type: data.season!.type, duration: SEASON_LENGTH, remaining: Math.min(SEASON_LENGTH, Math.max(0, data.season!.remaining)) });
+        // initialize seasonal delta to loaded season so it doesn't double-apply on first tick
+        seasonDeltaRef.current = seasonPollutionFor(data.season.type);
+      }
+      if (Array.isArray(data.tiles) && data.tiles.length) {
+        const map = new Map<string, { id: string; x: number; y: number; isHome?: boolean; entity?: EntityType | null }>();
+        data.tiles.forEach(t => map.set(t.id, t));
+        setTiles(prev => prev.map(t => {
+          const s = map.get(t.id);
+          if (!s) return t;
+          return {
+            ...t,
+            entity: s.entity ? instanceFor(s.entity) : null,
+          };
+        }));
+          // Rebuild pollutionRate baseline from saved tiles (house + forests)
+          const home = data.tiles.find(t => t.isHome);
+          const houseType = (home?.entity as EntityType | null | undefined) ?? null;
+          const forests = data.tiles.filter(t => t.entity === 'forest').length;
+          const base = housePollutionFor(houseType) + (-0.5 * forests);
+          setPollutionRate(Math.max(-2, base));
+          housePollutionRef.current = housePollutionFor(houseType);
+      }
+    } catch { /* ignore */ }
+  }, []);
+  // Persist on changes
+  useEffect(() => {
+    try {
+      const save: SaveV1 = {
+        v: 1,
+        resources,
+        pollution,
+  tiles: tiles.map(t => ({ id: t.id, x: t.x, y: t.y, isHome: t.isHome, entity: t.entity?.type ?? null })),
+  season: { type: season.type, remaining: season.remaining },
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    } catch { /* ignore */ }
+  }, [tiles, resources, pollution, season]);
+
+  // Export/import helpers
+  const exportSave = useCallback(() => {
+    try {
+      const raw = localStorage.getItem(SAVE_KEY);
+      const payload = raw || JSON.stringify({ v: 1, resources, pollution, tiles: tiles.map(t => ({ id: t.id, x: t.x, y: t.y, isHome: t.isHome, entity: t.entity?.type ?? null })) });
+      const name = `viessmann-save-${Date.now()}.json`;
+      const blob = new Blob([payload], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
+    } catch { /* ignore */ }
+  }, [tiles, resources, pollution]);
+
+  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const onImportFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const text = String(reader.result || '');
+        const data = JSON.parse(text) as SaveV1;
+        if (!data || data.v !== 1) return;
+        setResources(r => ({ ...r, ...data.resources }));
+        setPollution(typeof data.pollution === 'number' ? data.pollution : 0);
+        if (Array.isArray(data.tiles) && data.tiles.length) {
+          const map = new Map<string, { id: string; x: number; y: number; isHome?: boolean; entity?: EntityType | null }>();
+          data.tiles.forEach(t => map.set(t.id, t));
+          setTiles(createInitialTiles().map(t => {
+            const s = map.get(t.id);
+            if (!s) return t;
+            return { ...t, entity: s.entity ? instanceFor(s.entity) : null };
+          }));
+            if (data.season && data.season.type) {
+              setSeason({ type: data.season!.type, duration: SEASON_LENGTH, remaining: Math.min(SEASON_LENGTH, Math.max(0, data.season!.remaining)) });
+              seasonDeltaRef.current = seasonPollutionFor(data.season.type);
+            }
+          // Restore pollutionRate baseline on import
+          const home = data.tiles.find(t => t.isHome);
+          const houseType = (home?.entity as EntityType | null | undefined) ?? null;
+          const forests = data.tiles.filter(t => t.entity === 'forest').length;
+          const base = housePollutionFor(houseType) + (-0.5 * forests);
+          setPollutionRate(Math.max(-2, base));
+          housePollutionRef.current = housePollutionFor(houseType);
+        }
+      } catch { /* ignore */ }
+    };
+    reader.readAsText(f);
+    // reset input to allow importing the same file again if needed
+    e.target.value = '';
+  }, [createInitialTiles]);
+
+  // Reset game (Nowa gra)
+  const resetGame = useCallback(() => {
+    const ok = window.confirm('Na pewno rozpocząć nową grę? Spowoduje to utratę postępów.');
+    if (!ok) return;
+    try {
+      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem('vm_log');
+      localStorage.removeItem('vm_achUnlocked');
+      localStorage.removeItem('vm_seen_ach');
+      localStorage.removeItem('vm_seen_log');
+    } catch { /* ignore */ }
+    setTiles(createInitialTiles());
+    setResources({ sun: 0, water: 0, wind: 0, coins: 0 });
+    setPollution(0);
+    setPollutionRate(0);
+    setRenewablesUnlocked(false);
+    setPriceDiscountPct(0);
+    setOwned(makeOwnedInit());
+    setHasECharger(false);
+    echargerBonusRef.current = 0;
+  housePollutionRef.current = 0;
+    setPendingPlacement(null);
+    setLastPlacedKey(null);
+    setLog([]);
+    setLoggedMilestones({});
+    setMissions(prev => prev.map(m => ({ ...m, completed: false })));
+    setShowAchievements(false);
+    setShowMissions(false);
+    setShowLog(false);
+    setShowProfileMenu(false);
+  }, [createInitialTiles]);
+
+  // -------- Missions progress --------
+  type MissionProgress = { value: number; max: number; label: string };
+  const missionProgress = useMemo<Record<string, MissionProgress>>(() => {
+    const mp: Record<string, MissionProgress> = {};
+    const bin = (done: boolean): MissionProgress => ({ value: done ? 1 : 0, max: 1, label: done ? '1/1' : '0/1' });
+    const has = (k: EntityType) => (placedCounts[k] ?? 0) > 0;
+    // Binary missions mapped to entities
+    const mapBin: Array<[string, EntityType]> = [
+      ['first-steps','coal'], ['eco-choice','pellet'], ['triola-gas','gas'], ['parola-1965','parola1965'],
+      ['stainless-1972','stainless1972'], ['heatpump-1978','heatpump1978'], ['vitola-1978','vitola1978'], ['vitodens-1989','vitodens1989'],
+      ['vitocal-modern','heatpump'], ['green-investment','forest'], ['collector-1972','collector1972'], ['pv-vitovolt','solar'],
+      ['vitocharge-inverter','inverter'], ['grid-connect','grid'], ['vitovalor-2014','vitovalor2014'], ['floor-heat','floor'],
+      ['thermostats-src','thermostat'], ['inox-radial','inoxRadial']
+    ];
+    for (const [k, ent] of mapBin) mp[k] = bin(has(ent));
+    // Composite: future-home (heatpump + solar + grid)
+    const fhParts = ['heatpump','solar','grid'] as const;
+    const fhHave = fhParts.filter(k => has(k)).length;
+    mp['future-home'] = { value: fhHave, max: fhParts.length, label: `${fhHave}/${fhParts.length}` };
+    // Zero smog: require combo + pollution <= 10; show progress toward 10
+    const comboReady = ['heatpump','inoxRadial','solar','grid'].every(k => has(k as EntityType));
+    const val = pollution <= 10 ? 1 : Math.min(1, 10 / Math.max(10, pollution));
+    mp['zero-smog'] = { value: comboReady ? val : 0, max: 1, label: comboReady ? (pollution <= 10 ? '1/1' : `cel: ≤10 (teraz: ${Math.round(pollution)})`) : '0/1' };
+    return mp;
+  }, [placedCounts, pollution]);
   // Allow canceling placement with Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -381,11 +694,19 @@ export default function ViessmannGame() {
   // Profile menu states
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
+  const [showMissions, setShowMissions] = useState(false);
   const [showLog, setShowLog] = useState(false);
   const [logFilter, setLogFilter] = useState<'all' | LogType>('all');
   // Weather legend fixed overlay state
   const [legendOpen, setLegendOpen] = useState(false);
   const [legendPos, setLegendPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  // Custom tooltips for Season and Pollution (native title can be flaky on frequent updates)
+  const [seasonTipOpen, setSeasonTipOpen] = useState(false);
+  const [seasonTipPos, setSeasonTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  const [pollTipOpen, setPollTipOpen] = useState(false);
+  const [pollTipPos, setPollTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  // Economy panel state
+  const [ecoOpen, setEcoOpen] = useState(true);
 
   // Activity log
   const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
@@ -562,6 +883,19 @@ export default function ViessmannGame() {
     for (const [k, v] of Object.entries(cost)) if (typeof v === "number") out[k as ResKey] = Math.ceil(v * (1 - priceDiscountPct / 100));
     return out;
   };
+  // Dynamic pricing for forests: base 10/10 plus +8/+8 per owned forest
+  const dynamicCost = (item: ShopItem): Cost => {
+    // start with discounted base cost
+    const base = discountedCost(item.cost);
+    if (item.key !== 'forest') return base;
+    const count = owned.forest ?? 0;
+    const bump = 8 * count;
+    return {
+      ...base,
+      sun: (base.sun ?? 0) + bump,
+      water: (base.water ?? 0) + bump,
+    };
+  };
   const payCost = (cost: Cost) => setResources(r => {
     const n = { ...r } as Record<ResKey, number>;
     for (const [k, v] of Object.entries(cost)) n[k as ResKey] -= v ?? 0;
@@ -572,6 +906,21 @@ export default function ViessmannGame() {
     addRate: (k, d) => modifyBaseRates(r => ({ ...r, [k]: (r[k] ?? 0) + d })),
     multiplyAll: (m) => modifyBaseRates(r => { const n = { ...r } as Record<ResKey, number>; (Object.keys(n) as ResKey[]).forEach(k => n[k] *= m); return n; }),
     discountNextPurchasesPct: (pct) => setPriceDiscountPct(p => Math.min(90, p + pct)),
+  };
+  // Pollution contribution per house device
+  const housePollutionFor = (k: EntityType | null | undefined): number => {
+    switch (k) {
+      case 'coal': return 0.4;
+      case 'pellet': return 0.3;
+      case 'gas': return 0.2;
+      case 'parola1965': return 0.12;
+      case 'stainless1972': return 0.08;
+      case 'heatpump1978': return 0.06;
+      case 'vitola1978': return 0.04;
+      case 'vitodens1989': return 0.02;
+      case 'heatpump': return 0.0;
+      default: return 0.0;
+    }
   };
 
   // Loop
@@ -613,7 +962,7 @@ export default function ViessmannGame() {
   // Zakup
   const handleBuy = (item: ShopItem) => {
     if (isSinglePurchase(item.key) && (owned[item.key] ?? 0) > 0) return;
-    const cost = discountedCost(item.cost);
+  const cost = dynamicCost(item);
     if (!canAfford(cost)) return;
     payCost(cost);
     // Log purchase
@@ -663,20 +1012,34 @@ export default function ViessmannGame() {
         n[pendingPlacement.key] = 1;
         return n;
       });
-      // Proste efekty przejściowe dla wczesnych etapów
-      if (pendingPlacement.key === 'coal') {
-        addPollutionRate(+0.4);
-      } else if (pendingPlacement.key === 'pellet') {
-        addPollutionRate(-0.25);
+  // Pollution: apply delta vs previous house state using helper
+      const prevHouse = housePollutionRef.current;
+  const nextHouse = housePollutionFor(pendingPlacement.key);
+      if (nextHouse !== prevHouse) {
+        addPollutionRate(nextHouse - prevHouse);
+        housePollutionRef.current = nextHouse;
+      }
+
+      // Additional progression effects (kept from earlier design)
+      if (pendingPlacement.key === 'pellet') {
         setRenewablesUnlocked(true);
-        setBaseRates(r => ({ ...r, sun: Math.max(r.sun, 1 / 12), wind: Math.max(r.wind, 1 / 16), water: Math.max(r.water, 1 / 18), coins: 0.03 }));
+        // Kickstart sustainable progression: ensure decent passive income for renewables
+        setBaseRates(r => ({
+          ...r,
+          sun: Math.max(r.sun, 0.2),   // ~1 every 5s on average (day/night/weather considered)
+          wind: Math.max(r.wind, 0.15),
+          water: Math.max(r.water, 0.15),
+          coins: Math.max(r.coins, 0.05) // do not nerf coins
+        }));
+        // Starter pack to avoid deadlock to gas stage
+        setResources(res => ({ ...res, sun: res.sun + 5, water: res.water + 5, wind: res.wind + 5 }));
       } else if (pendingPlacement.key === 'gas') {
-        addPollutionRate(-0.1);
-        setBaseRates(r => ({ ...r, coins: Math.min(r.coins, 0.03) }));
+        // Keep coin rate unchanged (previously capped down); sustainability over nerf
       }
     } else {
       setOwned(o => ({ ...o, [pendingPlacement.key]: (o[pendingPlacement.key] ?? 0) + 1 }));
       if (pendingPlacement.key === 'echarger') setHasECharger(true);
+  if (pendingPlacement.key === 'forest') addPollutionRate(-0.5);
       pendingPlacement.onPurchaseEffects?.(effectsCtx);
     }
 
@@ -691,8 +1054,44 @@ export default function ViessmannGame() {
   }, [lastPlacedKey]);
 
   // --- UI helpers ---
-  const fmt = (n: number) => (n % 1 === 0 ? n.toString() : n.toFixed(1));
+  const fmt = (n: number) => {
+    if (n === 0) return "0";
+    if (Math.abs(n) < 0.01) return n.toFixed(3);
+    if (Math.abs(n) < 0.1) return n.toFixed(2);
+    return n % 1 === 0 ? n.toString() : n.toFixed(1);
+  };
   const rateText = (k: ResKey) => `+${fmt(effectiveRates[k])}/s`;
+
+  // Tooltip for pollution pill: breakdown of sources and total rate
+  const pollutionTooltip = useMemo(() => {
+    const home = tiles.find(t => t.isHome);
+    const houseType = home?.entity?.type as EntityType | undefined;
+    const forests = tiles.filter(t => t.entity?.type === 'forest').length;
+    const house = housePollutionFor(houseType);
+    const forest = -0.5 * forests;
+    const total = pollutionRate;
+  const nameMap: Partial<Record<EntityType, string>> = {
+      coal: 'Kocioł żeliwny', pellet: 'Kocioł stalowy', gas: 'Kocioł gazowy Triola',
+      parola1965: 'Parola 1965', stainless1972: 'Stal nierdzewna 1972', heatpump1978: 'Pompa ciepła 1978',
+      vitola1978: 'Vitola 1978', vitodens1989: 'Vitodens 1989', heatpump: 'Vitocal'
+  };
+  const hk = (houseType ?? undefined) as EntityType | undefined;
+  const houseName = (hk ? nameMap[hk] : undefined) || '—';
+    const fmtSign = (n: number) => `${n >= 0 ? '+' : ''}${fmt(n)}/s`;
+    return `Dom (${houseName}): ${fmtSign(house)}\nLasy (${forests}): ${fmtSign(forest)}\nŁącznie: ${fmtSign(total)}`;
+  }, [tiles, pollutionRate]);
+
+  // Tooltip for season pill
+  const seasonTooltip = useMemo(() => {
+    const map: Record<SeasonType, { name: string; icon: string; eff: string }> = {
+      spring: { name: 'Wiosna', icon: '🌸', eff: '💧 x1.3, smog −0.01/s' },
+      summer: { name: 'Lato', icon: '☀️', eff: '☀️ x1.3, smog −0.02/s' },
+      autumn: { name: 'Jesień', icon: '🍂', eff: '🌧️/🌬️ x1.2, smog ±0' },
+      winter: { name: 'Zima', icon: '❄️', eff: '☀️ x0.7, smog +0.05/s' },
+    };
+    const s = map[season.type];
+    return `${s.icon} ${s.name}: ${s.eff}`;
+  }, [season.type]);
 
   // --- styles ---
   const pill: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, borderRadius: 999, background: "rgba(255,255,255,0.7)", padding: "6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" };
@@ -722,27 +1121,27 @@ export default function ViessmannGame() {
   const [missions, setMissions] = useState<Mission[]>([
     // Ścieżka domu (historyczna)
     { key: "first-steps", title: "Rozpalamy dom", description: "Umieść kocioł żeliwny na domu.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "eco-choice", title: "Stalowy krok naprzód", description: "Zastąp kocioł żeliwny stalowym (1917–1928).", completed: false, reward: "-20 zanieczyszczenia", accent: "emerald" },
+  { key: "eco-choice", title: "Stalowy krok naprzód", description: "Zastąp kocioł żeliwny stalowym (1917–1928).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
     { key: "triola-gas", title: "Triola – wygoda gazu", description: "Ulepsz do kotła gazowego Triola (1957).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "parola-1965", title: "Parola 1965", description: "Zainstaluj kocioł olejowy Parola (1965).", completed: false, reward: "-10 zanieczyszczenia", accent: "emerald" },
+  { key: "parola-1965", title: "Parola 1965", description: "Zainstaluj kocioł olejowy Parola (1965).", completed: false, reward: "+10 ViCoins", accent: "emerald" },
     { key: "stainless-1972", title: "Nierdzewna rewolucja", description: "Pierwszy kocioł ze stali nierdzewnej (1972).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "heatpump-1978", title: "Pierwsza pompa ciepła", description: "Uruchom pompę ciepła (1978).", completed: false, reward: "-15 zanieczyszczenia", accent: "emerald" },
+  { key: "heatpump-1978", title: "Pierwsza pompa ciepła", description: "Uruchom pompę ciepła (1978).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
     { key: "vitola-1978", title: "Niskotemperaturowy komfort", description: "Kocioł Vitola (1978) – niższa temp. zasilania.", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "vitodens-1989", title: "Kondensacja po raz pierwszy", description: "Zainstaluj Vitodens (1989).", completed: false, reward: "-20 zanieczyszczenia", accent: "emerald" },
+  { key: "vitodens-1989", title: "Kondensacja po raz pierwszy", description: "Zainstaluj Vitodens (1989).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
     { key: "vitocal-modern", title: "Nowoczesna pompa ciepła", description: "Przejdź na Vitocal (pompa ciepła).", completed: false, reward: "+30 ViCoins", accent: "emerald" },
 
     // Zielona energia
-    { key: "green-investment", title: "Zielona inwestycja", description: "Posadź las.", completed: false, reward: "-30 zanieczyszczenia", accent: "emerald" },
+  { key: "green-investment", title: "Zielona inwestycja", description: "Posadź las.", completed: false, reward: "+30 ViCoins", accent: "emerald" },
     { key: "collector-1972", title: "Kolektor 1972", description: "Zainstaluj pierwszy kolektor słoneczny (1972).", completed: false, reward: "+10 ViCoins", accent: "emerald" },
     { key: "pv-vitovolt", title: "Fotowoltaika na dachu", description: "Zainstaluj PV (Vitovolt).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
     { key: "vitocharge-inverter", title: "Magazyn energii", description: "Dodaj inverter/magazyn (Vitocharge).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
     { key: "grid-connect", title: "Do sieci!", description: "Podłącz instalację do sieci (Grid).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "vitovalor-2014", title: "Ogniwo paliwowe", description: "Uruchom Vitovalor (2014).", completed: false, reward: "-25 zanieczyszczenia", accent: "emerald" },
+  { key: "vitovalor-2014", title: "Ogniwo paliwowe", description: "Uruchom Vitovalor (2014).", completed: false, reward: "+25 ViCoins", accent: "emerald" },
 
     // Komfort i sterowanie
     { key: "floor-heat", title: "Ciepła podłoga", description: "Dodaj ogrzewanie podłogowe.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
     { key: "thermostats-src", title: "Mądre termostaty", description: "Zainstaluj termostaty SRC.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "inox-radial", title: "Kondensacja Inox‑Radial", description: "Włącz technologię Inox‑Radial.", completed: false, reward: "-15 zanieczyszczenia", accent: "emerald" },
+  { key: "inox-radial", title: "Kondensacja Inox‑Radial", description: "Włącz technologię Inox‑Radial.", completed: false, reward: "+15 ViCoins", accent: "emerald" },
 
     // Integracja i cele łączone
     { key: "future-home", title: "Dom przyszłości", description: "Miej pompę ciepła + PV + Grid jednocześnie.", completed: false, reward: "+40 ViCoins", accent: "emerald" },
@@ -815,10 +1214,11 @@ export default function ViessmannGame() {
     if (weatherEvent.remaining !== weatherEvent.duration) return; // only when event starts
     const map: Record<WeatherEventType, { icon: string; name: string }> = {
       none: { icon: "", name: "" },
-      clouds: { icon: "☁️", name: "Chmury" },
+  clouds: { icon: "☁️", name: "Chmury" },
       sunny: { icon: "🌞", name: "Słońce" },
       rain: { icon: "🌧️", name: "Deszcz" },
       wind: { icon: "🌬️", name: "Wiatr" },
+  storm: { icon: "⛈️", name: "Burza" },
       frost: { icon: "❄️", name: "Mróz" },
     };
   const meta = map[weatherEvent.type];
@@ -918,6 +1318,7 @@ export default function ViessmannGame() {
               {weatherEvent.type === "sunny" && "🌞"}
               {weatherEvent.type === "rain" && "🌧️"}
               {weatherEvent.type === "wind" && "🌬️"}
+              {weatherEvent.type === "storm" && "⛈️"}
               {weatherEvent.type === "frost" && "❄️"}
               {weatherEvent.type === "none" && "🌤️"}
             </span>
@@ -927,6 +1328,7 @@ export default function ViessmannGame() {
                 {weatherEvent.type === "sunny" && "Słońce"}
                 {weatherEvent.type === "rain" && "Deszcz"}
                 {weatherEvent.type === "wind" && "Wiatr"}
+                {weatherEvent.type === "storm" && "Burza"}
                 {weatherEvent.type === "frost" && "Mróz"}
                 {weatherEvent.type === "none" && "Brak wydarzenia"}
               </div>
@@ -935,6 +1337,7 @@ export default function ViessmannGame() {
                 {weatherEvent.type === "sunny" && "x2 produkcja ☀️"}
                 {weatherEvent.type === "rain" && "x2 produkcja 💧"}
                 {weatherEvent.type === "wind" && "x2 produkcja 🌬️, -50% ☀️, -30% 💧"}
+                {weatherEvent.type === "storm" && "x3 🌬️, x1.5 💧, ☀️ = 0"}
                 {weatherEvent.type === "frost" && "Wszystkie produkcje zatrzymane"}
                 {weatherEvent.type === "none" && "Brak efektu specjalnego"}
               </div>
@@ -966,11 +1369,37 @@ export default function ViessmannGame() {
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
             padding: "6px 24px"
-          }}>
+          }}
+          onMouseEnter={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+            setPollTipOpen(true);
+          }}
+          onMouseLeave={() => setPollTipOpen(false)}
+          onFocus={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+            setPollTipOpen(true);
+          }}
+          onBlur={() => setPollTipOpen(false)}
+          >
             <span style={{ fontSize: 18 }}>🏭</span>
             <div>
               <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Zanieczyszczenie</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FCA5A5" }}>{Math.round(pollution)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: pollutionRate < 0 ? '#059669' : '#ef4444' }}>
+                {pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s
+              </div>
+              {smogMultiplier < 1 && (
+                <div style={{ fontSize: 11, marginTop: 2, color: isDay ? '#64748b' : '#94a3b8' }}>
+                  Produkcja −{Math.round((1 - smogMultiplier) * 100)}%
+                </div>
+              )}
+              {ecoBonusMultiplier > 1 && (
+                <div style={{ fontSize: 11, marginTop: 2, color: isDay ? '#059669' : '#34d399' }}>
+                  Bonus czystego powietrza +{Math.round((ecoBonusMultiplier - 1) * 100)}% 💰
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -979,6 +1408,36 @@ export default function ViessmannGame() {
           <div style={{ width: 120, height: 4, borderRadius: 4, background: "#e5e7eb", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${phasePct}%`, background: "#111" }} />
           </div>
+        </div>
+
+        {/* Season pill */}
+        <div
+          style={{
+            ...pill,
+            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
+            padding: "6px 16px",
+          }}
+          onMouseEnter={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setSeasonTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+            setSeasonTipOpen(true);
+          }}
+          onMouseLeave={() => setSeasonTipOpen(false)}
+          onFocus={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setSeasonTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+            setSeasonTipOpen(true);
+          }}
+          onBlur={() => setSeasonTipOpen(false)}
+        >
+          <span style={{ fontSize: 16 }}>{season.type === 'spring' ? '🌸' : season.type === 'summer' ? '☀️' : season.type === 'autumn' ? '🍂' : '❄️'}</span>
+          <span style={{ fontWeight: 600, fontSize: 14 }}>
+            {season.type === 'spring' && 'Wiosna'}
+            {season.type === 'summer' && 'Lato'}
+            {season.type === 'autumn' && 'Jesień'}
+            {season.type === 'winter' && 'Zima'}
+          </span>
+          <span style={{ fontSize: 13, fontWeight: 600, marginLeft: 8, color: isDay ? "#0ea5e9" : "#bae6fd" }}>{season.remaining}s</span>
         </div>
 
         {/* Profile Menu */}
@@ -1112,11 +1571,112 @@ export default function ViessmannGame() {
                   <span aria-label="nowe" title="Nowe" style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
                 )}
               </div>
+              
+
+              {/* Divider */}
+              <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
+
+              {/* Save actions */}
+              <div
+                style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
+                onClick={() => { exportSave(); setShowProfileMenu(false); }}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+              >
+                <span>⬇️</span>
+                <span>Zapisz grę</span>
+              </div>
+              <div
+                style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
+                onClick={() => { importInputRef.current?.click(); setShowProfileMenu(false); }}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+              >
+                <span>⬆️</span>
+                <span>Wczytaj grę</span>
+              </div>
+              {/* Hidden file input for import */}
+              <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFileChange} />
+
+              <div
+                style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
+                onClick={() => { resetGame(); }}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#fee2e2' : '#7f1d1d'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+              >
+                <span>🗑️</span>
+                <span>Nowa gra</span>
+              </div>
             </div>
           )}
         </div>
       </header>
-      {/* Fixed weather legend overlay (outside scroll containers) */}
+      {/* Season tooltip (custom) */}
+      {seasonTipOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: seasonTipPos.left,
+            top: seasonTipPos.top,
+            transform: 'translateX(-50%)',
+            minWidth: 200,
+            maxWidth: '92vw',
+            background: isDay ? '#ffffff' : '#0f172a',
+            color: isDay ? '#0f172a' : '#e5e7eb',
+            border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
+            borderRadius: 10,
+            boxShadow: isDay ? '0 8px 24px rgba(0,0,0,0.12)' : '0 8px 24px rgba(0,0,0,0.35)',
+            padding: '10px 12px',
+            fontSize: 13,
+            zIndex: 1200,
+            pointerEvents: 'none',
+          }}
+          aria-hidden
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontWeight: 700, marginBottom: 4 }}>
+            <span>{season.type === 'spring' ? '🌸' : season.type === 'summer' ? '☀️' : season.type === 'autumn' ? '🍂' : '❄️'}</span>
+            <span>
+              {season.type === 'spring' && 'Wiosna'}
+              {season.type === 'summer' && 'Lato'}
+              {season.type === 'autumn' && 'Jesień'}
+              {season.type === 'winter' && 'Zima'}
+            </span>
+          </div>
+          <div style={{ color: isDay ? '#334155' : '#94a3b8', marginBottom: 6 }}>{seasonTooltip}</div>
+          <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>Pozostało: {season.remaining}s</div>
+        </div>
+      )}
+      {/* Pollution tooltip (custom) */}
+      {pollTipOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            left: pollTipPos.left,
+            top: pollTipPos.top,
+            transform: 'translateX(-50%)',
+            minWidth: 220,
+            maxWidth: '92vw',
+            background: isDay ? '#ffffff' : '#0f172a',
+            color: isDay ? '#0f172a' : '#e5e7eb',
+            border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
+            borderRadius: 10,
+            boxShadow: isDay ? '0 8px 24px rgba(0,0,0,0.12)' : '0 8px 24px rgba(0,0,0,0.35)',
+            padding: '10px 12px',
+            fontSize: 13,
+            zIndex: 1200,
+            pointerEvents: 'none',
+            whiteSpace: 'pre-line',
+          }}
+          aria-hidden
+        >
+          {pollutionTooltip.split('\n').map((line, i) => (
+            <div key={i} style={{ color: i === 2 ? (pollutionRate < 0 ? '#059669' : '#ef4444') : (isDay ? '#334155' : '#94a3b8'), fontWeight: i === 2 ? 700 : 500 }}>
+              {line}
+            </div>
+          ))}
+        </div>
+      )}
+  {/* Fixed weather legend overlay (outside scroll containers) */}
       {legendOpen && (
         <div
           style={{
@@ -1155,9 +1715,57 @@ export default function ViessmannGame() {
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌬️</span><span style={{ fontWeight: 700 }}>Wiatr</span></span>
             <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 🌬️, -50% ☀️, -30% 💧</span>
           </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>⛈️</span><span style={{ fontWeight: 700 }}>Burza</span></span>
+            <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>x3 🌬️, x1.5 💧, ☀️ = 0 (20s)</span>
+          </div>
           <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>❄️</span><span style={{ fontWeight: 700 }}>Mróz</span></span>
             <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>wszystkie produkcje zatrzymane na 30s</span>
+          </div>
+        </div>
+      )}
+
+      {/* Missions Modal */}
+      {showMissions && (
+        <div
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={(e) => { if (e.currentTarget === e.target) setShowMissions(false); }}
+        >
+          <div style={{ width: 520, maxWidth: '92vw', background: isDay ? '#fff' : '#0f172a', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 12, padding: 20, boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, flex: 1 }}>Misje</div>
+              <button onClick={() => setShowMissions(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: isDay ? '#0f172a' : '#e5e7eb' }}>✖</button>
+            </div>
+            <div style={{ marginBottom: 12, fontSize: 13, color: isDay ? '#475569' : '#94a3b8' }}>
+              Postęp: {missions.filter(m => m.completed).length}/{missions.length}
+            </div>
+            <div style={{ display: 'grid', gap: 10 }}>
+              {missions.map(m => (
+                <div key={m.key} style={{ padding: 12, borderRadius: 10, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#ffffff' : '#111827', opacity: m.completed ? 0.85 : 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{m.accent === 'emerald' ? '✅' : '🎯'}</span>
+                    <div style={{ fontWeight: 700 }}>{m.title}</div>
+                    {m.completed && <span style={{ marginLeft: 'auto', color: '#10b981', fontSize: 12, fontWeight: 700 }}>ukończono</span>}
+                  </div>
+                  <div style={{ fontSize: 12, color: isDay ? '#475569' : '#94a3b8' }}>{m.description}</div>
+                  {/* Progress bar */}
+                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {(() => { const p = missionProgress[m.key]; return (
+                      <>
+                        <div style={{ flex: 1, height: 6, background: isDay ? '#e5e7eb' : '#334155', borderRadius: 6, overflow: 'hidden' }}>
+                          <div style={{ height: '100%', width: `${Math.min(100, Math.round(((p?.value ?? 0) / Math.max(1, p?.max ?? 1)) * 100))}%`, background: '#10b981' }} />
+                        </div>
+                        <span style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', minWidth: 64, textAlign: 'right' }}>{p?.label || ''}</span>
+                      </>
+                    ); })()}
+                  </div>
+                  <div style={{ fontSize: 12, marginTop: 6 }}>
+                    Nagroda: <span style={{ fontWeight: 700 }}>{m.reward}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -1204,7 +1812,7 @@ export default function ViessmannGame() {
           {/* Removed start tooltip text as requested */}
           <div style={{ display: "grid", gap: 8 }}>
             {(shopTab === "devices" ? visibleDevices : visibleProduction).map((item) => {
-              const cost = discountedCost(item.cost);
+              const cost = dynamicCost(item);
               const ownedCount = owned[item.key] ?? 0;
               const done = isSinglePurchase(item.key) && ownedCount > 0;
               const afford = !done && canAfford(cost);
@@ -1326,6 +1934,80 @@ export default function ViessmannGame() {
             weatherEvent={weatherEvent}
             isDay={isDay}
           />
+          {/* Economy panel */}
+          {(() => {
+            // derive next device cost and time-to-afford estimates
+            const home = tiles.find(t => t.isHome);
+            const currentKey = home?.entity && houseUpgradeKeys.includes(home.entity.type as EntityType)
+              ? (home.entity.type as EntityType) : undefined;
+            const currentIdx = currentKey ? houseUpgradeKeys.indexOf(currentKey) : -1;
+            const nextDevice = currentIdx >= -1 ? deviceItems.find(it => houseUpgradeKeys.indexOf(it.key) === currentIdx + 1) : undefined;
+            const nextDeviceCost = nextDevice ? dynamicCost(nextDevice) : undefined;
+            const forestCost = dynamicCost(itemByKey.forest);
+            const tta = (cost: Cost | undefined, k: ResKey): string | null => {
+              if (!cost) return null;
+              const need = Math.max(0, (cost[k] ?? 0) - resources[k]);
+              const rate = effectiveRates[k];
+              if (need <= 0) return 'gotowe';
+              if (rate <= 0.000001) return '—';
+              const secs = Math.ceil(need / rate);
+              return `${secs}s`;
+            };
+            const multLine = (k: ResKey) => {
+              const parts: string[] = [];
+              // day/night
+              parts.push(`${isDay ? 'Dzień' : 'Noc'} ×${fmt(dayNightMultipliers[k])}`);
+              // season
+              parts.push(`Sezon ×${fmt(seasonMultipliers[k])}`);
+              // weather
+              parts.push(`Pogoda ×${fmt(weatherMultipliers[k])}`);
+              // smog
+              parts.push(`Smog ×${fmt(smogMultiplier)}`);
+              if (k === 'coins' && ecoBonusMultiplier > 1) parts.push(`Eco ×${fmt(ecoBonusMultiplier)}`);
+              return parts.join(' · ');
+            };
+            const wrapStyle: React.CSSProperties = { marginTop: 12, borderTop: isDay ? '1px solid #e5e7eb' : '1px solid #334155', paddingTop: 10 };
+            const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center' };
+            const cap: React.CSSProperties = { fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' };
+            const val: React.CSSProperties = { fontSize: 13, fontWeight: 700 };
+            return (
+              <div style={wrapStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <div className="font-semibold font-sans" style={{ fontSize: 14 }}>Ekonomia</div>
+                  <button onClick={() => setEcoOpen(o => !o)}
+                    style={{ fontSize: 12, border: '1px solid #e5e7eb', background: isDay ? '#f8fafc' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 8, padding: '2px 8px', cursor: 'pointer' }}>
+                    {ecoOpen ? 'Zwiń' : 'Pokaż'}
+                  </button>
+                </div>
+                {ecoOpen && (
+                  <>
+                    <div style={{ display: 'grid', gap: 6 }}>
+                      <div style={row}><span>☀️ Słońce</span><span style={cap}>{multLine('sun')}</span><span style={val}>+{fmt(effectiveRates.sun)}/s</span></div>
+                      <div style={row}><span>💧 Woda</span><span style={cap}>{multLine('water')}</span><span style={val}>+{fmt(effectiveRates.water)}/s</span></div>
+                      <div style={row}><span>🌬️ Wiatr</span><span style={cap}>{multLine('wind')}</span><span style={val}>+{fmt(effectiveRates.wind)}/s</span></div>
+                      <div style={row}><span>💰 ViCoins</span><span style={cap}>{multLine('coins')}</span><span style={val}>+{fmt(effectiveRates.coins)}/s</span></div>
+                    </div>
+                    <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+                      <div style={row}>
+                        <span>⏳ Do następnego etapu domu</span>
+                        <span style={cap}>{nextDevice ? nextDevice.name : '—'}</span>
+                        <span style={val}>
+                          {['sun','water','wind'].map(k => tta(nextDeviceCost, k as ResKey)).filter(Boolean).join(' / ') || '—'}
+                        </span>
+                      </div>
+                      <div style={row}>
+                        <span>🌲 Do kolejnego lasu</span>
+                        <span style={cap}>{forestCost.sun ?? 0} ☀️ + {forestCost.water ?? 0} 💧</span>
+                        <span style={val}>
+                          {['sun','water'].map(k => tta(forestCost, k as ResKey)).filter(Boolean).join(' / ') || '—'}
+                        </span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </section>
 
         {/* missions */}
@@ -1725,6 +2407,24 @@ function IsoGrid({
                 @keyframes wind-move1 { 0%{left:0;} 100%{left:70%;} }
                 @keyframes wind-move2 { 0%{left:-28px;} 100%{left:80%;} }
                 @keyframes wind-move3 { 0%{left:-38px;} 100%{left:85%;} }
+              `}</style>
+            </span>
+          )}
+          {weatherEvent.type === "storm" && (
+            <span style={{ position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
+              {/* Lightning flashes */}
+              <span style={{ position: 'absolute', left: '10%', top: 8, fontSize: 32, opacity: 0.8, animation: 'storm-flash 2.2s ease-in-out infinite' }}>⛈️</span>
+              <span style={{ position: 'absolute', right: '12%', top: 18, fontSize: 28, opacity: 0.6, animation: 'storm-flash2 2.8s ease-in-out infinite' }}>⛈️</span>
+              {/* Strong wind lines */}
+              <span style={{ position: 'absolute', left: '15%', top: 52, fontSize: 22, opacity: 0.6, animation: 'wind-move1 1.2s linear infinite' }}>🌬️</span>
+              <span style={{ position: 'absolute', left: '45%', top: 36, fontSize: 18, opacity: 0.5, animation: 'wind-move3 0.9s linear infinite' }}>🌬️</span>
+              {/* Rain intensifies */}
+              <span style={{ position: 'absolute', left: '30%', top: 12, width: 4, height: 18, background: 'linear-gradient(to bottom, #2563eb 90%, transparent)', borderRadius: 2, animation: 'rain-bar 0.8s linear infinite', boxShadow: '0 0 4px 1px #2563eb55' }} />
+              <span style={{ position: 'absolute', left: '34%', top: 16, width: 3, height: 14, background: 'linear-gradient(to bottom, #3b82f6 90%, transparent)', borderRadius: 2, animation: 'rain-bar2 0.9s linear infinite', boxShadow: '0 0 3px 1px #3b82f655' }} />
+              <span style={{ position: 'absolute', left: '38%', top: 10, width: 2, height: 12, background: 'linear-gradient(to bottom, #60a5fa 90%, transparent)', borderRadius: 2, animation: 'rain-bar3 1.1s linear infinite', boxShadow: '0 0 2px 1px #60a5fa55' }} />
+              <style>{`
+                @keyframes storm-flash { 0%{opacity:0.5;} 10%{opacity:1;} 20%{opacity:0.4;} 100%{opacity:0.5;} }
+                @keyframes storm-flash2 { 0%{opacity:0.3;} 12%{opacity:0.9;} 24%{opacity:0.3;} 100%{opacity:0.3;} }
               `}</style>
             </span>
           )}

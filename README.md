@@ -23,9 +23,9 @@ Lekka gra przeglądarkowa pokazująca modernizację domu i OZE. Zbieraj zasoby, 
   - Węgiel podnosi, pellet i las redukują; gaz obniża w stosunku do pelletu.
   - Celem jest ekologiczna modernizacja i ograniczanie emisji.
 - Misje:
-  - Pierwsze kroki (postaw kocioł węglowy) → +10 ViCoins.
-  - Ekologiczny wybór (zamień węgiel na pellet) → −20 zanieczyszczenia.
-  - Zielona inwestycja (posadź las) → −30 zanieczyszczenia.
+  - Panel „Misje” pokazuje postęp (paski) oraz nagrody.
+  - Przykłady: Pierwsze kroki (postaw kocioł węglowy) → +10 ViCoins; Ekologiczny wybór (zamień węgiel na pellet) → −20 zanieczyszczenia; Zielona inwestycja (posadź las) → −30 zanieczyszczenia.
+  - Ukończenie misji nie jest zapisywane między sesjami (każda sesja to nowa runda pod kątem misji).
 - Osiągnięcia (odblokowują się automatycznie):
   - First Steps: postaw pierwsze urządzenie.
   - Heat Source: posiadaj źródło ciepła.
@@ -35,23 +35,33 @@ Lekka gra przeglądarkowa pokazująca modernizację domu i OZE. Zbieraj zasoby, 
   - Typy wpisów: zakupy, ustawienia (placement), misje, pogoda, osiągnięcia, kamienie milowe.
   - Filtry działają po typie; starsze wpisy są migrowane po tytule.
 - Powiadomienia (dzwonek):
-  - Toastery pojawiają się przy nowych osiągnięciach, misjach i pogodzie.
-  - Każdy toast ma przycisk „✕” do natychmiastowego zamknięcia; auto-zamykanie po kilku sekundach.
+  - Toasty pojawiają się tylko przy nowych osiągnięciach.
+  - Wpisy dotyczące misji i pogody trafiają do Dziennika bez toastów.
+  - Przyciski w prawym górnym rogu: „Mój profil” ma czerwoną kropkę, gdy są nowe osiągnięcia lub wpisy w Dzienniku.
 - Tryb nocny:
   - Menu profilu, popupy Osiągnięć i Dziennika oraz karty mają ciemne tło i jasne teksty.
 
 ### Sterowanie
 
 - Kupno w sklepie wymaga zasobów; po zakupie elementy umieszczaj klikając kafelek na mapie.
-- Profil → „Osiągnięcia”/„Dziennik” otwiera odpowiednie popupy; klik na tło zamyka okna.
+- Profil → „Osiągnięcia”/„Dziennik” otwiera odpowiednie popupy; klik na tło zamyka okna. Panel „Misje” jest dostępny z prawej strony ekranu.
+- Podczas ustawiania elementów na mapie można anulować klawiszem Esc.
 
-### Persistencja
+### Persistencja i zapisy gry
 
 Stan gry i profil są zapisywane w localStorage:
 
 - vm_achUnlocked – mapa odblokowanych osiągnięć (timestampy)
 - vm_seen_ach, vm_seen_log – znaczniki „ostatnio widziane” (daje czerwone kropki przy nowościach)
 - vm_log – wpisy dziennika (z typami)
+- vm_save_v1 – automatyczny zapis rdzenia stanu gry (siatka kafelków, zasoby, zanieczyszczenie)
+
+Zapisy gry:
+
+- „Zapisz grę” – eksportuje zapis do pliku JSON.
+- „Wczytaj grę” – importuje zapis z pliku JSON.
+- „Nowa gra” – resetuje stan (czyści vm_save_v1, resetuje mapę/zasoby/zanieczyszczenie oraz znaczniki „widziane”).
+- Misje: stan ukończenia nie jest utrwalany między sesjami (brak persistencji ukończeń).
 
 ### Development
 
