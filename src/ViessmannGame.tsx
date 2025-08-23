@@ -802,7 +802,6 @@ export default function ViessmannGame() {
         if (check && check()) {
           applyMissionReward(m);
           pushLog({ type: 'mission', icon: '🏅', title: `Ukończono misję: ${m.title}`, description: m.reward });
-          pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
           return { ...m, completed: true };
         }
       }
@@ -824,7 +823,6 @@ export default function ViessmannGame() {
     };
   const meta = map[weatherEvent.type];
   pushLog({ type: 'weather', icon: meta.icon, title: `Zdarzenie pogodowe: ${meta.name}`, description: `Czas trwania: ${weatherEvent.duration}s` });
-  pushToast({ icon: '🔔', text: `Pogoda: ${meta.name}` });
   }, [weatherEvent]);
   const card: React.CSSProperties = {
     borderRadius: 16,
@@ -999,6 +997,23 @@ export default function ViessmannGame() {
             <span style={{ fontSize: 16 }}>👤</span>
             <span style={{ fontWeight: 600, fontSize: 14 }}>Mój profil</span>
           </div>
+          {(hasNewAchievements || hasNewLog) && (
+            <span
+              aria-label="nowe"
+              title="Nowe"
+              style={{
+                position: 'absolute',
+                top: -4,
+                right: -4,
+                width: 10,
+                height: 10,
+                background: '#ef4444',
+                borderRadius: 999,
+                border: `2px solid ${isDay ? 'rgba(255,255,255,0.7)' : '#0f172a'}`,
+                pointerEvents: 'none'
+              }}
+            />
+          )}
 
           {/* Profile Dropdown */}
           {showProfileMenu && (
