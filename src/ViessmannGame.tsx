@@ -749,24 +749,11 @@ export default function ViessmannGame() {
     { key: "zero-smog", title: "Zero smogu", description: "Obniż zanieczyszczenie do 10 lub mniej.", completed: false, reward: "+50 ViCoins", accent: "emerald" },
   ]);
 
-  // Persist mission completion in localStorage to avoid duplicate completion effects on remounts
+  // Uwaga: świadomie nie utrwalamy stanu misji między restartami gry,
+  // aby każda nowa sesja zaczynała z czystą listą (zgodnie z oczekiwaniem).
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('vm_missions');
-      if (raw) {
-        const saved = JSON.parse(raw) as Record<string, boolean>;
-        if (saved && typeof saved === 'object') {
-          setMissions(prev => prev.map(m => saved[m.key] ? { ...m, completed: true } : m));
-        }
-      }
-    } catch { /* ignore */ }
+    try { localStorage.removeItem('vm_missions'); } catch { /* ignore */ }
   }, []);
-  useEffect(() => {
-    try {
-      const map = Object.fromEntries(missions.map(m => [m.key, m.completed]));
-      localStorage.setItem('vm_missions', JSON.stringify(map));
-    } catch { /* ignore */ }
-  }, [missions]);
 
   // Sprawdzenia misji: warunki ukończenia
   const missionChecks: Record<string, () => boolean> = useMemo(() => ({
@@ -814,7 +801,7 @@ export default function ViessmannGame() {
         const check = missionChecks[m.key];
         if (check && check()) {
           applyMissionReward(m);
-          pushLog({ type: 'mission', icon: "�", title: `Ukończono misję: ${m.title}`, description: m.reward });
+          pushLog({ type: 'mission', icon: '🏅', title: `Ukończono misję: ${m.title}`, description: m.reward });
           pushToast({ icon: '🔔', text: `Misja ukończona: ${m.title}` });
           return { ...m, completed: true };
         }
