@@ -171,6 +171,63 @@ const achievementDefs: AchievementDef[] = [
     icon: "⚡",
     check: ({ owned }) => (owned.inverter ?? 0) > 0 && (owned.grid ?? 0) > 0,
   },
+  // New, more granular goals
+  {
+    id: "coal-installed",
+    name: "Tradycja na dachu",
+    description: "Zainstaluj kocioł węglowy",
+    icon: "🧱",
+    check: ({ owned }) => (owned.coal ?? 0) > 0,
+  },
+  {
+    id: "pellet-installed",
+    name: "Pelletowy upgrade",
+    description: "Zainstaluj kocioł na pellet",
+    icon: "🔩",
+    check: ({ owned }) => (owned.pellet ?? 0) > 0,
+  },
+  {
+    id: "gas-installed",
+    name: "Gazowe ogrzewanie",
+    description: "Zainstaluj kocioł gazowy",
+    icon: "🔥",
+    check: ({ owned }) => (owned.gas ?? 0) > 0,
+  },
+  {
+    id: "heatpump-installed",
+    name: "Pompa ciepła",
+    description: "Zainstaluj pompę ciepła",
+    icon: "🌀",
+    check: ({ owned }) => (owned.heatpump ?? 0) > 0,
+  },
+  {
+    id: "solar-starter",
+    name: "Pierwszy panel",
+    description: "Postaw panel fotowoltaiczny",
+    icon: "☀️",
+    check: ({ owned }) => (owned.solar ?? 0) > 0,
+  },
+  {
+    id: "solar-farm",
+    name: "Mała farma",
+    description: "Postaw 3 panele fotowoltaiczne",
+    icon: "☀️",
+    check: ({ owned }) => (owned.solar ?? 0) >= 3,
+  },
+  {
+    id: "forest-planted",
+    name: "Zielony zakątek",
+    description: "Posadź las",
+    icon: "🌳",
+    check: ({ owned }) => (owned.forest ?? 0) > 0,
+  },
+  {
+    id: "ev-ready",
+    name: "EV ready",
+    description: "Zainstaluj E‑Charger",
+    icon: "🔌",
+    check: ({ owned }) => (owned.echarger ?? 0) > 0,
+  },
 ];
 
 export default function ViessmannGame() {
@@ -435,14 +492,16 @@ export default function ViessmannGame() {
 
   // Derived achievements for UI
   const achievements: Achievement[] = useMemo(() => (
-    achievementDefs.map(def => ({
-      id: def.id,
-      name: def.name,
-      description: def.description,
-      icon: def.icon,
-      unlocked: !!achUnlocked[def.id],
-      unlockedAt: achUnlocked[def.id] ? new Date(achUnlocked[def.id]) : undefined,
-    }))
+    achievementDefs
+      .map(def => ({
+        id: def.id,
+        name: def.name,
+        description: def.description,
+        icon: def.icon,
+        unlocked: !!achUnlocked[def.id],
+        unlockedAt: achUnlocked[def.id] ? new Date(achUnlocked[def.id]) : undefined,
+      }))
+      .sort((a, b) => Number(b.unlocked) - Number(a.unlocked) || ((b.unlockedAt?.getTime?.() || 0) - (a.unlockedAt?.getTime?.() || 0)))
   ), [achUnlocked]);
   // Persist achievements map
   useEffect(() => {
@@ -1445,6 +1504,11 @@ export default function ViessmannGame() {
                     }}>
                       {achievement.description}
                     </div>
+                    {achievement.id === 'solar-farm' && !achievement.unlocked && (
+                      <div style={{ fontSize: 12, color: isDay ? '#6b7280' : '#94a3b8', marginTop: 4 }}>
+                        Postęp: {Math.min(placedCounts.solar ?? 0, 3)}/3 paneli
+                      </div>
+                    )}
                     {achievement.unlocked && achievement.unlockedAt && (
                       <div style={{ 
                         fontSize: 12, 
