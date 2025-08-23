@@ -705,8 +705,18 @@ export default function ViessmannGame() {
   const [seasonTipPos, setSeasonTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   const [pollTipOpen, setPollTipOpen] = useState(false);
   const [pollTipPos, setPollTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
-  // Economy panel state
-  const [ecoOpen, setEcoOpen] = useState(true);
+  // Economy panel state (persisted)
+  const [ecoOpen, setEcoOpen] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem('vm_ecoOpen');
+      if (raw === '0') return false;
+      if (raw === '1') return true;
+    } catch { /* ignore */ }
+    return true;
+  });
+  useEffect(() => {
+    try { localStorage.setItem('vm_ecoOpen', ecoOpen ? '1' : '0'); } catch { /* ignore */ }
+  }, [ecoOpen]);
 
   // Activity log
   const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
