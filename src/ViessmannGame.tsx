@@ -310,6 +310,16 @@ export default function ViessmannGame() {
   const echargerBonusRef = useRef(0);
   const [pendingPlacement, setPendingPlacement] = useState<ShopItem | null>(null);
   const [lastPlacedKey, setLastPlacedKey] = useState<string | null>(null);
+  // Allow canceling placement with Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setPendingPlacement(null);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Profile menu states
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -1161,9 +1171,9 @@ export default function ViessmannGame() {
                     cursor: done ? "default" : "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = isDay ? "0 6px 18px rgba(0,0,0,0.10)" : "0 6px 18px rgba(0,0,0,0.35)";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
-                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "#d1d5db" : "#334155";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = isDay ? "0 4px 12px rgba(0,0,0,0.08)" : "0 4px 12px rgba(0,0,0,0.28)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-0.5px)";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "#e5e7eb" : "#2b3647";
                   }}
                   onMouseLeave={(e) => {
                     (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
@@ -1171,10 +1181,10 @@ export default function ViessmannGame() {
                     (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "rgba(0,0,0,0.06)" : "#1f2937";
                   }}
                   onMouseDown={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0) scale(0.995)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0) scale(0.998)";
                   }}
                   onMouseUp={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-1px)";
+                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-0.5px)";
                   }}
                 >
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -1185,9 +1195,9 @@ export default function ViessmannGame() {
                       <div className="font-normal text-xs text-neutral-600 font-sans" style={{ fontSize: 13 }}>{item.description}</div>
                     </div>
                   </div>
-                  <div style={{ marginTop: 8, marginBottom: 36 }}>
+          <div style={{ marginTop: 8, marginBottom: 36 }}>
                     {!done ? (
-                      <span className="text-sm font-semibold font-sans tabular-nums">
+            <span className="text-sm font-semibold font-sans tabular-nums" style={{ fontSize: 12 }}>
                         Koszt:&nbsp;
                         {cost.sun ? `${cost.sun} ☀️ ` : ""}{cost.water ? `+ ${cost.water} 💧 ` : ""}{cost.wind ? `+ ${cost.wind} 🌬️ ` : ""}{cost.coins ? `+ ${cost.coins} 💰` : ""}
                         {!cost.sun && !cost.water && !cost.wind && !cost.coins ? "—" : ""}
@@ -1601,6 +1611,7 @@ function IsoGrid({
   weatherEvent: WeatherEvent;
   isDay: boolean;
 }) {
+  const [hoverInfo, setHoverInfo] = useState<{ tile: IsoTileType; left: number; top: number; placeable: boolean } | null>(null);
   const tileW = 96, tileH = 48;
   const size = Math.sqrt(tiles.length);
   const baseX = (size - 1) * (tileW / 2);
@@ -1725,6 +1736,10 @@ function IsoGrid({
             w={tileW}
             h={tileH}
             onClick={() => onTileClick(t)}
+            onHoverChange={(h) => {
+              if (h) setHoverInfo({ tile: t, left, top, placeable });
+              else if (hoverInfo?.tile.id === t.id) setHoverInfo(null);
+            }}
             isHome={t.id === homeTileId}
             pendingItem={pendingItem}
             placeable={placeable}
@@ -1732,12 +1747,51 @@ function IsoGrid({
           />
         );
       })}
+      {/* Hover card */}
+      {hoverInfo && (
+        <div
+          style={{
+            position: 'absolute',
+            left: hoverInfo.left + tileW / 2,
+            top: hoverInfo.top - 8,
+            transform: 'translate(-50%,-100%)',
+            background: isDay ? '#ffffff' : '#0f172a',
+            color: isDay ? '#0f172a' : '#e5e7eb',
+            border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
+            borderRadius: 8,
+            padding: '6px 10px',
+            fontSize: 12,
+            boxShadow: isDay ? '0 6px 16px rgba(0,0,0,0.08)' : '0 8px 20px rgba(0,0,0,0.35)',
+            pointerEvents: 'none',
+            zIndex: 4,
+            whiteSpace: 'nowrap'
+          }}
+        >
+          {(() => {
+            const t = hoverInfo.tile;
+            const icon = t.isHome ? '🏠' : t.entity ? t.entity.icon : pendingItem ? pendingItem.icon : '⬜';
+            const text = t.isHome
+              ? 'Dom'
+              : t.entity
+              ? t.entity.label
+              : pendingItem
+              ? `${hoverInfo.placeable ? 'Postaw: ' : 'Nie można tutaj: '}${pendingItem.name}`
+              : 'Pusty kafelek';
+            return (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 14 }}>{icon}</span>
+                <span className="font-medium font-sans">{text}</span>
+              </span>
+            );
+          })()}
+        </div>
+      )}
     </div>
   );
 }
 
 function IsoTile({
-  tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced,
+  tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced, onHoverChange,
 }: {
   tile: { id: string; entity?: { type: string; icon: string; label: string } | null };
   onClick: () => void;
@@ -1746,6 +1800,7 @@ function IsoTile({
   left: number; top: number; w: number; h: number;
   placeable: boolean;
   isNewlyPlaced: boolean;
+  onHoverChange?: (hovered: boolean) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
@@ -1764,14 +1819,15 @@ function IsoTile({
   const baseFill = isHome ? "#FFF7ED" : "rgba(255,255,255,0.8)";
   const hoverFill = placeable ? "#E0F2FE" : "#FFE4E6";
   const downFill = placeable ? "#BAE6FD" : "#FECDD3";
-  const stroke = hovered ? (placeable ? "#38BDF8" : "#FB7185") : "rgba(0,0,0,0.15)";
+  const baseStroke = pendingItem ? (placeable ? 'rgba(59,130,246,0.35)' : 'rgba(0,0,0,0.12)') : 'rgba(0,0,0,0.15)';
+  const stroke = hovered ? (placeable ? "#38BDF8" : "#FB7185") : baseStroke;
   const fill = pressed ? downFill : hovered ? hoverFill : baseFill;
 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => { setHovered(false); setPressed(false); }}
+      onMouseEnter={() => { setHovered(true); onHoverChange?.(true); }}
+      onMouseLeave={() => { setHovered(false); setPressed(false); onHoverChange?.(false); }}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
       title={isHome ? "Dom" : tile.entity ? tile.entity.label : pendingItem ? `Postaw: ${pendingItem.name}` : "Pusty kafelek"}
