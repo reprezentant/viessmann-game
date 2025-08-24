@@ -1100,6 +1100,7 @@ export default function ViessmannGame() {
     return n % 1 === 0 ? n.toString() : n.toFixed(1);
   };
   const rateText = (k: ResKey) => `+${fmt(effectiveRates[k])}/s`;
+  const isNearZeroRate = (k: ResKey) => Math.abs(effectiveRates[k]) < 1e-4;
 
   // Tooltip for pollution pill: breakdown of sources and total rate
   const pollutionTooltip = useMemo(() => {
@@ -1306,6 +1307,7 @@ export default function ViessmannGame() {
             <div>
               <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Słońce</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FBBF24" }}>{fmt(resources.sun)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('sun') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('sun')}</div>
             </div>
           </div>
           <div style={{
@@ -1317,6 +1319,7 @@ export default function ViessmannGame() {
             <div>
               <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Woda</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#38BDF8" }}>{fmt(resources.water)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('water') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('water')}</div>
             </div>
           </div>
           <div style={{
@@ -1328,6 +1331,7 @@ export default function ViessmannGame() {
             <div>
               <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Wiatr</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#A5B4FC" }}>{fmt(resources.wind)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('wind') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('wind')}</div>
             </div>
           </div>
           <div style={{
@@ -1339,6 +1343,7 @@ export default function ViessmannGame() {
             <div>
               <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>ViCoins</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FDE68A" }}>{fmt(resources.coins)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('coins')}</div>
             </div>
           </div>
           {/* Weather Event Pill - zawsze widoczny */}
@@ -2012,7 +2017,7 @@ export default function ViessmannGame() {
                 <div style={{ maxWidth: 720, marginLeft: 'auto', textAlign: 'right' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8, gap: 12 }}>
                     <div className="font-semibold font-sans" style={{ fontSize: 15 }}>Ekonomia</div>
-                    <button onClick={() => setEcoOpen(o => !o)}
+                    <button aria-expanded={ecoOpen} onClick={() => setEcoOpen(o => !o)}
                       style={{ fontSize: 13, fontWeight: 700, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#f1f5f9' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 10, padding: '4px 12px', cursor: 'pointer' }}>
                       {ecoOpen ? 'Zwiń' : 'Pokaż'}
                     </button>
@@ -2023,28 +2028,28 @@ export default function ViessmannGame() {
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>☀️</span><span>Słońce</span></div>
-          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.sun)}/s <span style={{ color: rateTrends.sun.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.sun.icon}</span></div>
+          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('sun') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.sun)}/s <span style={{ color: rateTrends.sun.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.sun.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('sun')}</span>
                       </div>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>💧</span><span>Woda</span></div>
-          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.water)}/s <span style={{ color: rateTrends.water.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.water.icon}</span></div>
+          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('water') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.water)}/s <span style={{ color: rateTrends.water.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.water.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('water')}</span>
                       </div>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>🌬️</span><span>Wiatr</span></div>
-          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.wind)}/s <span style={{ color: rateTrends.wind.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.wind.icon}</span></div>
+          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('wind') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.wind)}/s <span style={{ color: rateTrends.wind.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.wind.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('wind')}</span>
                       </div>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>💰</span><span>ViCoins</span></div>
-          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.coins)}/s <span style={{ color: rateTrends.coins.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.coins.icon}</span></div>
+          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.coins)}/s <span style={{ color: rateTrends.coins.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.coins.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('coins')}</span>
                       </div>
