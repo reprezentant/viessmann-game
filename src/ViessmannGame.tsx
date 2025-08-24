@@ -1095,7 +1095,7 @@ export default function ViessmannGame() {
   }, [season.type]);
 
   // --- styles ---
-  const pill: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, borderRadius: 999, background: "rgba(255,255,255,0.7)", padding: "6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" };
+  const pill: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, borderRadius: 14, background: "rgba(255,255,255,0.7)", padding: "6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" };
   const headerStyle: React.CSSProperties = {
     position: "sticky",
     top: 0,
