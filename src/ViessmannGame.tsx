@@ -1037,6 +1037,11 @@ export default function ViessmannGame() {
         // Keep coin rate unchanged (previously capped down); sustainability over nerf
       }
     } else {
+      // Additional rule: forests can be planted only on the perimeter ring
+      if (pendingPlacement.key === 'forest') {
+        const onPerimeter = tile.x === 0 || tile.y === 0 || tile.x === SIZE - 1 || tile.y === SIZE - 1;
+        if (!onPerimeter) return;
+      }
       setOwned(o => ({ ...o, [pendingPlacement.key]: (o[pendingPlacement.key] ?? 0) + 1 }));
       if (pendingPlacement.key === 'echarger') setHasECharger(true);
   if (pendingPlacement.key === 'forest') addPollutionRate(-0.5);
@@ -1943,6 +1948,11 @@ export default function ViessmannGame() {
                 if (t.isHome) {
                   const home = tiles.find((x) => x.id === homeTileId);
                   return !!home && !home.entity;
+                }
+                // forests only on perimeter ring
+                if (pendingPlacement.key === 'forest') {
+                  const onPerimeter = t.x === 0 || t.y === 0 || t.x === SIZE - 1 || t.y === SIZE - 1;
+                  if (!onPerimeter) return false;
                 }
                 return !t.entity;
               }
