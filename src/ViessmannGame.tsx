@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -301,6 +301,9 @@ export default function ViessmannGame() {
   const DAY_FRACTION = 0.7; // 70% dzień
   const [elapsed, setElapsed] = useState(0);
   const isDay = useMemo(() => (elapsed % DAY_LENGTH) < DAY_LENGTH * DAY_FRACTION, [elapsed]);
+  // Map view state for external minimap
+  const isoRef = useRef<IsoGridHandle | null>(null);
+  const [isoView, setIsoView] = useState<IsoView | null>(null);
 
   // --- Pogodowe wydarzenia losowe ---
   useEffect(() => {
@@ -896,11 +899,7 @@ export default function ViessmannGame() {
       water: (base.water ?? 0) + bump,
     };
   };
-  const payCost = (cost: Cost) => setResources(r => {
-    const n = { ...r } as Record<ResKey, number>;
-    for (const [k, v] of Object.entries(cost)) n[k as ResKey] -= v ?? 0;
-    return n;
-  });
+  // charge is applied on placement time, so we don't pre-pay on Buy
   const modifyBaseRates = (fn: (r: Record<ResKey, number>) => Record<ResKey, number>) => setBaseRates(r => fn({ ...r }));
   const effectsCtx: EffectsContext = {
     addRate: (k, d) => modifyBaseRates(r => ({ ...r, [k]: (r[k] ?? 0) + d })),
@@ -964,19 +963,8 @@ export default function ViessmannGame() {
     if (isSinglePurchase(item.key) && (owned[item.key] ?? 0) > 0) return;
   const cost = dynamicCost(item);
     if (!canAfford(cost)) return;
-    payCost(cost);
-    // Log purchase
-    const costStr = [
-      cost.sun ? `${cost.sun} ☀️` : null,
-      cost.water ? `${cost.water} 💧` : null,
-      cost.wind ? `${cost.wind} 🌬️` : null,
-      cost.coins ? `${cost.coins} 💰` : null,
-    ].filter(Boolean).join(" + ") || "—";
-  pushLog({ type: 'purchase', icon: item.icon, title: `Zakupiono: ${item.name}`, description: `Koszt: ${costStr}` });
-    if (item.key === "coal" || item.key === "pellet" || item.key === "gas") { setPendingPlacement(item); return; }
-    setOwned(o => ({ ...o, [item.key]: (o[item.key] ?? 0) + 1 }));
-    // E-Charger i efekty przeniesione na moment umieszczenia na mapie
-    setPendingPlacement(item);
+  // Opłata i log przeniesione na moment umieszczenia na mapie
+  setPendingPlacement(item);
   };
 
   // Placement
@@ -998,9 +986,22 @@ export default function ViessmannGame() {
       if (!tile.isHome && tile.entity) return;
       // jeśli to pole domu i coś stoi, nie pozwalaj (dom zarezerwowany dla upgrade'ów)
       if (tile.isHome && tiles.find(t => t.id === homeTileId)?.entity) return;
+  // Rezerwacja obrzeża wyłącznie dla lasów: inne elementy nie mogą stać na krawędziach
+  const onPerimeter = tile.x === 0 || tile.y === 0 || tile.x === SIZE - 1 || tile.y === SIZE - 1;
+  if (pendingPlacement.key !== 'forest' && onPerimeter) return;
     }
 
-    const instance: EntityInstance = { type: pendingPlacement.key, label: pendingPlacement.name, icon: pendingPlacement.icon };
+    // Before placing, re-check affordability and deduct cost now (handles ESC cancel case)
+    const placingItem = pendingPlacement;
+    const placeCost = dynamicCost(placingItem);
+    if (!canAfford(placeCost)) return;
+    setResources(r => {
+      const n = { ...r } as Record<ResKey, number>;
+      for (const [k, v] of Object.entries(placeCost)) n[k as ResKey] -= v ?? 0;
+      return n;
+    });
+
+    const instance: EntityInstance = { type: placingItem.key, label: placingItem.name, icon: placingItem.icon };
     // Ustaw/Podmień na kafelku
     setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
 
@@ -1009,7 +1010,7 @@ export default function ViessmannGame() {
       setOwned(o => {
         const n: Record<EntityType | 'coal', number> = { ...(o as Record<EntityType | 'coal', number>) };
         houseUpgradeKeys.forEach(k => { n[k] = 0; });
-        n[pendingPlacement.key] = 1;
+  n[placingItem.key] = 1;
         return n;
       });
   // Pollution: apply delta vs previous house state using helper
@@ -1021,7 +1022,7 @@ export default function ViessmannGame() {
       }
 
       // Additional progression effects (kept from earlier design)
-      if (pendingPlacement.key === 'pellet') {
+  if (placingItem.key === 'pellet') {
         setRenewablesUnlocked(true);
         // Kickstart sustainable progression: ensure decent passive income for renewables
         setBaseRates(r => ({
@@ -1033,22 +1034,33 @@ export default function ViessmannGame() {
         }));
         // Starter pack to avoid deadlock to gas stage
         setResources(res => ({ ...res, sun: res.sun + 5, water: res.water + 5, wind: res.wind + 5 }));
-      } else if (pendingPlacement.key === 'gas') {
+      } else if (placingItem.key === 'gas') {
         // Keep coin rate unchanged (previously capped down); sustainability over nerf
       }
     } else {
       // Additional rule: forests can be planted only on the perimeter ring
-      if (pendingPlacement.key === 'forest') {
+      if (placingItem.key === 'forest') {
         const onPerimeter = tile.x === 0 || tile.y === 0 || tile.x === SIZE - 1 || tile.y === SIZE - 1;
         if (!onPerimeter) return;
       }
-      setOwned(o => ({ ...o, [pendingPlacement.key]: (o[pendingPlacement.key] ?? 0) + 1 }));
-      if (pendingPlacement.key === 'echarger') setHasECharger(true);
-  if (pendingPlacement.key === 'forest') addPollutionRate(-0.5);
-      pendingPlacement.onPurchaseEffects?.(effectsCtx);
+      // For non-forest placements, ensure not on perimeter
+      if (placingItem.key !== 'forest') {
+        const onPerimeter = tile.x === 0 || tile.y === 0 || tile.x === SIZE - 1 || tile.y === SIZE - 1;
+        if (onPerimeter) return;
+      }
+      setOwned(o => ({ ...o, [placingItem.key]: (o[placingItem.key] ?? 0) + 1 }));
+      if (placingItem.key === 'echarger') setHasECharger(true);
+  if (placingItem.key === 'forest') addPollutionRate(-0.5);
+      placingItem.onPurchaseEffects?.(effectsCtx);
     }
 
-    pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id}` });
+    const costStr = [
+      placeCost.sun ? `${placeCost.sun} ☀️` : null,
+      placeCost.water ? `${placeCost.water} 💧` : null,
+      placeCost.wind ? `${placeCost.wind} 🌬️` : null,
+      placeCost.coins ? `${placeCost.coins} 💰` : null,
+    ].filter(Boolean).join(" + ") || "—";
+    pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id} • Koszt: ${costStr}` });
     setPendingPlacement(null); setLastPlacedKey(tile.id);
   };
 
@@ -1797,7 +1809,7 @@ export default function ViessmannGame() {
       {/* body */}
       <main style={gridWrap}>
         {/* shop */}
-        <aside style={card}>
+        <section style={{ ...card, position: 'relative' }}>
           {/* Home device info card */}
           {(() => {
             const home = tiles.find(t => t.id === homeTileId);
@@ -1841,6 +1853,8 @@ export default function ViessmannGame() {
               const done = isSinglePurchase(item.key) && ownedCount > 0;
               const afford = !done && canAfford(cost);
               const isPending = pendingPlacement?.key === item.key;
+              const isForest = item.key === 'forest';
+              const forestOwned = owned.forest ?? 0;
               const missingParts: string[] = [];
               if (!done) {
                 if ((cost.sun ?? 0) > resources.sun) missingParts.push(`${Math.max(0, (cost.sun ?? 0) - resources.sun)} ☀️`);
@@ -1883,9 +1897,35 @@ export default function ViessmannGame() {
                   <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                     <span style={{ fontSize: 22 }}>{item.icon}</span>
                     <div style={{ flex: 1 }}>
-                      <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{item.name}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{item.name}</span>
+                        {isForest && (
+                          <span
+                            title="Las można sadzić wyłącznie na skraju mapy (zewnętrzny pierścień)."
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 800,
+                              letterSpacing: 0.3,
+                              textTransform: 'uppercase',
+                              padding: '2px 6px',
+                              borderRadius: 999,
+                              background: isDay ? '#dcfce7' : '#064e3b',
+                              color: isDay ? '#065f46' : '#d1fae5',
+                              border: isDay ? '1px solid #bbf7d0' : '1px solid #065f46'
+                            }}
+                          >Tylko na obrzeżach</span>
+                        )}
+                      </div>
                       <div className="text-xs text-neutral-500 font-sans" style={{ fontSize: 11, marginTop: 2, marginBottom: 2 }}>Posiadane: {ownedCount}</div>
                       <div className="font-normal text-xs text-neutral-600 font-sans" style={{ fontSize: 13 }}>{item.description}</div>
+                      {isForest && (
+                        <div
+                          title="Każdy kolejny las jest droższy o +8 ☀️ i +8 💧."
+                          style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
+                        >
+                          Cena rośnie: +8 ☀️ +8 💧 za każdy posiadany las{forestOwned > 0 ? ` (masz ${forestOwned})` : ''}.
+                        </div>
+                      )}
                     </div>
                   </div>
           <div style={{ marginTop: 8, marginBottom: 36 }}>
@@ -1922,7 +1962,7 @@ export default function ViessmannGame() {
               );
             })}
           </div>
-        </aside>
+        </section>
 
   {/* map */}
   <section style={{ ...card, position: 'relative' }}>
@@ -1931,11 +1971,13 @@ export default function ViessmannGame() {
             <h2 className="font-bold font-sans text-lg text-neutral-900">Dom i otoczenie</h2>
           </div>
           <IsoGrid
+            ref={isoRef}
             tiles={tiles}
             homeTileId={homeTileId}
             onTileClick={placeOnTile}
             pendingItem={pendingPlacement ? { key: pendingPlacement.key, name: pendingPlacement.name, icon: pendingPlacement.icon } : null}
             lastPlacedKey={lastPlacedKey}
+            onViewChange={setIsoView}
             isPlaceable={(t) => {
               if (!pendingPlacement) return false;
               const isHouse = houseUpgradeKeys.includes(pendingPlacement.key);
@@ -1949,10 +1991,12 @@ export default function ViessmannGame() {
                   const home = tiles.find((x) => x.id === homeTileId);
                   return !!home && !home.entity;
                 }
-                // forests only on perimeter ring
+                const onPerimeter = t.x === 0 || t.y === 0 || t.x === SIZE - 1 || t.y === SIZE - 1;
+                // forests only on perimeter ring; other non-house items forbidden on perimeter
                 if (pendingPlacement.key === 'forest') {
-                  const onPerimeter = t.x === 0 || t.y === 0 || t.x === SIZE - 1 || t.y === SIZE - 1;
                   if (!onPerimeter) return false;
+                } else {
+                  if (onPerimeter) return false;
                 }
                 return !t.entity;
               }
@@ -1960,6 +2004,59 @@ export default function ViessmannGame() {
             weatherEvent={weatherEvent}
             isDay={isDay}
           />
+          {/* Minimap anchored to section bottom-right */}
+          {isoView && (
+            <div
+              onClick={(e) => {
+                if (!isoView) return;
+                const mmW = 160, mmH = 160;
+                const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                const mx = (e.clientX - rect.left) - 6; // padding
+                const my = (e.clientY - rect.top) - 6;
+                const sx = mmW / isoView.contentW, sy = mmH / isoView.contentH;
+                const worldX = mx / sx;
+                const worldY = my / sy;
+                isoRef.current?.centerWorld(worldX, worldY);
+              }}
+              title="Kliknij, aby przesunąć widok"
+              style={{ position: 'absolute', right: 8, bottom: 8, width: 172, height: 172, padding: 6, borderRadius: 10, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? 'rgba(255,255,255,0.9)' : '#0b1220', color: isDay ? '#0f172a' : '#e5e7eb', zIndex: 6, boxShadow: isDay ? '0 6px 18px rgba(0,0,0,0.08)' : '0 6px 18px rgba(0,0,0,0.35)', cursor: 'pointer' }}
+            >
+              {(() => {
+                const { contentW, contentH, tileW, tileH, baseX, baseY, offset, scale, viewport } = isoView;
+                const mmW = 160, mmH = 160;
+                const sx = mmW / contentW, sy = mmH / contentH;
+                const tileCenter = (t: Tile) => ({
+                  x: ((t.x - t.y) * (tileW / 2) + baseX + tileW / 2) * sx,
+                  y: ((t.x + t.y) * (tileH / 2) + baseY + tileH / 2) * sy,
+                });
+                const worldMinX = Math.max(0, (-offset.x) / scale);
+                const worldMinY = Math.max(0, (-offset.y) / scale);
+                const worldMaxX = Math.min(contentW, (viewport.w - offset.x) / scale);
+                const worldMaxY = Math.min(contentH, (viewport.h - offset.y) / scale);
+                const viewRect = {
+                  x: worldMinX * sx,
+                  y: worldMinY * sy,
+                  w: Math.max(0, (worldMaxX - worldMinX) * sx),
+                  h: Math.max(0, (worldMaxY - worldMinY) * sy),
+                };
+                return (
+                  <svg width={mmW} height={mmH} style={{ display: 'block' }}>
+                    <rect x={0.5} y={0.5} width={mmW - 1} height={mmH - 1} fill={isDay ? '#f8fafc' : '#111827'} stroke={isDay ? '#e5e7eb' : '#334155'} />
+                    {tiles.map((t: IsoTileType) => {
+                      const c = tileCenter(t as unknown as Tile);
+                      const isHomeT = t.id === homeTileId;
+                      const e = t.entity;
+                      if (!isHomeT && !e) return null;
+                      const color = isHomeT ? '#f59e0b' : e?.type === 'forest' ? '#10b981' : '#64748b';
+                      const r = isHomeT ? 3.5 : 2.5;
+                      return <circle key={t.id} cx={c.x} cy={c.y} r={r} fill={color} stroke={isDay ? 'rgba(0,0,0,0.08)' : 'rgba(255,255,255,0.08)'} />;
+                    })}
+                    <rect x={viewRect.x} y={viewRect.y} width={viewRect.w} height={viewRect.h} fill="none" stroke={isDay ? '#3b82f6' : '#60a5fa'} strokeWidth={1.5} />
+                  </svg>
+                );
+              })()}
+            </div>
+          )}
           {/* Ekonomia panel removed – header now shows rate info */}
         </section>
 
@@ -2300,9 +2397,27 @@ export default function ViessmannGame() {
 
 // ------- Iso grid -------
 type IsoTileType = { id: string; x: number; y: number; entity?: { type: EntityType; icon: string; label: string } | null; isHome?: boolean };
-function IsoGrid({
-  tiles, homeTileId, onTileClick, pendingItem, lastPlacedKey, isPlaceable, weatherEvent, isDay
-}: {
+
+type IsoView = {
+  scale: number;
+  offset: { x: number; y: number };
+  viewport: { w: number; h: number };
+  contentW: number;
+  contentH: number;
+  tileW: number;
+  tileH: number;
+  baseX: number;
+  baseY: number;
+  size: number;
+};
+
+type IsoGridHandle = {
+  centerWorld: (wx: number, wy: number) => void;
+  centerHome: () => void;
+  setScale: (s: number) => void;
+};
+
+const IsoGrid = React.forwardRef<IsoGridHandle, {
   tiles: IsoTileType[];
   homeTileId: string;
   onTileClick: (t: IsoTileType) => void;
@@ -2311,16 +2426,126 @@ function IsoGrid({
   isPlaceable?: (t: IsoTileType) => boolean;
   weatherEvent: WeatherEvent;
   isDay: boolean;
-}) {
+  onViewChange?: (view: IsoView) => void;
+}>(function IsoGrid({
+  tiles, homeTileId, onTileClick, pendingItem, lastPlacedKey, isPlaceable, weatherEvent, isDay, onViewChange
+}, ref) {
   const [hoverInfo, setHoverInfo] = useState<{ tile: IsoTileType; left: number; top: number; placeable: boolean } | null>(null);
   const tileW = 96, tileH = 48;
   const size = Math.sqrt(tiles.length);
   const baseX = (size - 1) * (tileW / 2);
   const baseY = 0;
 
+  // Zoom & pan state
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const panRef = useRef<{ active: boolean; sx: number; sy: number; ox: number; oy: number }>({ active: false, sx: 0, sy: 0, ox: 0, oy: 0 });
+  const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
+  const contentW = size * tileW;
+  const contentH = size * tileH;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [viewport, setViewport] = useState({ w: contentW, h: contentH });
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const resize = () => setViewport({ w: el.clientWidth, h: el.clientHeight });
+    resize();
+    const ro = new ResizeObserver(resize);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Notify parent about view changes
+  useEffect(() => {
+    onViewChange?.({
+      scale,
+      offset,
+      viewport,
+      contentW,
+      contentH,
+      tileW,
+      tileH,
+      baseX,
+      baseY,
+      size,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scale, offset, viewport]);
+
+  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    // Zoom with wheel; prevent page scroll while over the map
+    e.preventDefault();
+    const dir = e.deltaY > 0 ? -1 : 1;
+  const next = clamp(scale * (dir > 0 ? 1.12 : 0.89), 0.6, 2.25);
+    setScale(next);
+  };
+
+  const startPan: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (!e.altKey || e.button !== 0) return; // Alt + left drag to pan
+    e.preventDefault();
+    panRef.current = { active: true, sx: e.clientX, sy: e.clientY, ox: offset.x, oy: offset.y };
+    const onMove = (ev: MouseEvent) => {
+      if (!panRef.current.active) return;
+      const dx = ev.clientX - panRef.current.sx;
+      const dy = ev.clientY - panRef.current.sy;
+      setOffset({ x: panRef.current.ox + dx, y: panRef.current.oy + dy });
+    };
+    const onUp = () => {
+      panRef.current.active = false;
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
+  const centerHome = useCallback(() => {
+    const home = tiles.find(t => t.id === homeTileId);
+    if (!home) return;
+    const left = (home.x - home.y) * (tileW / 2) + baseX + tileW / 2;
+    const top = (home.x + home.y) * (tileH / 2) + baseY + tileH / 2;
+    setOffset({ x: (viewport.w / 2) - left * scale, y: (viewport.h / 2) - top * scale });
+  }, [tiles, homeTileId, tileW, tileH, baseX, baseY, viewport.w, viewport.h, scale]);
+
+  // Imperative API for parent (recentering on minimap click)
+  useImperativeHandle(ref, () => ({
+    centerWorld: (wx: number, wy: number) => {
+      setOffset({ x: (viewport.w / 2) - wx * scale, y: (viewport.h / 2) - wy * scale });
+    },
+    centerHome,
+    setScale: (s: number) => setScale(s),
+  }), [viewport.w, viewport.h, scale, centerHome]);
+
 
   return (
-    <div style={{ position: "relative", width: size * tileW, height: size * tileH, margin: "8px auto 0" }}>
+    <div
+      ref={containerRef}
+      onWheel={onWheel}
+      onMouseDown={startPan}
+      style={{ position: "relative", width: Math.min(contentW * 1.5, window.innerWidth ? window.innerWidth * 0.95 : contentW * 1.5), height: Math.min(contentH * 1.5, (typeof window !== 'undefined' ? window.innerHeight : contentH) * 0.75), margin: "8px auto 0", overflow: 'hidden', cursor: panRef.current.active ? 'grabbing' : undefined, userSelect: panRef.current.active ? 'none' : undefined, background: 'transparent' }}
+    >
+      {/* Controls overlay */}
+      <div style={{ position: 'absolute', right: 8, top: 8, zIndex: 6, display: 'flex', gap: 6 }}>
+        <button
+          onClick={() => setScale(s => clamp(s * 0.9, 0.75, 1.5))}
+          title="Pomniejsz"
+          style={{ padding: '4px 8px', borderRadius: 6, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#fff' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', cursor: 'pointer' }}
+        >−</button>
+        <button
+          onClick={() => setScale(s => clamp(s * 1.1, 0.75, 1.5))}
+          title="Powiększ"
+          style={{ padding: '4px 8px', borderRadius: 6, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#fff' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', cursor: 'pointer' }}
+        >+</button>
+        <button
+          onClick={centerHome}
+          title="Wyśrodkuj dom"
+          style={{ padding: '4px 8px', borderRadius: 6, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#fff' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', cursor: 'pointer' }}
+        >🎯</button>
+      </div>
+
+      {/* Transformed content wrapper (tiles + weather + guides) */}
+      <div style={{ position: 'absolute', left: 0, top: 0, width: contentW, height: contentH, transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: '0 0' }}>
       {/* Animacje pogodowe tylko nad mapą */}
       {weatherEvent && weatherEvent.type !== "none" && (
         <div style={{
@@ -2442,7 +2667,7 @@ function IsoGrid({
           )}
         </div>
       )}
-      {tiles.map((t) => {
+  {tiles.map((t) => {
         const left = (t.x - t.y) * (tileW / 2) + baseX;
         const top = (t.x + t.y) * (tileH / 2) + baseY;
         const placeable = isPlaceable ? isPlaceable(t) : true;
@@ -2460,7 +2685,7 @@ function IsoGrid({
             top={top}
             w={tileW}
             h={tileH}
-            onClick={() => onTileClick(t)}
+    onClick={() => onTileClick(t)}
             onHoverChange={(h) => {
               if (h) setHoverInfo({ tile: t, left, top, placeable });
               else if (hoverInfo?.tile.id === t.id) setHoverInfo(null);
@@ -2475,13 +2700,14 @@ function IsoGrid({
           />
         );
       })}
+  </div>
       {/* Hover card */}
       {hoverInfo && (
         <div
           style={{
             position: 'absolute',
-            left: hoverInfo.left + tileW / 2,
-            top: hoverInfo.top - 8,
+    left: offset.x + (hoverInfo.left + tileW / 2) * scale,
+    top: offset.y + (hoverInfo.top - 8) * scale,
             transform: 'translate(-50%,-100%)',
             background: isDay ? '#ffffff' : '#0f172a',
             color: isDay ? '#0f172a' : '#e5e7eb',
@@ -2522,9 +2748,11 @@ function IsoGrid({
           })()}
         </div>
       )}
+
+  {/* Minimap moved to parent section */}
     </div>
   );
-}
+});
 
 function IsoTile({
   tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced, onHoverChange, highlightAllowed, dimDisallowed, isDay,
@@ -2566,7 +2794,7 @@ function IsoTile({
 
   return (
     <button
-      onClick={onClick}
+      onClick={(e) => { if ((e as React.MouseEvent).altKey) return; onClick(); }}
       onMouseEnter={() => { setHovered(true); onHoverChange?.(true); }}
       onMouseLeave={() => { setHovered(false); setPressed(false); onHoverChange?.(false); }}
       onMouseDown={() => setPressed(true)}
