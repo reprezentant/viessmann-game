@@ -461,35 +461,7 @@ export default function ViessmannGame() {
     }),
     [baseRates, multipliers]
   );
-  // Trend arrows for economy panel: compare with previous effective rates
-  const prevEffRatesRef = useRef<Record<ResKey, number> | null>(null);
-  const rateTrends = useMemo(() => {
-    const prev = prevEffRatesRef.current;
-    const keys: ResKey[] = ['sun','water','wind','coins'];
-    const map: Record<ResKey, { icon: string; color: string }> = {
-      sun: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
-      water: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
-      wind: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
-      coins: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
-    };
-    if (!prev) return map;
-    for (const k of keys) {
-      const curr = effectiveRates[k];
-      const p = prev[k];
-      const diff = curr - p;
-      const abs = Math.abs(diff);
-      const tol = Math.max(1e-4, Math.abs(p) * 0.02); // 2% or 1e-4
-      if (abs <= tol) {
-        map[k] = { icon: '→', color: isDay ? '#64748b' : '#94a3b8' };
-      } else if (diff > 0) {
-        map[k] = { icon: '▲', color: '#10b981' };
-      } else {
-        map[k] = { icon: '▼', color: '#ef4444' };
-      }
-    }
-    return map;
-  }, [effectiveRates, isDay]);
-  useEffect(() => { prevEffRatesRef.current = effectiveRates; }, [effectiveRates]);
+  // (Ekonomia panel removed)
 
   // ---------- Map ----------
   const SIZE = 7;
@@ -734,18 +706,7 @@ export default function ViessmannGame() {
   const [seasonTipPos, setSeasonTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   const [pollTipOpen, setPollTipOpen] = useState(false);
   const [pollTipPos, setPollTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
-  // Economy panel state (persisted)
-  const [ecoOpen, setEcoOpen] = useState<boolean>(() => {
-    try {
-      const raw = localStorage.getItem('vm_ecoOpen');
-      if (raw === '0') return false;
-      if (raw === '1') return true;
-    } catch { /* ignore */ }
-    return true;
-  });
-  useEffect(() => {
-    try { localStorage.setItem('vm_ecoOpen', ecoOpen ? '1' : '0'); } catch { /* ignore */ }
-  }, [ecoOpen]);
+  // (Ekonomia panel state removed)
 
   // Activity log
   const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
@@ -1978,78 +1939,7 @@ export default function ViessmannGame() {
             weatherEvent={weatherEvent}
             isDay={isDay}
           />
-          {/* Economy panel */}
-          {(() => {
-            // derive next device cost and time-to-afford estimates
-            // next-device timing removed per request; forest TTA removed
-            const multLine = (k: ResKey) => {
-              const parts: string[] = [];
-              // day/night
-              parts.push(`${isDay ? 'Dzień' : 'Noc'} ×${fmt(dayNightMultipliers[k])}`);
-              // season
-              parts.push(`Sezon ×${fmt(seasonMultipliers[k])}`);
-              // weather
-              parts.push(`Pogoda ×${fmt(weatherMultipliers[k])}`);
-              // smog
-              parts.push(`Smog ×${fmt(smogMultiplier)}`);
-              if (k === 'coins' && ecoBonusMultiplier > 1) parts.push(`Eco ×${fmt(ecoBonusMultiplier)}`);
-              return parts.join(' · ');
-            };
-            const wrapStyle: React.CSSProperties = { marginTop: 12, borderTop: isDay ? '1px solid #e5e7eb' : '1px solid #334155', paddingTop: 10 };
-            // Row grid: left block (label + rate under) and right multipliers; keep panel right-aligned
-            const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 10, alignItems: 'center' };
-            const cap: React.CSSProperties = { fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', textAlign: 'right' };
-            const leftBlock: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' };
-            const leftTop: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6 };
-            const rateUnder: React.CSSProperties = { fontSize: 12, color: isDay ? '#334155' : '#CBD5E1' };
-            return (
-              <div style={wrapStyle}>
-                <div style={{ maxWidth: 720, marginLeft: 'auto', textAlign: 'right' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8, gap: 12 }}>
-                    <div className="font-semibold font-sans" style={{ fontSize: 15 }}>Ekonomia</div>
-                    <button aria-expanded={ecoOpen} onClick={() => setEcoOpen(o => !o)}
-                      style={{ fontSize: 13, fontWeight: 700, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#f1f5f9' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 10, padding: '4px 12px', cursor: 'pointer' }}>
-                      {ecoOpen ? 'Zwiń' : 'Pokaż'}
-                    </button>
-                  </div>
-                  {ecoOpen && (
-                  <>
-        <div style={{ display: 'grid', gap: 8 }}>
-                      <div style={row}>
-                        <div style={leftBlock}>
-                          <div style={leftTop}><span>☀️</span><span>Słońce</span></div>
-          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('sun') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.sun)}/s <span style={{ color: rateTrends.sun.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.sun.icon}</span></div>
-                        </div>
-                        <span style={cap}>{multLine('sun')}</span>
-                      </div>
-                      <div style={row}>
-                        <div style={leftBlock}>
-                          <div style={leftTop}><span>💧</span><span>Woda</span></div>
-          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('water') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.water)}/s <span style={{ color: rateTrends.water.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.water.icon}</span></div>
-                        </div>
-                        <span style={cap}>{multLine('water')}</span>
-                      </div>
-                      <div style={row}>
-                        <div style={leftBlock}>
-                          <div style={leftTop}><span>🌬️</span><span>Wiatr</span></div>
-          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('wind') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.wind)}/s <span style={{ color: rateTrends.wind.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.wind.icon}</span></div>
-                        </div>
-                        <span style={cap}>{multLine('wind')}</span>
-                      </div>
-                      <div style={row}>
-                        <div style={leftBlock}>
-                          <div style={leftTop}><span>💰</span><span>ViCoins</span></div>
-          <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.coins)}/s <span style={{ color: rateTrends.coins.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.coins.icon}</span></div>
-                        </div>
-                        <span style={cap}>{multLine('coins')}</span>
-                      </div>
-                    </div>
-                  </>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
+          {/* Ekonomia panel removed – header now shows rate info */}
         </section>
 
         {/* missions */}
