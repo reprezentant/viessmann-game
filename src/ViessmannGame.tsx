@@ -1934,7 +1934,7 @@ export default function ViessmannGame() {
             tiles={tiles}
             homeTileId={homeTileId}
             onTileClick={placeOnTile}
-            pendingItem={pendingPlacement ? { name: pendingPlacement.name, icon: pendingPlacement.icon } : null}
+            pendingItem={pendingPlacement ? { key: pendingPlacement.key, name: pendingPlacement.name, icon: pendingPlacement.icon } : null}
             lastPlacedKey={lastPlacedKey}
             isPlaceable={(t) => {
               if (!pendingPlacement) return false;
@@ -2306,7 +2306,7 @@ function IsoGrid({
   tiles: IsoTileType[];
   homeTileId: string;
   onTileClick: (t: IsoTileType) => void;
-  pendingItem: { name: string; icon: string } | null;
+  pendingItem: { key: string; name: string; icon: string } | null;
   lastPlacedKey: string | null;
   isPlaceable?: (t: IsoTileType) => boolean;
   weatherEvent: WeatherEvent;
@@ -2446,6 +2446,9 @@ function IsoGrid({
         const left = (t.x - t.y) * (tileW / 2) + baseX;
         const top = (t.x + t.y) * (tileH / 2) + baseY;
         const placeable = isPlaceable ? isPlaceable(t) : true;
+        const isForestPending = pendingItem?.key === 'forest';
+        const onPerimeter = t.x === 0 || t.y === 0 || t.x === size - 1 || t.y === size - 1;
+        const highlightAllowed = !!pendingItem && isForestPending && onPerimeter && !t.entity;
         return (
           <IsoTile
             key={t.id}
@@ -2463,6 +2466,7 @@ function IsoGrid({
             pendingItem={pendingItem}
             placeable={placeable}
             isNewlyPlaced={lastPlacedKey === t.id}
+            highlightAllowed={highlightAllowed}
           />
         );
       })}
@@ -2510,7 +2514,7 @@ function IsoGrid({
 }
 
 function IsoTile({
-  tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced, onHoverChange,
+  tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced, onHoverChange, highlightAllowed,
 }: {
   tile: { id: string; entity?: { type: string; icon: string; label: string } | null };
   onClick: () => void;
@@ -2520,6 +2524,7 @@ function IsoTile({
   placeable: boolean;
   isNewlyPlaced: boolean;
   onHoverChange?: (hovered: boolean) => void;
+  highlightAllowed?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
@@ -2559,6 +2564,15 @@ function IsoTile({
     >
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))", pointerEvents: "none" }}>
         <polygon points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`} fill={fill} stroke={stroke} strokeWidth={1} shapeRendering="crispEdges" />
+        {highlightAllowed ? (
+          <polygon
+            points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`}
+            fill="rgba(16,185,129,0.18)"
+            stroke="rgba(16,185,129,0.5)"
+            strokeWidth={1}
+            shapeRendering="crispEdges"
+          />
+        ) : null}
       </svg>
       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none", willChange: "transform" }}>
         {isHome ? (
