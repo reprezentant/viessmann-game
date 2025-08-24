@@ -1302,7 +1302,26 @@ export default function ViessmannGame() {
           }}>
             <span style={{ fontSize: 18 }}>💰</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>ViCoins</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>
+                <span>ViCoins</span>
+                {ecoBonusMultiplier > 1 && (
+                  <span
+                    title={`Bonus czystego powietrza +${Math.round((ecoBonusMultiplier - 1) * 100)}%`}
+                    aria-label={`Bonus czystego powietrza +${Math.round((ecoBonusMultiplier - 1) * 100)}%`}
+                    style={{
+                      fontWeight: 800,
+                      fontSize: 11,
+                      borderRadius: 999,
+                      padding: '1px 6px',
+                      background: isDay ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.2)',
+                      color: isDay ? '#059669' : '#34d399',
+                      lineHeight: 1.6
+                    }}
+                  >
+                    +{Math.round((ecoBonusMultiplier - 1) * 100)}% 💰
+                  </span>
+                )}
+              </div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FDE68A" }}>{fmt(resources.coins)}</div>
               <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('coins')}</div>
             </div>
@@ -1398,11 +1417,6 @@ export default function ViessmannGame() {
               {smogMultiplier < 1 && (
                 <div style={{ fontSize: 11, marginTop: 2, color: isDay ? '#64748b' : '#94a3b8' }}>
                   Produkcja −{Math.round((1 - smogMultiplier) * 100)}%
-                </div>
-              )}
-              {ecoBonusMultiplier > 1 && (
-                <div style={{ fontSize: 11, marginTop: 2, color: isDay ? '#059669' : '#34d399' }}>
-                  Bonus czystego powietrza +{Math.round((ecoBonusMultiplier - 1) * 100)}% 💰
                 </div>
               )}
             </div>
