@@ -67,3 +67,56 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+/*
+  Scrollbar theming (Chromium, Safari, Edge + Firefox)
+  - Uses CSS variables with light/dark variants
+  - Subtle rounded thumb, higher contrast on hover
+*/
+:root {
+  --scrollbar-size: 12px;
+  /* dark default */
+  --scrollbar-track: rgba(255, 255, 255, 0.06);
+  --scrollbar-thumb: rgba(255, 255, 255, 0.28);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.42);
+  --scrollbar-thumb-active: rgba(255, 255, 255, 0.52);
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --scrollbar-track: rgba(0, 0, 0, 0.06);
+    --scrollbar-thumb: rgba(0, 0, 0, 0.28);
+    --scrollbar-thumb-hover: rgba(0, 0, 0, 0.42);
+    --scrollbar-thumb-active: rgba(0, 0, 0, 0.52);
+  }
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin; /* auto | thin | none */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+/* WebKit-based browsers */
+::-webkit-scrollbar {
+  width: var(--scrollbar-size);
+  height: var(--scrollbar-size);
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 8px;
+  border: 3px solid transparent; /* creates inset look */
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--scrollbar-thumb-active);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
