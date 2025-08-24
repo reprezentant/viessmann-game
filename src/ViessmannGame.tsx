@@ -461,6 +461,35 @@ export default function ViessmannGame() {
     }),
     [baseRates, multipliers]
   );
+  // Trend arrows for economy panel: compare with previous effective rates
+  const prevEffRatesRef = useRef<Record<ResKey, number> | null>(null);
+  const rateTrends = useMemo(() => {
+    const prev = prevEffRatesRef.current;
+    const keys: ResKey[] = ['sun','water','wind','coins'];
+    const map: Record<ResKey, { icon: string; color: string }> = {
+      sun: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
+      water: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
+      wind: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
+      coins: { icon: '→', color: isDay ? '#64748b' : '#94a3b8' },
+    };
+    if (!prev) return map;
+    for (const k of keys) {
+      const curr = effectiveRates[k];
+      const p = prev[k];
+      const diff = curr - p;
+      const abs = Math.abs(diff);
+      const tol = Math.max(1e-4, Math.abs(p) * 0.02); // 2% or 1e-4
+      if (abs <= tol) {
+        map[k] = { icon: '→', color: isDay ? '#64748b' : '#94a3b8' };
+      } else if (diff > 0) {
+        map[k] = { icon: '▲', color: '#10b981' };
+      } else {
+        map[k] = { icon: '▼', color: '#ef4444' };
+      }
+    }
+    return map;
+  }, [effectiveRates, isDay]);
+  useEffect(() => { prevEffRatesRef.current = effectiveRates; }, [effectiveRates]);
 
   // ---------- Map ----------
   const SIZE = 7;
@@ -1990,37 +2019,37 @@ export default function ViessmannGame() {
                   </div>
                   {ecoOpen && (
                   <>
-                    <div style={{ display: 'grid', gap: 8 }}>
+        <div style={{ display: 'grid', gap: 8 }}>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>☀️</span><span>Słońce</span></div>
-                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.sun)}/s</div>
+          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.sun)}/s <span style={{ color: rateTrends.sun.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.sun.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('sun')}</span>
                       </div>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>💧</span><span>Woda</span></div>
-                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.water)}/s</div>
+          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.water)}/s <span style={{ color: rateTrends.water.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.water.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('water')}</span>
                       </div>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>🌬️</span><span>Wiatr</span></div>
-                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.wind)}/s</div>
+          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.wind)}/s <span style={{ color: rateTrends.wind.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.wind.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('wind')}</span>
                       </div>
                       <div style={row}>
                         <div style={leftBlock}>
                           <div style={leftTop}><span>💰</span><span>ViCoins</span></div>
-                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.coins)}/s</div>
+          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.coins)}/s <span style={{ color: rateTrends.coins.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.coins.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('coins')}</span>
                       </div>
                     </div>
-                    <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
+        <div style={{ marginTop: 18, display: 'grid', gap: 6 }}>
                       <div style={row}>
                         <span>🌲 Do kolejnego lasu</span>
                         <span style={cap}>{forestCost.sun ?? 0} ☀️ + {forestCost.water ?? 0} 💧</span>
