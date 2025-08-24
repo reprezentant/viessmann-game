@@ -1346,7 +1346,7 @@ export default function ViessmannGame() {
               {weatherEvent.type === "frost" && "❄️"}
               {weatherEvent.type === "none" && "🌤️"}
             </span>
-            <div>
+            <div style={{ minWidth: 0, flex: 1 }}>
               <div style={{ fontWeight: 700, fontSize: 12, color: isDay ? "#0ea5e9" : "#bae6fd" }}>
                 {weatherEvent.type === "clouds" && "Chmury"}
                 {weatherEvent.type === "sunny" && "Słońce"}
@@ -1356,7 +1356,7 @@ export default function ViessmannGame() {
                 {weatherEvent.type === "frost" && "Mróz"}
                 {weatherEvent.type === "none" && "Brak wydarzenia"}
               </div>
-              <div style={{ fontSize: 13, color: isDay ? "#334155" : "#e0f2fe" }}>
+              <div style={{ fontSize: 13, color: isDay ? "#334155" : "#e0f2fe", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {weatherEvent.type === "clouds" && "Brak produkcji ☀️"}
                 {weatherEvent.type === "sunny" && "x2 produkcja ☀️"}
                 {weatherEvent.type === "rain" && "x2 produkcja 💧"}
