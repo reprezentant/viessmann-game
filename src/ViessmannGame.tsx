@@ -1981,17 +1981,7 @@ export default function ViessmannGame() {
           {/* Economy panel */}
           {(() => {
             // derive next device cost and time-to-afford estimates
-            // next-device timing removed per request
-            const forestCost = dynamicCost(itemByKey.forest);
-            const tta = (cost: Cost | undefined, k: ResKey): string | null => {
-              if (!cost) return null;
-              const need = Math.max(0, (cost[k] ?? 0) - resources[k]);
-              const rate = effectiveRates[k];
-              if (need <= 0) return 'gotowe';
-              if (rate <= 0.000001) return '—';
-              const secs = Math.ceil(need / rate);
-              return `${secs}s`;
-            };
+            // next-device timing removed per request; forest TTA removed
             const multLine = (k: ResKey) => {
               const parts: string[] = [];
               // day/night
@@ -2052,15 +2042,6 @@ export default function ViessmannGame() {
           <div className="font-sans tabular-nums" style={{ ...rateUnder, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#334155' : '#CBD5E1') }}>+{fmt(effectiveRates.coins)}/s <span style={{ color: rateTrends.coins.color, fontSize: 11, marginLeft: 4 }}>{rateTrends.coins.icon}</span></div>
                         </div>
                         <span style={cap}>{multLine('coins')}</span>
-                      </div>
-                    </div>
-        <div style={{ marginTop: 18, display: 'grid', gap: 6 }}>
-                      <div style={row}>
-                        <span>🌲 Do kolejnego lasu</span>
-                        <span style={cap}>{forestCost.sun ?? 0} ☀️ + {forestCost.water ?? 0} 💧</span>
-                        <span style={{ fontSize: 13, fontWeight: 800 }}>
-                          {['sun','water'].map(k => tta(forestCost, k as ResKey)).filter(Boolean).join(' / ') || '—'}
-                        </span>
                       </div>
                     </div>
                   </>
