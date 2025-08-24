@@ -2571,7 +2571,15 @@ function IsoTile({
         border: "none", padding: 0, background: "transparent", cursor: placeable ? "pointer" : "not-allowed",
       }}
     >
-      <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))", pointerEvents: "none" }}>
+      <svg
+        width={w}
+        height={h}
+        viewBox={`0 0 ${w} ${h}`}
+        style={{
+          filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+          pointerEvents: "none",
+        }}
+      >
         <polygon points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`} fill={fill} stroke={stroke} strokeWidth={1} shapeRendering="crispEdges" />
         {/* Dim non-perimeter tiles during forest placement */}
         {dimDisallowed ? (
@@ -2591,6 +2599,15 @@ function IsoTile({
             shapeRendering="crispEdges"
           />
         ) : null}
+        {highlightAllowed && hovered ? (
+          <polygon
+            points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`}
+            fill="none"
+            stroke={isDay ? "rgba(16,185,129,0.95)" : "rgba(16,185,129,1)"}
+            strokeWidth={2}
+            shapeRendering="crispEdges"
+          />
+        ) : null}
       </svg>
       <div style={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%,-50%)", pointerEvents: "none", willChange: "transform" }}>
         {isHome ? (
@@ -2603,8 +2620,30 @@ function IsoTile({
           </span>
         ) : null}
       </div>
-      {/* keyframes pulse */}
-      <style>{`@keyframes pulse{0%{opacity:.35}50%{opacity:.55}100%{opacity:.35}}`}</style>
+      {/* Leaf burst when a forest is placed */}
+      {isNewlyPlaced && tile.entity?.type === 'forest' ? (
+        <div
+          style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            transform: "translate(-50%,-50%)",
+            pointerEvents: "none",
+          }}
+        >
+          <span style={{ position: 'absolute', left: -2, top: -8, animation: 'leaf-burst-1 500ms ease-out forwards' }}>🍃</span>
+          <span style={{ position: 'absolute', left: 6, top: -6, animation: 'leaf-burst-2 520ms ease-out forwards' }}>🌿</span>
+          <span style={{ position: 'absolute', left: 0, top: 0, animation: 'leaf-burst-3 540ms ease-out forwards' }}>🍃</span>
+        </div>
+      ) : null}
+
+      {/* keyframes */}
+      <style>{`
+        @keyframes pulse{0%{opacity:.35}50%{opacity:.55}100%{opacity:.35}}
+        @keyframes leaf-burst-1{0%{transform:translate(0,0) rotate(0deg);opacity:1}100%{transform:translate(-10px,-14px) rotate(-18deg);opacity:0}}
+        @keyframes leaf-burst-2{0%{transform:translate(0,0) rotate(0deg);opacity:1}100%{transform:translate(12px,-12px) rotate(22deg);opacity:0}}
+        @keyframes leaf-burst-3{0%{transform:translate(0,0) rotate(0deg);opacity:1}100%{transform:translate(0,10px) rotate(12deg);opacity:0}}
+      `}</style>
     </button>
   );
 }
