@@ -1910,9 +1910,6 @@ export default function ViessmannGame() {
           {/* Animacje pogodowe przeniesione do IsoGrid */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
             <h2 className="font-bold font-sans text-lg text-neutral-900">Dom i otoczenie</h2>
-            <div className="font-medium text-xs text-neutral-600 font-sans">
-              {rateText("sun")} ☀️ / {rateText("wind")} 🌬️ / {rateText("water")} 💧 / {rateText("coins")} 💰
-            </div>
           </div>
           <IsoGrid
             tiles={tiles}
