@@ -1947,12 +1947,7 @@ export default function ViessmannGame() {
           {/* Economy panel */}
           {(() => {
             // derive next device cost and time-to-afford estimates
-            const home = tiles.find(t => t.isHome);
-            const currentKey = home?.entity && houseUpgradeKeys.includes(home.entity.type as EntityType)
-              ? (home.entity.type as EntityType) : undefined;
-            const currentIdx = currentKey ? houseUpgradeKeys.indexOf(currentKey) : -1;
-            const nextDevice = currentIdx >= -1 ? deviceItems.find(it => houseUpgradeKeys.indexOf(it.key) === currentIdx + 1) : undefined;
-            const nextDeviceCost = nextDevice ? dynamicCost(nextDevice) : undefined;
+            // next-device timing removed per request
             const forestCost = dynamicCost(itemByKey.forest);
             const tta = (cost: Cost | undefined, k: ResKey): string | null => {
               if (!cost) return null;
@@ -1977,44 +1972,66 @@ export default function ViessmannGame() {
               return parts.join(' · ');
             };
             const wrapStyle: React.CSSProperties = { marginTop: 12, borderTop: isDay ? '1px solid #e5e7eb' : '1px solid #334155', paddingTop: 10 };
-            const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 8, alignItems: 'center' };
-            const cap: React.CSSProperties = { fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' };
-            const val: React.CSSProperties = { fontSize: 13, fontWeight: 700 };
+            // Row grid: left block (label + rate under) and right multipliers; keep panel right-aligned
+            const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 10, alignItems: 'center' };
+            const cap: React.CSSProperties = { fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', textAlign: 'right' };
+            const leftBlock: React.CSSProperties = { display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'left' };
+            const leftTop: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6 };
+            const rateUnder: React.CSSProperties = { fontSize: 12, color: isDay ? '#334155' : '#CBD5E1' };
             return (
               <div style={wrapStyle}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <div className="font-semibold font-sans" style={{ fontSize: 14 }}>Ekonomia</div>
-                  <button onClick={() => setEcoOpen(o => !o)}
-                    style={{ fontSize: 12, border: '1px solid #e5e7eb', background: isDay ? '#f8fafc' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 8, padding: '2px 8px', cursor: 'pointer' }}>
-                    {ecoOpen ? 'Zwiń' : 'Pokaż'}
-                  </button>
-                </div>
-                {ecoOpen && (
+                <div style={{ maxWidth: 720, marginLeft: 'auto', textAlign: 'right' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginBottom: 8, gap: 12 }}>
+                    <div className="font-semibold font-sans" style={{ fontSize: 15 }}>Ekonomia</div>
+                    <button onClick={() => setEcoOpen(o => !o)}
+                      style={{ fontSize: 13, fontWeight: 700, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#f1f5f9' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 10, padding: '4px 12px', cursor: 'pointer' }}>
+                      {ecoOpen ? 'Zwiń' : 'Pokaż'}
+                    </button>
+                  </div>
+                  {ecoOpen && (
                   <>
-                    <div style={{ display: 'grid', gap: 6 }}>
-                      <div style={row}><span>☀️ Słońce</span><span style={cap}>{multLine('sun')}</span><span style={val}>+{fmt(effectiveRates.sun)}/s</span></div>
-                      <div style={row}><span>💧 Woda</span><span style={cap}>{multLine('water')}</span><span style={val}>+{fmt(effectiveRates.water)}/s</span></div>
-                      <div style={row}><span>🌬️ Wiatr</span><span style={cap}>{multLine('wind')}</span><span style={val}>+{fmt(effectiveRates.wind)}/s</span></div>
-                      <div style={row}><span>💰 ViCoins</span><span style={cap}>{multLine('coins')}</span><span style={val}>+{fmt(effectiveRates.coins)}/s</span></div>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      <div style={row}>
+                        <div style={leftBlock}>
+                          <div style={leftTop}><span>☀️</span><span>Słońce</span></div>
+                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.sun)}/s</div>
+                        </div>
+                        <span style={cap}>{multLine('sun')}</span>
+                      </div>
+                      <div style={row}>
+                        <div style={leftBlock}>
+                          <div style={leftTop}><span>💧</span><span>Woda</span></div>
+                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.water)}/s</div>
+                        </div>
+                        <span style={cap}>{multLine('water')}</span>
+                      </div>
+                      <div style={row}>
+                        <div style={leftBlock}>
+                          <div style={leftTop}><span>🌬️</span><span>Wiatr</span></div>
+                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.wind)}/s</div>
+                        </div>
+                        <span style={cap}>{multLine('wind')}</span>
+                      </div>
+                      <div style={row}>
+                        <div style={leftBlock}>
+                          <div style={leftTop}><span>💰</span><span>ViCoins</span></div>
+                          <div className="font-sans tabular-nums" style={rateUnder}>+{fmt(effectiveRates.coins)}/s</div>
+                        </div>
+                        <span style={cap}>{multLine('coins')}</span>
+                      </div>
                     </div>
                     <div style={{ marginTop: 10, display: 'grid', gap: 6 }}>
                       <div style={row}>
-                        <span>⏳ Do następnego etapu domu</span>
-                        <span style={cap}>{nextDevice ? nextDevice.name : '—'}</span>
-                        <span style={val}>
-                          {['sun','water','wind'].map(k => tta(nextDeviceCost, k as ResKey)).filter(Boolean).join(' / ') || '—'}
-                        </span>
-                      </div>
-                      <div style={row}>
                         <span>🌲 Do kolejnego lasu</span>
                         <span style={cap}>{forestCost.sun ?? 0} ☀️ + {forestCost.water ?? 0} 💧</span>
-                        <span style={val}>
+                        <span style={{ fontSize: 13, fontWeight: 800 }}>
                           {['sun','water'].map(k => tta(forestCost, k as ResKey)).filter(Boolean).join(' / ') || '—'}
                         </span>
                       </div>
                     </div>
                   </>
-                )}
+                  )}
+                </div>
               </div>
             );
           })()}
