@@ -2506,9 +2506,17 @@ function IsoGrid({
               ? `${hoverInfo.placeable ? 'Postaw: ' : 'Nie można tutaj: '}${pendingItem.name}`
               : 'Pusty kafelek';
             return (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 14 }}>{icon}</span>
-                <span className="font-medium font-sans">{text}</span>
+              <span style={{ display: 'inline-flex', flexDirection: 'column' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 14 }}>{icon}</span>
+                  <span className="font-medium font-sans">{text}</span>
+                </span>
+                {pendingItem ? (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, color: isDay ? '#64748b' : '#94a3b8' }}>
+                    <span style={{ fontSize: 12 }}>⎋</span>
+                    <span className="font-sans">Esc: anuluj</span>
+                  </span>
+                ) : null}
               </span>
             );
           })()}
