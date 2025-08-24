@@ -2446,9 +2446,12 @@ function IsoGrid({
         const left = (t.x - t.y) * (tileW / 2) + baseX;
         const top = (t.x + t.y) * (tileH / 2) + baseY;
         const placeable = isPlaceable ? isPlaceable(t) : true;
-        const isForestPending = pendingItem?.key === 'forest';
-        const onPerimeter = t.x === 0 || t.y === 0 || t.x === size - 1 || t.y === size - 1;
-        const highlightAllowed = !!pendingItem && isForestPending && onPerimeter && !t.entity;
+  const isForestPending = pendingItem?.key === 'forest';
+  const onPerimeter = t.x === 0 || t.y === 0 || t.x === size - 1 || t.y === size - 1;
+  // Allowed = only empty perimeter tiles while planting forest
+  const highlightAllowed = !!pendingItem && isForestPending && onPerimeter && !t.entity;
+  // Dim non-perimeter area while forest is pending (visual guidance)
+  const dimNonPerimeter = !!pendingItem && isForestPending && !onPerimeter;
         return (
           <IsoTile
             key={t.id}
@@ -2467,6 +2470,8 @@ function IsoGrid({
             placeable={placeable}
             isNewlyPlaced={lastPlacedKey === t.id}
             highlightAllowed={highlightAllowed}
+            dimDisallowed={dimNonPerimeter}
+            isDay={isDay}
           />
         );
       })}
@@ -2514,7 +2519,7 @@ function IsoGrid({
 }
 
 function IsoTile({
-  tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced, onHoverChange, highlightAllowed,
+  tile, onClick, isHome, pendingItem, left, top, w, h, placeable, isNewlyPlaced, onHoverChange, highlightAllowed, dimDisallowed, isDay,
 }: {
   tile: { id: string; entity?: { type: string; icon: string; label: string } | null };
   onClick: () => void;
@@ -2525,6 +2530,8 @@ function IsoTile({
   isNewlyPlaced: boolean;
   onHoverChange?: (hovered: boolean) => void;
   highlightAllowed?: boolean;
+  dimDisallowed?: boolean;
+  isDay?: boolean;
 }) {
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
@@ -2545,6 +2552,8 @@ function IsoTile({
   const downFill = placeable ? "#BAE6FD" : "#FECDD3";
   const baseStroke = pendingItem ? (placeable ? 'rgba(59,130,246,0.35)' : 'rgba(0,0,0,0.12)') : 'rgba(0,0,0,0.15)';
   const stroke = hovered ? (placeable ? "#38BDF8" : "#FB7185") : baseStroke;
+  // Subtle dimming for disallowed area when guiding forest placement
+  const dimOverlay = dimDisallowed ? (isDay ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.06)') : 'transparent';
   const fill = pressed ? downFill : hovered ? hoverFill : baseFill;
 
   return (
@@ -2564,11 +2573,20 @@ function IsoTile({
     >
       <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.1))", pointerEvents: "none" }}>
         <polygon points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`} fill={fill} stroke={stroke} strokeWidth={1} shapeRendering="crispEdges" />
+        {/* Dim non-perimeter tiles during forest placement */}
+        {dimDisallowed ? (
+          <polygon
+            points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`}
+            fill={dimOverlay}
+            stroke="transparent"
+            shapeRendering="crispEdges"
+          />
+        ) : null}
         {highlightAllowed ? (
           <polygon
             points={`${w / 2},0 ${w},${h / 2} ${w / 2},${h} 0,${h / 2}`}
-            fill="rgba(16,185,129,0.18)"
-            stroke="rgba(16,185,129,0.5)"
+            fill={isDay ? "rgba(16,185,129,0.18)" : "rgba(16,185,129,0.22)"}
+            stroke={isDay ? "rgba(16,185,129,0.5)" : "rgba(16,185,129,0.6)"}
             strokeWidth={1}
             shapeRendering="crispEdges"
           />
