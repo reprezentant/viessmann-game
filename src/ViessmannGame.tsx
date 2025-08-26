@@ -1,4 +1,6 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
+import { canAfford as canAffordHelper, discountedCost as discountedCostHelper, dynamicCost as dynamicCostHelper } from './lib/economy';
+import { clamp as clampHelper, seasonPollutionFor as seasonPollutionForHelper, housePollutionFor as housePollutionForHelper } from './lib/pollution';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -23,7 +25,8 @@ type EntityType =
   | "grid"
   | "solar"
   | "echarger"
-  | "vitovalor2014";
+  | "vitovalor2014"
+  | "lab"; // Laboratorium R&D – powtarzalny budynek podnoszący produkcję
 // --- Typy pomocnicze (przeniesione z poprzednich wersji) ---
 type Tile = { id: string; x: number; y: number; entity?: EntityInstance | null; isHome?: boolean };
 type EntityInstance = { type: EntityType; label: string; icon: string };
@@ -68,6 +71,7 @@ const entityKeys: EntityType[] = [
   "solar",
   "echarger",
   "vitovalor2014",
+  "lab",
 ];
 
 const makeOwnedInit = (): Record<EntityType, number> => {
@@ -95,12 +99,23 @@ const productionItems: ShopItem[] = [
   { key: "collector1972", name: "Pierwszy kolektor słoneczny (1972)", description: "Więcej ☀️, mniej zanieczyszczeń, krótszy Mróz.", icon: "☀️", cost: { sun: 25, water: 10 }, requires: ["stainless1972"] },
   { key: "inoxRadial", name: "Technologia kondensacyjna (Inox‑Radial)", description: "Zmniejsza generowanie zanieczyszczeń.", icon: "🧰", cost: { sun: 20, water: 10, wind: 10 }, requires: ["vitodens1989"] },
   { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort. Skraca czas trwania Mrozu.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["vitodens1989"] },
-  { key: "thermostat", name: "Termostaty SRC", description: "Inteligentna regulacja – więcej zasobów.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["vitodens1989"] },
+  { key: "thermostat", name: "Termostaty SRC", description: "Inteligentna regulacja – więcej zasobów.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["vitodens1989"], onPurchaseEffects: (ctx) => {
+    // Subtle boost to passive generation as a benefit of smart control
+    ctx.addRate('sun', 0.05);
+    ctx.addRate('water', 0.05);
+    ctx.addRate('wind', 0.05);
+  } },
   { key: "solar", name: "Fotowoltaika (Vitovolt)", description: "Więcej ☀️.", icon: "🔆", cost: { sun: 20, wind: 10 }, requires: ["heatpump"] },
   { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Lepsza monetyzacja – więcej 💰.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
   { key: "grid", name: "Grid", description: "Wymiana energii – więcej 💰.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["heatpump"] },
   { key: "vitovalor2014", name: "Vitovalor (2014)", description: "Ogniwo paliwowe – silnie redukuje zanieczyszczenie.", icon: "🧫", cost: { sun: 35, water: 20, wind: 20 }, requires: ["heatpump"] },
   { key: "echarger", name: "E-Charger", description: "+5 💰/min.", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
+  { key: "lab", name: "Laboratorium R&D", description: "Trwale zwiększa produkcję zasobów (+0.02 ☀️/💧/🌬️, +0.01 💰). Tylko jedno – ale bardzo drogie.", icon: "🧪", cost: { coins: 500 }, onPurchaseEffects: (ctx) => {
+    ctx.addRate('sun', 0.02);
+    ctx.addRate('water', 0.02);
+    ctx.addRate('wind', 0.02);
+    ctx.addRate('coins', 0.01);
+  } },
 ];
 
 // --- Helper index for entity metadata ---
@@ -276,18 +291,13 @@ export default function ViessmannGame() {
   // Zanieczyszczenie
   const [pollution, setPollution] = useState(0);
   const [pollutionRate, setPollutionRate] = useState(0);
-  const clamp = (n: number, min = 0, max = 100) => Math.max(min, Math.min(max, n));
+  const clamp = clampHelper;
   const addPollutionRate = (d: number) => setPollutionRate((p) => Math.max(-2, p + d));
+  // Helper aliases (must be declared before effects that depend on them)
+  const seasonPollutionFor = seasonPollutionForHelper as (t: SeasonType) => number;
+  const housePollutionFor = housePollutionForHelper as (k: EntityType | null | undefined) => number;
   // Sezonowy wkład do pollutionRate (delta vs poprzedni sezon)
   const seasonDeltaRef = useRef(0);
-  const seasonPollutionFor = (t: SeasonType): number => {
-    switch (t) {
-      case 'spring': return -0.01;
-      case 'summer': return -0.02;
-      case 'autumn': return 0.0;
-      case 'winter': return +0.05;
-    }
-  };
   useEffect(() => {
     const next = seasonPollutionFor(season.type);
     const prev = seasonDeltaRef.current;
@@ -295,7 +305,7 @@ export default function ViessmannGame() {
       addPollutionRate(next - prev);
       seasonDeltaRef.current = next;
     }
-  }, [season.type]);
+  }, [season.type, seasonPollutionFor]);
   // Dzień/noc
   const DAY_LENGTH = 240; // s
   const DAY_FRACTION = 0.7; // 70% dzień
@@ -481,7 +491,7 @@ export default function ViessmannGame() {
   // Liczba faktycznie postawionych obiektów (z mapy), do misji i osiągnięć
   const placedCounts: Record<EntityType | 'coal', number> = useMemo(() => {
     const counts: Record<EntityType | 'coal', number> = {
-      coal: 0, pellet: 0, gas: 0, floor: 0, thermostat: 0, heatpump: 0, inverter: 0, grid: 0, solar: 0, echarger: 0, forest: 0,
+      coal: 0, pellet: 0, gas: 0, floor: 0, thermostat: 0, heatpump: 0, inverter: 0, grid: 0, solar: 0, echarger: 0, forest: 0, lab: 0,
     } as Record<EntityType | 'coal', number>;
     for (const t of tiles) {
       if (t.entity) {
@@ -498,7 +508,8 @@ export default function ViessmannGame() {
 
 
   const [shopTab, setShopTab] = useState<"devices" | "production">("devices");
-  const isSinglePurchase = (k: EntityType) => !["solar", "echarger", "forest"].includes(k);
+  // Multiple-purchase items: allow buying more than one (thermostat joins solar/echarger/forest)
+  const isSinglePurchase = (k: EntityType) => !["solar", "echarger", "forest", "thermostat"].includes(k);
 
   const [hasECharger, setHasECharger] = useState(false);
   const echargerBonusRef = useRef(0);
@@ -556,7 +567,7 @@ export default function ViessmannGame() {
           housePollutionRef.current = housePollutionFor(houseType);
       }
     } catch { /* ignore */ }
-  }, []);
+  }, [seasonPollutionFor, housePollutionFor]);
   // Persist on changes
   useEffect(() => {
     try {
@@ -625,7 +636,7 @@ export default function ViessmannGame() {
     reader.readAsText(f);
     // reset input to allow importing the same file again if needed
     e.target.value = '';
-  }, [createInitialTiles]);
+  }, [createInitialTiles, seasonPollutionFor, housePollutionFor]);
 
   // Reset game (Nowa gra)
   const resetGame = useCallback(() => {
@@ -700,6 +711,8 @@ export default function ViessmannGame() {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
   const [showLog, setShowLog] = useState(false);
+  const [showCompendium, setShowCompendium] = useState(false);
+  const [compendiumFilter, setCompendiumFilter] = useState<'all' | 'heat' | 'support'>('all');
   const [logFilter, setLogFilter] = useState<'all' | LogType>('all');
   // Weather legend fixed overlay state
   const [legendOpen, setLegendOpen] = useState(false);
@@ -880,25 +893,14 @@ export default function ViessmannGame() {
   const removeToast = (id: string) => setToasts(prev => prev.filter(t => t.id !== id));
 
   // Helpers
-  const canAfford = (c: Cost) => Object.entries(c).every(([k, v]) => (resources as Record<string, number>)[k] >= (v ?? 0));
-  const discountedCost = (cost: Cost): Cost => {
-    if (!priceDiscountPct) return cost; const out: Cost = {};
-    for (const [k, v] of Object.entries(cost)) if (typeof v === "number") out[k as ResKey] = Math.ceil(v * (1 - priceDiscountPct / 100));
-    return out;
-  };
-  // Dynamic pricing for forests: base 10/10 plus +8/+8 per owned forest
-  const dynamicCost = (item: ShopItem): Cost => {
-    // start with discounted base cost
-    const base = discountedCost(item.cost);
-    if (item.key !== 'forest') return base;
-    const count = owned.forest ?? 0;
-    const bump = 8 * count;
-    return {
-      ...base,
-      sun: (base.sun ?? 0) + bump,
-      water: (base.water ?? 0) + bump,
-    };
-  };
+  const canAfford = (c: Cost) => canAffordHelper(resources, c);
+  const discountedCost = (cost: Cost): Cost => discountedCostHelper(cost, priceDiscountPct);
+  // removed unused multiplyCost helper alias (moved to lib if needed)
+  // Dynamic pricing:
+  // - forest: base + linear bump per owned (+8 ☀️/+8 💧 each)
+  // - solar: geometric scaling +15% per owned
+  // - echarger: geometric scaling +18% per owned
+  const dynamicCost = (item: ShopItem): Cost => dynamicCostHelper(item.key, discountedCost(item.cost), owned);
   // charge is applied on placement time, so we don't pre-pay on Buy
   const modifyBaseRates = (fn: (r: Record<ResKey, number>) => Record<ResKey, number>) => setBaseRates(r => fn({ ...r }));
   const effectsCtx: EffectsContext = {
@@ -906,21 +908,7 @@ export default function ViessmannGame() {
     multiplyAll: (m) => modifyBaseRates(r => { const n = { ...r } as Record<ResKey, number>; (Object.keys(n) as ResKey[]).forEach(k => n[k] *= m); return n; }),
     discountNextPurchasesPct: (pct) => setPriceDiscountPct(p => Math.min(90, p + pct)),
   };
-  // Pollution contribution per house device
-  const housePollutionFor = (k: EntityType | null | undefined): number => {
-    switch (k) {
-      case 'coal': return 0.4;
-      case 'pellet': return 0.3;
-      case 'gas': return 0.2;
-      case 'parola1965': return 0.12;
-      case 'stainless1972': return 0.08;
-      case 'heatpump1978': return 0.06;
-      case 'vitola1978': return 0.04;
-      case 'vitodens1989': return 0.02;
-      case 'heatpump': return 0.0;
-      default: return 0.0;
-    }
-  };
+  // Pollution contribution per house device moved earlier for availability
 
   // Loop
   useEffect(() => {
@@ -936,10 +924,49 @@ export default function ViessmannGame() {
         echargerBonusRef.current += 1;
         if (echargerBonusRef.current >= 60) { echargerBonusRef.current = 0; setResources(r => ({ ...r, coins: r.coins + 5 })); }
       }
-      setPollution(p => clamp(p + pollutionRate));
+    setPollution(p => clamp(p + pollutionRate));
+
+      // Konsumpcja zasobów i koszty utrzymania (co 1s)
+      setResources(r => {
+        const n = { ...r } as Record<ResKey, number>;
+        // 1) Zapotrzebowanie bazowe domu – działa gdy jest jakiekolwiek źródło ciepła
+        const hasHeat = tiles.some(t => t.isHome && t.entity && houseUpgradeKeys.includes(t.entity.type as EntityType));
+        if (hasHeat) {
+          // sezon/pogoda modyfikuje popyt (zimą większy)
+          const seasonDemand = season.type === 'winter' ? 1.3 : season.type === 'summer' ? 0.9 : 1.0;
+          // podczas mrozu zapotrzebowanie skacze
+          const frostMult = weatherEvent.type === 'frost' ? 1.5 : 1.0;
+          const baseSun = 0.02 * seasonDemand * frostMult;
+          const baseWater = 0.015 * seasonDemand;
+          const baseWind = 0.015 * seasonDemand;
+          n.sun = Math.max(0, n.sun - baseSun);
+          n.water = Math.max(0, n.water - baseWater);
+          n.wind = Math.max(0, n.wind - baseWind);
+        }
+
+        // 2) Utrzymanie posiadanych urządzeń (coin sink) – rośnie z liczbą sztuk
+        const upkeepPer: Partial<Record<EntityType, number>> = {
+          forest: 0.02, // pielęgnacja
+          solar: 0.03,  // serwis
+          inverter: 0.02,
+          grid: 0.01,
+          thermostat: 0.005,
+          echarger: 0.02,
+          lab: 0.05, // drogie utrzymanie, ale daje stały boost
+        };
+        let upkeep = 0;
+        for (const [k, v] of Object.entries(upkeepPer)) {
+          const count = placedCounts[k as EntityType] ?? 0;
+          upkeep += (v ?? 0) * count;
+        }
+        // Eco‑podatek w zależności od smogu (zachęta do budowy lasów i czystych źródeł)
+        const ecoTax = pollution > 40 ? (pollution - 40) * 0.002 : 0; // do +0.12/s przy 100 smogu
+        n.coins = Math.max(0, n.coins - upkeep - ecoTax);
+        return n;
+      });
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [effectiveRates, hasECharger, pollutionRate]);
+  }, [effectiveRates, hasECharger, pollutionRate, clamp, tiles, placedCounts, season.type, weatherEvent.type, pollution]);
 
   // Widoki list
   const visibleDevices = useMemo(() => {
@@ -956,7 +983,27 @@ export default function ViessmannGame() {
     });
   }, [tiles]);
 
-  const visibleProduction = useMemo(() => productionItems.filter(it => !it.requires || it.requires.every(k => owned[k] > 0)), [owned]);
+  const visibleProduction = useMemo(() => {
+    // Determine current house stage key and index
+    const home = tiles.find(t => t.isHome);
+    const currentKey = home?.entity && houseUpgradeKeys.includes(home.entity.type as EntityType)
+      ? (home.entity.type as EntityType)
+      : undefined;
+    const currentIdx = currentKey ? houseUpgradeKeys.indexOf(currentKey) : -1;
+    return productionItems.filter(it => {
+      if (!it.requires || it.requires.length === 0) return true;
+      return it.requires.every((req) => {
+        // If requirement is a house-stage key, allow when current stage >= required stage
+        if (houseUpgradeKeys.includes(req as EntityType)) {
+          if (currentIdx < 0) return false;
+          const reqIdx = houseUpgradeKeys.indexOf(req as EntityType);
+          return currentIdx >= reqIdx;
+        }
+        // Fallback for non-house requirements (if ever added): use owned flag
+        return (owned[req as EntityType] ?? 0) > 0;
+      });
+    });
+  }, [tiles, owned]);
 
   // Zakup
   const handleBuy = (item: ShopItem) => {
@@ -1097,7 +1144,7 @@ export default function ViessmannGame() {
   const houseName = (hk ? nameMap[hk] : undefined) || '—';
     const fmtSign = (n: number) => `${n >= 0 ? '+' : ''}${fmt(n)}/s`;
     return `Dom (${houseName}): ${fmtSign(house)}\nLasy (${forests}): ${fmtSign(forest)}\nŁącznie: ${fmtSign(total)}`;
-  }, [tiles, pollutionRate]);
+  }, [tiles, pollutionRate, housePollutionFor]);
 
   // Tooltip for season pill
   const seasonTooltip = useMemo(() => {
@@ -1321,23 +1368,6 @@ export default function ViessmannGame() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>
                 <span>ViCoins</span>
-                {ecoBonusMultiplier > 1 && (
-                  <span
-                    title={`Bonus czystego powietrza +${Math.round((ecoBonusMultiplier - 1) * 100)}%`}
-                    aria-label={`Bonus czystego powietrza +${Math.round((ecoBonusMultiplier - 1) * 100)}%`}
-                    style={{
-                      fontWeight: 800,
-                      fontSize: 11,
-                      borderRadius: 999,
-                      padding: '1px 6px',
-                      background: isDay ? 'rgba(16,185,129,0.12)' : 'rgba(16,185,129,0.2)',
-                      color: isDay ? '#059669' : '#34d399',
-                      lineHeight: 1.6
-                    }}
-                  >
-                    +{Math.round((ecoBonusMultiplier - 1) * 100)}% 💰
-                  </span>
-                )}
               </div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FDE68A" }}>{fmt(resources.coins)}</div>
               <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('coins')}</div>
@@ -1364,7 +1394,9 @@ export default function ViessmannGame() {
               {weatherEvent.type === "none" && "🌤️"}
             </span>
             <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontWeight: 700, fontSize: 12, color: isDay ? "#0ea5e9" : "#bae6fd" }}>
+              {/* Label to vertically align with other pills */}
+              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Pogoda</div>
+              <div style={{ fontWeight: 700, fontSize: 12, color: isDay ? "#0ea5e9" : "#bae6fd", marginTop: 2 }}>
                 {weatherEvent.type === "clouds" && "Chmury"}
                 {weatherEvent.type === "sunny" && "Słońce"}
                 {weatherEvent.type === "rain" && "Deszcz"}
@@ -1373,7 +1405,7 @@ export default function ViessmannGame() {
                 {weatherEvent.type === "frost" && "Mróz"}
                 {weatherEvent.type === "none" && "Brak wydarzenia"}
               </div>
-              <div style={{ fontSize: 13, color: isDay ? "#334155" : "#e0f2fe", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div style={{ fontSize: 13, color: isDay ? "#334155" : "#e0f2fe", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
                 {weatherEvent.type === "clouds" && "Brak produkcji ☀️"}
                 {weatherEvent.type === "sunny" && "x2 produkcja ☀️"}
                 {weatherEvent.type === "rain" && "x2 produkcja 💧"}
@@ -1428,20 +1460,22 @@ export default function ViessmannGame() {
             <div>
               <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Zanieczyszczenie</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FCA5A5" }}>{Math.round(pollution)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: pollutionRate < 0 ? '#059669' : '#ef4444' }}>
-                {pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                <span style={{ color: pollutionRate < 0 ? '#059669' : '#ef4444' }}>
+                  {pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s
+                </span>
+                {smogMultiplier < 1 && (
+                  <span style={{ color: isDay ? '#64748b' : '#94a3b8' }}>
+                    Produkcja −{Math.round((1 - smogMultiplier) * 100)}%
+                  </span>
+                )}
               </div>
-              {smogMultiplier < 1 && (
-                <div style={{ fontSize: 11, marginTop: 2, color: isDay ? '#64748b' : '#94a3b8' }}>
-                  Produkcja −{Math.round((1 - smogMultiplier) * 100)}%
-                </div>
-              )}
             </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }} className="text-base font-medium font-sans">
           <span className="font-medium font-sans">{isDay ? "☀️ Dzień" : "🌙 Noc"}</span>
-          <div style={{ width: 120, height: 4, borderRadius: 4, background: "#e5e7eb", overflow: "hidden" }}>
+          <div style={{ width: 80, height: 8, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${phasePct}%`, background: "#111" }} />
           </div>
         </div>
@@ -1606,6 +1640,37 @@ export default function ViessmannGame() {
                 {hasNewLog && (
                   <span aria-label="nowe" title="Nowe" style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
                 )}
+              </div>
+
+              {/* Kompendium wiedzy */}
+              <div
+                style={{ 
+                  padding: "12px 16px", 
+                  cursor: "pointer",
+                  fontSize: 14,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  color: isDay ? '#0f172a' : '#e5e7eb'
+                }}
+                onClick={() => { 
+                  setShowCompendium(true);
+                  setShowProfileMenu(false);
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setShowCompendium(true);
+                    setShowProfileMenu(false);
+                  }
+                }}
+                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+              >
+                <span>📚</span>
+                <span>Kompedium wiedzy</span>
               </div>
               
 
@@ -1854,6 +1919,8 @@ export default function ViessmannGame() {
               const afford = !done && canAfford(cost);
               const isPending = pendingPlacement?.key === item.key;
               const isForest = item.key === 'forest';
+              const isSolar = item.key === 'solar';
+              const isECharger = item.key === 'echarger';
               const forestOwned = owned.forest ?? 0;
               const missingParts: string[] = [];
               if (!done) {
@@ -1924,6 +1991,22 @@ export default function ViessmannGame() {
                           style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
                         >
                           Cena rośnie: +8 ☀️ +8 💧 za każdy posiadany las{forestOwned > 0 ? ` (masz ${forestOwned})` : ''}.
+                        </div>
+                      )}
+                      {isSolar && (
+                        <div
+                          title="Każdy kolejny panel PV drożeje geometrycznie (+15% od bazowej ceny za każdą posiadaną sztukę)."
+                          style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
+                        >
+                          Cena rośnie: ~+15% względem bazowej za każdy posiadany panel.
+                        </div>
+                      )}
+                      {isECharger && (
+                        <div
+                          title="Każdy kolejny E‑Charger drożeje geometrycznie (+18% od bazowej ceny za każdą posiadaną sztukę)."
+                          style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
+                        >
+                          Cena rośnie: ~+18% względem bazowej za każdy posiadany E‑Charger.
                         </div>
                       )}
                     </div>
@@ -2280,6 +2363,129 @@ export default function ViessmannGame() {
         </div>
       )}
 
+      {/* Kompendium wiedzy Popup */}
+      {showCompendium && (
+        <div
+          onClick={(e) => { if (e.currentTarget === e.target) setShowCompendium(false); }}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000
+          }}
+        >
+          <div style={{
+            background: isDay ? "white" : "#0f172a",
+            color: isDay ? "#0f172a" : "#e5e7eb",
+            borderRadius: 16,
+            padding: 24,
+            maxWidth: 900,
+            width: "min(94vw,900px)",
+            maxHeight: "80vh",
+            overflow: "auto",
+            margin: 20,
+            boxShadow: isDay ? "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" : "0 20px 40px rgba(0,0,0,0.5)",
+            border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>📚 Kompendium wiedzy</h2>
+              <button 
+                onClick={() => setShowCompendium(false)}
+                style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: 4, color: isDay ? '#666' : '#94a3b8' }}
+                aria-label="Zamknij"
+              >✕</button>
+            </div>
+
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+              {([
+                { k: 'all', label: 'Wszystko' },
+                { k: 'heat', label: 'Urządzenia grzewcze' },
+                { k: 'support', label: 'Urządzenia wspierające' },
+              ] as Array<{ k: 'all' | 'heat' | 'support'; label: string }>).map(btn => (
+                <button key={btn.k}
+                  onClick={() => setCompendiumFilter(btn.k)}
+                  style={{
+                    background: compendiumFilter === btn.k ? (isDay ? '#0f172a' : '#334155') : (isDay ? '#f1f5f9' : '#1f2937'),
+                    color: compendiumFilter === btn.k ? (isDay ? '#ffffff' : '#e5e7eb') : (isDay ? '#334155' : '#94a3b8'),
+                    border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
+                    borderRadius: 999, padding: '6px 10px', cursor: 'pointer', fontSize: 12
+                  }}
+                >{btn.label}</button>
+              ))}
+            </div>
+
+            {/* Content */}
+            {(() => {
+              const sectionTitle = (text: string) => (
+                <h3 style={{ margin: '12px 0 8px', fontSize: 18, fontWeight: 700, color: isDay ? '#0f172a' : '#e5e7eb' }}>{text}</h3>
+              );
+              const Card = ({ icon, title, desc }: { icon?: string; title: string; desc: string }) => (
+                <div style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
+                  <div style={{ fontSize: 22 }}>{icon ?? '•'}</div>
+                  <div>
+                    <div style={{ fontWeight: 700 }}>{title}</div>
+                    <div style={{ fontSize: 14, color: isDay ? '#475569' : '#94a3b8' }}>{desc}</div>
+                  </div>
+                </div>
+              );
+
+              const heatItems = [
+                { icon: '🔥', title: 'Kocioł tradycyjny żeliwny', desc: 'Duże zanieczyszczenie środowiska, wysoka wydajność.' },
+                { icon: '🧰', title: 'Stalowy kocioł grzewczy (1917–1928)', desc: 'Kotły ze spawanych rur stalowych – trwalsze, szybciej się nagrzewają i zużywają mniej paliwa niż tradycyjne.' },
+                { icon: '♨️', title: 'Kocioł Triola (1957)', desc: 'Stalowy piec z wbudowanym podgrzewaczem wody; łatwa konwersja z koksu na olej opałowy.' },
+                { icon: '🛢️', title: 'Kocioł na olej Parola (1965)', desc: 'Niskie emisje zanieczyszczeń i wysoka sprawność.' },
+                { icon: '🧪', title: 'Pierwszy kocioł ze stali nierdzewnej (1972)', desc: 'Lżejszy i wydajniejszy. Lepsza wymiana ciepła, mniej osadów, łatwiejsze czyszczenie. Prekursor kotłów kondensacyjnych.' },
+                { icon: '🌀', title: 'Pierwsza pompa ciepła (1978)', desc: 'Wykorzystuje energię z otoczenia (powietrza, gruntu) do celów grzewczych.' },
+                { icon: '🌡️', title: 'Kocioł niskotemperaturowy Vitola (1978)', desc: 'Biferral z podwójną stalowo‑żeliwną powierzchnią. Praca przy ~40°C zamiast ~70°C – dopasowanie do zapotrzebowania.' },
+                { icon: '🔥💧', title: 'Kocioł gazowy Vitodens (1989)', desc: 'Kondensacja pary wodnej ze spalin – wyższa sprawność i niższe emisje niż w tradycyjnych urządzeniach.' },
+                { icon: '🔋', title: 'Pompa ciepła (Vitocal)', desc: 'Wysoka efektywność i OZE. W grze odblokowuje zielone instalacje.' },
+              ];
+
+              const supportItems = [
+                { icon: '🌲', title: 'Las', desc: 'Silnie redukuje zanieczyszczenie (−0.5/s). Każdy kolejny jest droższy.' },
+                { icon: '☀️', title: 'Pierwszy kolektor słoneczny (1972)', desc: 'Wykorzystanie energii odnawialnej ze słońca, redukując zużycie oleju czy gazu.' },
+                { icon: '🧰', title: 'Technologia kondensacyjna (Inox‑Radial)', desc: 'Odblokowuje generację gazowych kotłów kondensacyjnych i zmniejsza emisje.' },
+                { icon: '🧱', title: 'Ogrzewanie podłogowe', desc: 'Wyższy komfort przy niższej temperaturze zasilania – lepsza efektywność. Skraca działanie mrozu.' },
+                { icon: '🌡️', title: 'Termostaty SRC', desc: 'Inteligentne sterowanie – dokładniejsza regulacja i oszczędności. Zwiększa generowanie zasobów.' },
+                { icon: '🔶', title: 'Inverter / magazyn (Vitocharge)', desc: 'Magazynowanie i zarządzanie energią. Lepsze wykorzystanie produkcji. Zwiększa generowanie ViCoinów.' },
+                { icon: '⚡', title: 'Grid', desc: 'Przyłącze do sieci elektroenergetycznej – umożliwia wymianę energii. Zwiększa generowanie ViCoinów.' },
+                { icon: '🧫', title: 'Domowe ogniwo paliwowe Vitovalor (2014)', desc: 'Z gazu ziemnego wytwarza prąd i ciepło bez tradycyjnego spalania ("zimna" reakcja utleniania wodoru).' },
+                { icon: '🧪', title: 'Laboratorium R&D', desc: 'Jednorazowa inwestycja. Bardzo drogie, ale trwale zwiększa produkcję zasobów (+0.02 ☀️/💧/🌬️, +0.01 💰). Dostępne od początku gry.' },
+              ];
+
+              return (
+                <div>
+                  {(compendiumFilter === 'all' || compendiumFilter === 'heat') && (
+                    <div>
+                      {sectionTitle('Urządzenia grzewcze dla Twojego domu')}
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {heatItems.map((it, i) => <Card key={i} icon={it.icon} title={it.title} desc={it.desc} />)}
+                      </div>
+                    </div>
+                  )}
+
+                  {(compendiumFilter === 'all' || compendiumFilter === 'support') && (
+                    <div style={{ marginTop: 16 }}>
+                      {sectionTitle('Urządzenia wspierające')}
+                      <div style={{ display: 'grid', gap: 10 }}>
+                        {supportItems.map((it, i) => <Card key={i} icon={it.icon} title={it.title} desc={it.desc} />)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        </div>
+      )}
+
       {/* Log Popup */}
   {showLog && (
         <div
@@ -2436,8 +2642,8 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
   const baseX = (size - 1) * (tileW / 2);
   const baseY = 0;
 
-  // Zoom & pan state
-  const [scale, setScale] = useState(1);
+  // Zoom & pan state (start slightly zoomed in for a larger visual map)
+  const [scale, setScale] = useState(1.35);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const panRef = useRef<{ active: boolean; sx: number; sy: number; ox: number; oy: number }>({ active: false, sx: 0, sy: 0, ox: 0, oy: 0 });
   const clamp = (n: number, a: number, b: number) => Math.max(a, Math.min(b, n));
@@ -2454,6 +2660,23 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
     const ro = new ResizeObserver(resize);
     ro.observe(el);
     return () => ro.disconnect();
+  }, []);
+
+  // Fire an initial view update so parent can render the minimap immediately
+  useEffect(() => {
+    onViewChange?.({
+      scale,
+      offset,
+      viewport,
+      contentW,
+      contentH,
+      tileW,
+      tileH,
+      baseX,
+      baseY,
+      size,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Notify parent about view changes
@@ -2508,6 +2731,17 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
     setOffset({ x: (viewport.w / 2) - left * scale, y: (viewport.h / 2) - top * scale });
   }, [tiles, homeTileId, tileW, tileH, baseX, baseY, viewport.w, viewport.h, scale]);
 
+  // Center home and enforce the preferred zoom level
+  const centerHomeZoomed = useCallback(() => {
+    const preferred = 1.35;
+    const home = tiles.find(t => t.id === homeTileId);
+    if (!home) { setScale(preferred); return; }
+    const left = (home.x - home.y) * (tileW / 2) + baseX + tileW / 2;
+    const top = (home.x + home.y) * (tileH / 2) + baseY + tileH / 2;
+    setScale(preferred);
+    setOffset({ x: (viewport.w / 2) - left * preferred, y: (viewport.h / 2) - top * preferred });
+  }, [tiles, homeTileId, tileW, tileH, baseX, baseY, viewport.w, viewport.h]);
+
   // Imperative API for parent (recentering on minimap click)
   useImperativeHandle(ref, () => ({
     centerWorld: (wx: number, wy: number) => {
@@ -2518,15 +2752,29 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
   }), [viewport.w, viewport.h, scale, centerHome]);
 
 
+  // Center map to home after first real viewport measurement
+  const didCenterRef = useRef(false);
+  useEffect(() => {
+    if (didCenterRef.current) return;
+    // Wait until ResizeObserver measured the actual container size (different from initial content size)
+    if (viewport.w === contentW && viewport.h === contentH) return;
+    try {
+      centerHome();
+      didCenterRef.current = true;
+    } catch {
+      // ignore
+    }
+  }, [centerHome, viewport.w, viewport.h, contentW, contentH]);
+
   return (
     <div
       ref={containerRef}
       onWheel={onWheel}
       onMouseDown={startPan}
-      style={{ position: "relative", width: Math.min(contentW * 1.5, window.innerWidth ? window.innerWidth * 0.95 : contentW * 1.5), height: Math.min(contentH * 1.5, (typeof window !== 'undefined' ? window.innerHeight : contentH) * 0.75), margin: "8px auto 0", overflow: 'hidden', cursor: panRef.current.active ? 'grabbing' : undefined, userSelect: panRef.current.active ? 'none' : undefined, background: 'transparent' }}
+      style={{ position: "relative", width: '100%', height: '60vh', minHeight: 360, margin: "8px auto 0", overflow: 'hidden', cursor: panRef.current.active ? 'grabbing' : undefined, userSelect: panRef.current.active ? 'none' : undefined, background: 'transparent' }}
     >
       {/* Controls overlay */}
-      <div style={{ position: 'absolute', right: 8, top: 8, zIndex: 6, display: 'flex', gap: 6 }}>
+  <div style={{ position: 'absolute', right: 8, top: 8, zIndex: 60, display: 'flex', gap: 6 }}>
         <button
           onClick={() => setScale(s => clamp(s * 0.9, 0.75, 1.5))}
           title="Pomniejsz"
@@ -2538,7 +2786,7 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
           style={{ padding: '4px 8px', borderRadius: 6, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#fff' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', cursor: 'pointer' }}
         >+</button>
         <button
-          onClick={centerHome}
+          onClick={centerHomeZoomed}
           title="Wyśrodkuj dom"
           style={{ padding: '4px 8px', borderRadius: 6, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#fff' : '#111827', color: isDay ? '#0f172a' : '#e5e7eb', cursor: 'pointer' }}
         >🎯</button>

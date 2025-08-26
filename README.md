@@ -16,6 +16,10 @@ Lekka gra przeglądarkowa pokazująca modernizację domu i OZE. Zbieraj zasoby, 
 - Sklep i progresja:
   - Urządzenia (pojedyncze zakupy): węgiel → pellet → gaz → pompa ciepła → inverter/magazyn → grid.
   - Produkcja (wiele sztuk): las, fotowoltaika, e-charger.
+  - Skalowanie kosztów:
+    - Las: każdy kolejny +8 ☀️ i +8 💧 do bazowej ceny.
+    - PV (Vitovolt): koszt rośnie geometrycznie o ~15% względem bazowej ceny za każdy posiadany panel.
+    - E‑Charger: koszt rośnie geometrycznie o ~18% względem bazowej ceny za każdą posiadaną sztukę.
   - Zasady stawiania: kocioł węglowy/pellet/gaz tylko na kafelku domu; pozostałe na wolnych kafelkach (dom musi pozostać wolny, jeśli na nim nic nie ma).
   - E-Charger: +5 💰/min (pasywny bonus).
   - Las: silna redukcja zanieczyszczenia (opis w karcie sklepu), działa stale po postawieniu.
