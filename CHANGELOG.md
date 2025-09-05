@@ -1,5 +1,21 @@
 # Changelog
 
+## 2025-09-05 — v0.5.0
+
+Gameplay & Systems
+- Eko‑reputacja (0–100) zależna od smogu i liczby lasów; bonus do ViCoins przy niskim smogu; historia eko‑rep zapisywana i pokazywana w Kompendium.
+- Relacje frakcji (Mieszkańcy, Dostawcy) z zakładką „Relacje” w Kompendium i dymkami informacyjnymi.
+- Silnik historii: wagi, cooldowny, flagi i frakcje w kontekście; nowe zdarzenia z konsekwencjami (follow‑up po porozumieniu, protest mieszkańców, krytyka prasowa, opóźnienia dostaw).
+- Zdarzenie „Paczka pomocowa” odblokowujące zasoby, gdy gracz się zacina.
+
+UI/UX
+- Pigułka Eko‑reputacji w nagłówku z podpowiedzią; dopracowane infotipy (eco/smog/relacje) spójne w dzień/noc.
+- StoryModal dostosowany do trybu dzień/noc.
+
+Dev
+- Vite dev: host ustawiony na `localhost` z HMR `localhost`; stabilny adres http://localhost:5174/.
+- Porządki w stanie localStorage (wersja zapisu v2, decyzje, flagi, frakcje).
+
 ## 2025-08-24 — v0.4.0
 
 Map UX

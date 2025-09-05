@@ -1,6 +1,6 @@
 ## Viessmann Game (React + TypeScript + Vite)
 
-Lekka gra przeglądarkowa pokazująca modernizację domu i OZE. Zbieraj zasoby, kupuj urządzenia, stawiaj budynki na izometrycznej mapie, odblokowuj osiągnięcia i śledź postęp w dzienniku. Aplikacja ma tryb dzień/noc oraz dynamiczną pogodę wpływającą na produkcję.
+Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urządzenia, stawiaj obiekty na izometrycznej mapie, rozwijaj profil i relacje. Aplikacja ma tryb dzień/noc, dynamiczną pogodę i wydarzenia fabularne z wyborami oraz konsekwencjami.
 
 ### Zasady gry (Rules)
 
@@ -26,6 +26,15 @@ Lekka gra przeglądarkowa pokazująca modernizację domu i OZE. Zbieraj zasoby, 
 - Zanieczyszczenie 🏭:
   - Węgiel podnosi, pellet i las redukują; gaz obniża w stosunku do pelletu.
   - Celem jest ekologiczna modernizacja i ograniczanie emisji.
+- Eko‑reputacja ⭐:
+  - Definicja: 0–100, liczona w locie jako 100 − smog + min(20, 5×lasy).
+  - Efekty: daje premię do ViCoins przy niskim smogu, wpływa na wydarzenia i relacje; podpowiedź dostępna po najechaniu na pigułkę w nagłówku.
+- Wydarzenia fabularne i wybory:
+  - Silnik historii dobiera zdarzenia ważone, z cooldownami i warunkami (pora roku, smog, eko‑reputacja, posiadane flagi).
+  - Występują frakcje (Relacje): Mieszkańcy (community) i Dostawcy (suppliers) – wybory zmieniają ich opinię i mogą odblokowywać/ blokować kolejne zdarzenia lub premie.
+  - Przykłady konsekwencji: follow‑up po podpisaniu porozumienia z dostawcą (dopłać teraz albo gorsze warunki), protest mieszkańców przy niskiej opinii (koszt konsultacji vs wzrost smogu), krytyka prasowa przy niskiej eko‑reputacji (chwilowy wzrost cen vs wydatek i redukcja smogu).
+- Kompendium → Relacje:
+  - Osobna zakładka z paskami opinii frakcji i dymkami informacyjnymi, z progami korzyści opisanymi kontekstowo.
 - Misje:
   - Panel „Misje” pokazuje postęp (paski) oraz nagrody.
   - Przykłady: Pierwsze kroki (postaw kocioł węglowy) → +10 ViCoins; Ekologiczny wybór (zamień węgiel na pellet) → −20 zanieczyszczenia; Zielona inwestycja (posadź las) → −30 zanieczyszczenia.
@@ -56,9 +65,13 @@ Lekka gra przeglądarkowa pokazująca modernizację domu i OZE. Zbieraj zasoby, 
 Stan gry i profil są zapisywane w localStorage:
 
 - vm_achUnlocked – mapa odblokowanych osiągnięć (timestampy)
-- vm_seen_ach, vm_seen_log – znaczniki „ostatnio widziane” (daje czerwone kropki przy nowościach)
+- vm_seen_ach, vm_seen_log – znaczniki „ostatnio widziane” (czerwone kropki)
 - vm_log – wpisy dziennika (z typami)
-- vm_save_v1 – automatyczny zapis rdzenia stanu gry (siatka kafelków, zasoby, zanieczyszczenie)
+- vm_save_v2 – automatyczny zapis rdzenia (kafelki, zasoby, zanieczyszczenie) + metadane v2
+- vm_eco_hist – historia eko‑reputacji (wykres w Kompendium)
+- vm_story_decisions – skrócony dziennik decyzji fabularnych
+- vm_story_flags – flagi fabularne (odblokowania, stany)
+- vm_factions – opinie frakcji (Relacje)
 
 Zapisy gry:
 
@@ -71,15 +84,18 @@ Zapisy gry:
 
 - Stack: React + TypeScript + Vite.
 - Kod główny: `src/ViessmannGame.tsx` (logika gry, UI, profil, dziennik, toasty, misje, pogoda).
+ - Zdarzenia i relacje: `src/lib/story.ts` (kontekst, API historii, definicje zdarzeń i progi relacji).
 
-Uruchamianie lokalne (opcjonalne):
+Uruchamianie lokalne (dev, localhost):
 
 ```
 npm install
 npm run dev
 ```
 
-Build (opcjonalne):
+Dev serwuje pod http://localhost:5174/ (konfiguracja wymusza host localhost i HMR na localhost).
+
+Build (prod):
 
 ```
 npm run build
