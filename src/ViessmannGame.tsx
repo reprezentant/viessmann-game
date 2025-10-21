@@ -34,6 +34,19 @@ type EntityType =
 type Tile = { id: string; x: number; y: number; entity?: EntityInstance | null; isHome?: boolean };
 type EntityInstance = { type: EntityType; label: string; icon: string };
 type Cost = Partial<Record<ResKey, number>>;
+type BuildTask = {
+  id: string;
+  tileId: string;
+  itemKey: EntityType;
+  label: string;
+  icon: string;
+  duration: number; // seconds
+  startedAt: number; // epoch ms
+  completesAt: number; // epoch ms
+  queuedAt: number; // epoch ms
+  cost: Cost;
+  isHouse: boolean;
+};
 type ShopItem = {
   key: EntityType;
   name: string;
@@ -543,6 +556,8 @@ export default function ViessmannGame() {
   const echargerBonusRef = useRef(0);
   // Track house device's pollution contribution to adjust cleanly on upgrades
   const housePollutionRef = useRef(0);
+  const [buildQueue, setBuildQueue] = useState<BuildTask[]>([]);
+  const [buildHistoryCount, setBuildHistoryCount] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<ShopItem | null>(null);
   const [lastPlacedKey, setLastPlacedKey] = useState<string | null>(null);
 
@@ -565,14 +580,32 @@ export default function ViessmannGame() {
     ecoRepHistory?: Array<{ t: number; v: number }>;
     storyDecisions?: Array<{ id: string; ts: number; eventId: string; eventTitle: string; choiceId: string; choiceLabel: string }>;
   };
-  const SAVE_KEY = 'vm_save_v2';
+  type BuildQueueSaveItem = {
+    id: string;
+    tileId: string;
+    itemKey: EntityType;
+    label: string;
+    icon: string;
+    duration: number;
+    startedAt: number;
+    completesAt: number;
+    queuedAt: number;
+    cost?: Cost;
+    isHouse?: boolean;
+  };
+  type SaveV3 = Omit<SaveV2, 'v'> & {
+    v: 3;
+    buildQueue?: BuildQueueSaveItem[];
+    buildHistoryCount?: number;
+  };
+  const SAVE_KEY = 'vm_save_v3';
   // Load once on mount
   useEffect(() => {
     try {
-  const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem('vm_save_v1');
+  const raw = localStorage.getItem(SAVE_KEY) || localStorage.getItem('vm_save_v2') || localStorage.getItem('vm_save_v1');
       if (!raw) return;
-  const data = JSON.parse(raw) as SaveV1 | SaveV2;
-  if (!data || (data.v !== 1 && data.v !== 2)) return;
+  const data = JSON.parse(raw) as SaveV1 | SaveV2 | SaveV3;
+  if (!data || (data.v !== 1 && data.v !== 2 && data.v !== 3)) return;
       if (data.resources) setResources(r => ({ ...r, ...data.resources }));
       if (typeof data.pollution === 'number') setPollution(data.pollution);
       if (data.season && data.season.type) {
@@ -600,7 +633,7 @@ export default function ViessmannGame() {
           housePollutionRef.current = housePollutionFor(houseType);
       }
       // v2: hydrate ecoRepHistory + storyDecisions if present
-      if ('v' in data && data.v === 2) {
+      if ('v' in data && data.v >= 2) {
         const d2 = data as SaveV2;
         if (Array.isArray(d2.ecoRepHistory)) {
           try { localStorage.setItem('vm_eco_hist', JSON.stringify(d2.ecoRepHistory.slice(-180))); } catch { /* ignore */ }
@@ -609,42 +642,85 @@ export default function ViessmannGame() {
           try { localStorage.setItem('vm_story_decisions', JSON.stringify(d2.storyDecisions.slice(0, 100))); } catch { /* ignore */ }
         }
       }
+      if ('v' in data && data.v >= 3) {
+        const d3 = data as SaveV3;
+        if (Array.isArray(d3.buildQueue) && d3.buildQueue.length > 0) {
+          const restored = d3.buildQueue.map(task => {
+            const fallback = Date.now();
+            const startedAt = typeof task.startedAt === 'number' ? task.startedAt : fallback;
+            const completesAt = typeof task.completesAt === 'number' ? task.completesAt : startedAt + (task.duration ?? 0) * 1000;
+            const queuedAt = typeof task.queuedAt === 'number' ? task.queuedAt : startedAt;
+            const normalized: BuildTask = {
+              id: task.id || `${task.itemKey}-${task.tileId}-${queuedAt}`,
+              tileId: task.tileId,
+              itemKey: task.itemKey,
+              label: task.label,
+              icon: task.icon,
+              duration: task.duration,
+              startedAt,
+              completesAt,
+              queuedAt,
+              cost: task.cost ?? {},
+              isHouse: !!task.isHouse,
+            };
+            return normalized;
+          }).filter(task => !!itemByKey[task.itemKey]);
+          if (restored.length > 0) setBuildQueue(restored);
+        }
+        if (typeof d3.buildHistoryCount === 'number' && !Number.isNaN(d3.buildHistoryCount)) {
+          setBuildHistoryCount(d3.buildHistoryCount);
+        }
+      }
     } catch { /* ignore */ }
   }, [seasonPollutionFor, housePollutionFor]);
   // Persist on changes
   useEffect(() => {
     try {
       // pull late-bound extras from localStorage to avoid referencing state before declaration
-  const extras: Pick<SaveV2, 'ecoRepHistory' | 'storyDecisions'> = {};
+  const extras: Pick<SaveV3, 'ecoRepHistory' | 'storyDecisions'> = {};
       try {
         const histRaw = localStorage.getItem('vm_eco_hist');
         const decRaw = localStorage.getItem('vm_story_decisions');
         if (histRaw) extras.ecoRepHistory = (JSON.parse(histRaw) as Array<{ t: number; v: number }>).slice(-180);
         if (decRaw) extras.storyDecisions = (JSON.parse(decRaw) as Array<{ id: string; ts: number; eventId: string; eventTitle: string; choiceId: string; choiceLabel: string }>).slice(0, 100);
       } catch { /* ignore */ }
-      const save: SaveV2 = {
-        v: 2,
+      const save: SaveV3 = {
+        v: 3,
         resources,
         pollution,
         tiles: tiles.map(t => ({ id: t.id, x: t.x, y: t.y, isHome: t.isHome, entity: t.entity?.type ?? null })),
         season: { type: season.type, remaining: season.remaining },
+        buildQueue: buildQueue.map(task => ({
+          id: task.id,
+          tileId: task.tileId,
+          itemKey: task.itemKey,
+          label: task.label,
+          icon: task.icon,
+          duration: task.duration,
+          startedAt: task.startedAt,
+          completesAt: task.completesAt,
+          queuedAt: task.queuedAt,
+          cost: task.cost,
+          isHouse: task.isHouse,
+        })),
+        buildHistoryCount,
         ...extras,
       };
       localStorage.setItem(SAVE_KEY, JSON.stringify(save));
     } catch { /* ignore */ }
-  }, [tiles, resources, pollution, season]);
+  }, [tiles, resources, pollution, season, buildQueue, buildHistoryCount]);
 
   // Export/import helpers
   const exportSave = useCallback(() => {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       // enrich with latest extras from localStorage
-      let payloadObj: SaveV2 | null = null;
+  let payloadObj: SaveV3 | null = null;
       if (raw) {
-        try { payloadObj = JSON.parse(raw) as SaveV2; } catch { payloadObj = null; }
+  try { payloadObj = JSON.parse(raw) as SaveV3; } catch { payloadObj = null; }
       }
       if (!payloadObj) {
-  const extras: Pick<SaveV2, 'ecoRepHistory' | 'storyDecisions'> = {};
+  const extras: Pick<SaveV3, 'ecoRepHistory' | 'storyDecisions'> = {};
         try {
           const histRaw = localStorage.getItem('vm_eco_hist');
           const decRaw = localStorage.getItem('vm_story_decisions');
@@ -652,11 +728,25 @@ export default function ViessmannGame() {
           if (decRaw) extras.storyDecisions = (JSON.parse(decRaw) as Array<{ id: string; ts: number; eventId: string; eventTitle: string; choiceId: string; choiceLabel: string }> ).slice(0, 100);
         } catch { /* ignore */ }
         payloadObj = {
-          v: 2,
+          v: 3,
           resources,
           pollution,
           tiles: tiles.map(t => ({ id: t.id, x: t.x, y: t.y, isHome: t.isHome, entity: t.entity?.type ?? null })),
           season: { type: season.type, remaining: season.remaining },
+          buildQueue: buildQueue.map(task => ({
+            id: task.id,
+            tileId: task.tileId,
+            itemKey: task.itemKey,
+            label: task.label,
+            icon: task.icon,
+            duration: task.duration,
+            startedAt: task.startedAt,
+            completesAt: task.completesAt,
+            queuedAt: task.queuedAt,
+            cost: task.cost,
+            isHouse: task.isHouse,
+          })),
+          buildHistoryCount,
           ...extras,
         };
       }
@@ -671,7 +761,7 @@ export default function ViessmannGame() {
       a.click();
       setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 0);
     } catch { /* ignore */ }
-  }, [tiles, resources, pollution, season]);
+  }, [tiles, resources, pollution, season, buildQueue, buildHistoryCount]);
 
   const importInputRef = useRef<HTMLInputElement | null>(null);
   const onImportFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -681,8 +771,8 @@ export default function ViessmannGame() {
     reader.onload = () => {
       try {
         const text = String(reader.result || '');
-  const data = JSON.parse(text) as SaveV1 | SaveV2;
-  if (!data || (data.v !== 1 && data.v !== 2)) return;
+  const data = JSON.parse(text) as SaveV1 | SaveV2 | SaveV3;
+  if (!data || (data.v !== 1 && data.v !== 2 && data.v !== 3)) return;
         setResources(r => ({ ...r, ...data.resources }));
         setPollution(typeof data.pollution === 'number' ? data.pollution : 0);
         if (Array.isArray(data.tiles) && data.tiles.length) {
@@ -705,7 +795,7 @@ export default function ViessmannGame() {
           setPollutionRate(Math.max(-2, base));
           housePollutionRef.current = housePollutionFor(houseType);
         }
-        if ('v' in data && data.v === 2) {
+        if ('v' in data && data.v >= 2) {
           const d2 = data as SaveV2;
           if (Array.isArray(d2.ecoRepHistory)) {
             try { localStorage.setItem('vm_eco_hist', JSON.stringify(d2.ecoRepHistory.slice(-180))); } catch { /* ignore */ }
@@ -713,6 +803,36 @@ export default function ViessmannGame() {
           if (Array.isArray(d2.storyDecisions)) {
             try { localStorage.setItem('vm_story_decisions', JSON.stringify(d2.storyDecisions.slice(0, 100))); } catch { /* ignore */ }
           }
+        }
+        if ('v' in data && data.v >= 3) {
+          const d3 = data as SaveV3;
+          const restored = Array.isArray(d3.buildQueue) ? d3.buildQueue.map(task => {
+            const fallback = Date.now();
+            const startedAt = typeof task.startedAt === 'number' ? task.startedAt : fallback;
+            const completesAt = typeof task.completesAt === 'number' ? task.completesAt : startedAt + (task.duration ?? 0) * 1000;
+            const queuedAt = typeof task.queuedAt === 'number' ? task.queuedAt : startedAt;
+            const normalized: BuildTask = {
+              id: task.id || `${task.itemKey}-${task.tileId}-${queuedAt}`,
+              tileId: task.tileId,
+              itemKey: task.itemKey,
+              label: task.label,
+              icon: task.icon,
+              duration: task.duration,
+              startedAt,
+              completesAt,
+              queuedAt,
+              cost: task.cost ?? {},
+              isHouse: !!task.isHouse,
+            };
+            return normalized;
+          }).filter(task => !!itemByKey[task.itemKey]) : [];
+          setBuildQueue(restored);
+          if (typeof d3.buildHistoryCount === 'number' && !Number.isNaN(d3.buildHistoryCount)) {
+            setBuildHistoryCount(d3.buildHistoryCount);
+          }
+        } else {
+          setBuildQueue([]);
+          setBuildHistoryCount(0);
         }
       } catch { /* ignore */ }
     };
@@ -744,6 +864,8 @@ export default function ViessmannGame() {
   housePollutionRef.current = 0;
     setPendingPlacement(null);
     setLastPlacedKey(null);
+   setBuildQueue([]);
+   setBuildHistoryCount(0);
     setLog([]);
     setLoggedMilestones({});
     setMissions(prev => prev.map(m => ({ ...m, completed: false })));
@@ -1080,7 +1202,17 @@ export default function ViessmannGame() {
   // - forest: base + linear bump per owned (+8 ☀️/+8 💧 each)
   // - solar: geometric scaling +15% per owned
   // - echarger: geometric scaling +18% per owned
-  const dynamicCost = useCallback((item: ShopItem): Cost => dynamicCostHelper(item.key, discountedCost(item.cost), owned), [discountedCost, owned]);
+  const dynamicCost = useCallback((item: ShopItem): Cost => {
+    const queued = buildQueue.reduce<Record<EntityType, number>>((acc, task) => {
+      acc[task.itemKey] = (acc[task.itemKey] ?? 0) + 1;
+      return acc;
+    }, {} as Record<EntityType, number>);
+    const effectiveOwned = { ...owned } as Record<EntityType | 'coal', number>;
+    if (queued[item.key]) {
+      effectiveOwned[item.key] = (effectiveOwned[item.key] ?? 0) + queued[item.key];
+    }
+    return dynamicCostHelper(item.key, discountedCost(item.cost), effectiveOwned);
+  }, [discountedCost, owned, buildQueue]);
   // charge is applied on placement time, so we don't pre-pay on Buy
   const modifyBaseRates = (fn: (r: Record<ResKey, number>) => Record<ResKey, number>) => setBaseRates(r => fn({ ...r }));
   const effectsCtx: EffectsContext = useMemo(() => ({
@@ -1288,12 +1420,63 @@ export default function ViessmannGame() {
   }, [tiles, owned]);
   // Shop: start placement for an item
   const handleBuy = (item: ShopItem) => {
-    if (isSinglePurchase(item.key) && (owned[item.key] ?? 0) > 0) return;
+    const alreadyQueued = buildQueue.some(task => task.itemKey === item.key);
+    if (isSinglePurchase(item.key) && ((owned[item.key] ?? 0) > 0 || alreadyQueued)) {
+      if (alreadyQueued) pushToast({ icon: '⏳', text: `${item.name} już w kolejce` });
+      return;
+    }
     const cost = dynamicCost(item);
     if (!canAfford(cost)) return;
     // Opłata i log przeniesione na moment umieszczenia na mapie
     setPendingPlacement(item);
   };
+
+  const finalizeBuild = useCallback((task: BuildTask) => {
+    const placingItem = itemByKey[task.itemKey];
+    if (!placingItem) return;
+    const instance: EntityInstance = { type: placingItem.key, label: placingItem.name, icon: placingItem.icon };
+    setTiles(ts => ts.map(t => t.id === task.tileId ? { ...t, entity: instance } : t));
+    if (task.isHouse) {
+      setOwned(o => {
+        const n: Record<EntityType | 'coal', number> = { ...(o as Record<EntityType | 'coal', number>) };
+        houseUpgradeKeys.forEach(k => { n[k] = 0; });
+        n[placingItem.key] = 1;
+        return n;
+      });
+      const prevHouse = housePollutionRef.current;
+      const nextHouse = housePollutionFor(task.itemKey);
+      if (nextHouse !== prevHouse) {
+        addPollutionRate(nextHouse - prevHouse);
+        housePollutionRef.current = nextHouse;
+      }
+      if (placingItem.key === 'pellet') {
+        setRenewablesUnlocked(true);
+        setBaseRates(r => ({
+          ...r,
+          sun: Math.max(r.sun, 0.2),
+          wind: Math.max(r.wind, 0.15),
+          water: Math.max(r.water, 0.15),
+          coins: Math.max(r.coins, 0.05)
+        }));
+        setResources(res => ({ ...res, sun: res.sun + 5, water: res.water + 5, wind: res.wind + 5 }));
+      }
+    } else {
+      setOwned(o => ({ ...o, [placingItem.key]: (o[placingItem.key] ?? 0) + 1 }));
+      if (placingItem.key === 'echarger') setHasECharger(true);
+      if (placingItem.key === 'forest') addPollutionRate(-0.5);
+      placingItem.onPurchaseEffects?.(effectsCtx);
+    }
+    const costStr = [
+      task.cost.sun ? `${task.cost.sun} ☀️` : null,
+      task.cost.water ? `${task.cost.water} 💧` : null,
+      task.cost.wind ? `${task.cost.wind} 🌬️` : null,
+      task.cost.coins ? `${task.cost.coins} 💰` : null,
+    ].filter(Boolean).join(' + ') || '—';
+    pushLog({ type: 'placement', icon: instance.icon, title: `Ukończono: ${instance.label}`, description: `Kafelek: ${task.tileId} • Koszt: ${costStr}` });
+    pushToast({ icon: '🏗️', text: `Budowa ukończona: ${placingItem.name}` });
+    setLastPlacedKey(task.tileId);
+    setBuildHistoryCount(c => c + 1);
+  }, [setTiles, housePollutionFor, addPollutionRate, setOwned, setRenewablesUnlocked, setBaseRates, setResources, setHasECharger, effectsCtx]);
 
   // Place currently pending item on a tile
   const placeOnTile = useCallback((tile: Tile) => {
@@ -1316,6 +1499,8 @@ export default function ViessmannGame() {
       if (pendingPlacement.key !== 'forest' && onPerimeter) return;
     }
 
+    if (buildQueue.some(task => task.tileId === tile.id)) return;
+
     // Before placing, re-check affordability and deduct cost now (handles ESC cancel case)
     const placingItem = pendingPlacement;
     const placeCost = dynamicCost(placingItem);
@@ -1326,54 +1511,43 @@ export default function ViessmannGame() {
       return n;
     });
 
-    const instance: EntityInstance = { type: placingItem.key, label: placingItem.name, icon: placingItem.icon };
-    // Ustaw/Podmień na kafelku
-    setTiles(ts => ts.map(t => t.id === tile.id ? { ...t, entity: instance } : t));
-
-    // Licznik posiadanych + efekty
-    if (isHouse) {
-      setOwned(o => {
-        const n: Record<EntityType | 'coal', number> = { ...(o as Record<EntityType | 'coal', number>) };
-        houseUpgradeKeys.forEach(k => { n[k] = 0; });
-        n[placingItem.key] = 1;
-        return n;
-      });
-      // Pollution: apply delta vs previous house state using helper
-      const prevHouse = housePollutionRef.current;
-      const nextHouse = housePollutionFor(pendingPlacement.key);
-      if (nextHouse !== prevHouse) {
-        addPollutionRate(nextHouse - prevHouse);
-        housePollutionRef.current = nextHouse;
+  const now = Date.now();
+  const baseDuration = houseUpgradeKeys.includes(placingItem.key) ? 45 : 60;
+  const congestion = buildHistoryCount + buildQueue.length;
+  const duration = Math.max(15, Math.round(baseDuration * (1 + Math.min(2, congestion * 0.12))));
+    const task: BuildTask = {
+      id: `${now}-${Math.random().toString(36).slice(2, 7)}`,
+      tileId: tile.id,
+      itemKey: placingItem.key,
+      label: placingItem.name,
+      icon: placingItem.icon,
+      duration,
+      startedAt: 0,
+      completesAt: 0,
+      queuedAt: now,
+      cost: placeCost,
+      isHouse,
+    };
+    setBuildQueue(prev => {
+      if (prev.length === 0) {
+        const startAt = now;
+        return [{ ...task, startedAt: startAt, completesAt: startAt + duration * 1000 }];
       }
-
-      // Additional progression effects
-      if (placingItem.key === 'pellet') {
-        setRenewablesUnlocked(true);
-        setBaseRates(r => ({
-          ...r,
-          sun: Math.max(r.sun, 0.2),
-          wind: Math.max(r.wind, 0.15),
-          water: Math.max(r.water, 0.15),
-          coins: Math.max(r.coins, 0.05)
-        }));
-        setResources(res => ({ ...res, sun: res.sun + 5, water: res.water + 5, wind: res.wind + 5 }));
-      }
-    } else {
-      setOwned(o => ({ ...o, [placingItem.key]: (o[placingItem.key] ?? 0) + 1 }));
-      if (placingItem.key === 'echarger') setHasECharger(true);
-      if (placingItem.key === 'forest') addPollutionRate(-0.5);
-      placingItem.onPurchaseEffects?.(effectsCtx);
-    }
-
-    const costStr = [
+      const last = prev[prev.length - 1];
+      const startAt = Math.max(last.completesAt, now);
+      return [...prev, { ...task, startedAt: startAt, completesAt: startAt + duration * 1000 }];
+    });
+    const startCostStr = [
       placeCost.sun ? `${placeCost.sun} ☀️` : null,
       placeCost.water ? `${placeCost.water} 💧` : null,
       placeCost.wind ? `${placeCost.wind} 🌬️` : null,
       placeCost.coins ? `${placeCost.coins} 💰` : null,
-    ].filter(Boolean).join(" + ") || "—";
-    pushLog({ type: 'placement', icon: instance.icon, title: `Ustawiono: ${instance.label}`, description: `Kafelek: ${tile.id} • Koszt: ${costStr}` });
-    setPendingPlacement(null); setLastPlacedKey(tile.id);
-  }, [pendingPlacement, dynamicCost, canAfford, setResources, setTiles, setOwned, setBaseRates, addPollutionRate, tiles, homeTileId, effectsCtx, housePollutionFor]);
+    ].filter(Boolean).join(' + ') || '—';
+    pushLog({ type: 'placement', icon: placingItem.icon, title: `Rozpoczęto budowę: ${placingItem.name}`, description: `Kafelek: ${tile.id} • Czas: ${formatShortDuration(duration)} • Koszt: ${startCostStr}` });
+    pushToast({ icon: '🏗️', text: `Budowa rozpoczęta: ${placingItem.name}` });
+    setPendingPlacement(null);
+    setLastPlacedKey(tile.id);
+  }, [pendingPlacement, dynamicCost, canAfford, setResources, tiles, homeTileId, buildQueue, buildHistoryCount]);
 
   useEffect(() => {
     if (!lastPlacedKey) return;
@@ -1388,8 +1562,47 @@ export default function ViessmannGame() {
     if (Math.abs(n) < 0.1) return n.toFixed(2);
     return n % 1 === 0 ? n.toString() : n.toFixed(1);
   };
+  const formatShortDuration = (seconds: number) => {
+    const s = Math.max(0, Math.round(seconds));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return m > 0 ? `${m}:${rem.toString().padStart(2, '0')}` : `${rem}s`;
+  };
+  const rescheduleQueue = useCallback((tasks: BuildTask[]) => {
+    if (tasks.length === 0) return tasks;
+    let cursor = Date.now();
+    return tasks.map(task => {
+      const startAt = cursor;
+      const completesAt = startAt + task.duration * 1000;
+      cursor = completesAt;
+      return { ...task, startedAt: startAt, completesAt };
+    });
+  }, []);
+
+  useEffect(() => {
+    if (buildQueue.length === 0) return;
+    const now = Date.now();
+    let completedCount = 0;
+    while (completedCount < buildQueue.length && now >= buildQueue[completedCount].completesAt) {
+      completedCount += 1;
+    }
+    if (completedCount === 0) return;
+    const finished = buildQueue.slice(0, completedCount);
+    finished.forEach(finalizeBuild);
+    const remaining = buildQueue.slice(completedCount);
+    setBuildQueue(rescheduleQueue(remaining));
+  }, [buildQueue, elapsed, finalizeBuild, rescheduleQueue]);
   const rateText = (k: ResKey) => `+${fmt(effectiveRates[k])}/s`;
   const isNearZeroRate = (k: ResKey) => Math.abs(effectiveRates[k]) < 1e-4;
+  const nowMs = Date.now();
+  const buildQueueSnapshot = buildQueue.length === 0 ? null : (() => {
+    const [current, ...rest] = buildQueue;
+    const totalMs = Math.max(1, current.duration * 1000);
+    const elapsedMs = Math.max(0, nowMs - current.startedAt);
+    const progress = Math.min(1, elapsedMs / totalMs);
+    const remainingSeconds = Math.max(0, Math.ceil((current.completesAt - nowMs) / 1000));
+    return { current, progress, remainingSeconds, rest };
+  })();
 
   // Tooltip for pollution pill: breakdown of sources and total rate
   const pollutionTooltip = useMemo(() => {
@@ -2344,6 +2557,65 @@ export default function ViessmannGame() {
       <main style={gridWrap}>
         {/* shop */}
         <section style={{ ...card, position: 'relative' }}>
+          {(() => {
+            const baseStyle = {
+              borderRadius: 12,
+              padding: 14,
+              marginBottom: 16,
+              background: isDay ? '#fff' : '#0b1220',
+              color: isDay ? '#0f172a' : '#e5e7eb',
+              border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
+              borderLeft: isDay ? '4px solid #6366f1' : '4px solid #4f46e5',
+              display: 'flex',
+              flexDirection: 'column' as const,
+              gap: 10,
+            };
+            if (!buildQueueSnapshot) {
+              return (
+                <div style={{ ...baseStyle, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 20 }}>🛠️</span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>Kolejka budowy</span>
+                    <span style={{ fontSize: 15 }}>Brak aktywnych zleceń</span>
+                  </div>
+                </div>
+              );
+            }
+            const { current, progress, remainingSeconds, rest } = buildQueueSnapshot;
+            const pct = Math.round(progress * 100);
+            return (
+              <div style={baseStyle}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 20 }}>{current.icon || '🏗️'}</span>
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>Kolejka budowy</span>
+                    <span style={{ fontSize: 15 }}>{current.label}</span>
+                  </div>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#475569' : '#94a3b8' }}>Czas: {formatShortDuration(current.duration)}</span>
+                </div>
+                <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: isDay ? '#e5e7eb' : '#1f2937' }}>
+                  <div style={{ height: '100%', width: `${pct}%`, background: '#f97316', transition: 'width 200ms linear' }} />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: isDay ? '#475569' : '#94a3b8' }}>
+                  <span>Postęp: {pct}%</span>
+                  <span>Pozostało: {formatShortDuration(remainingSeconds)}</span>
+                </div>
+                {rest.length > 0 && (
+                  <div style={{ marginTop: 4, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {rest.slice(0, 3).map(task => (
+                      <span key={task.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 999, background: isDay ? '#eef2ff' : '#312e81', color: isDay ? '#312e81' : '#c7d2fe', fontSize: 11 }}>
+                        <span>{task.icon || '🧱'}</span>
+                        <span>{task.label}</span>
+                      </span>
+                    ))}
+                    {rest.length > 3 && (
+                      <span style={{ fontSize: 11, color: isDay ? '#475569' : '#94a3b8', alignSelf: 'center' }}>+{rest.length - 3} w kolejce</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
           {/* Home device info card */}
           {(() => {
             const home = tiles.find(t => t.id === homeTileId);
@@ -2532,6 +2804,7 @@ export default function ViessmannGame() {
             onViewChange={setIsoView}
             isPlaceable={(t) => {
               if (!pendingPlacement) return false;
+              if (buildQueue.some(task => task.tileId === t.id)) return false;
               const isHouse = houseUpgradeKeys.includes(pendingPlacement.key);
               if (isHouse) {
                 if (t.id !== homeTileId) return false;
