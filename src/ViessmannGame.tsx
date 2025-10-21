@@ -482,6 +482,60 @@ export default function ViessmannGame() {
     return { progressPct, remainingSeconds, totalSeconds: phaseDuration };
   }, [elapsed, isDay]);
   const dayPhasePercent = Math.round(dayPhase.progressPct);
+  const theme = useMemo(() => {
+    if (isDay) {
+      return {
+        bodyBg: "linear-gradient(135deg,#fff3da,#fde2b9,#f7d2a1)",
+        bodyText: "#5b2d16",
+        secondaryText: "#704424",
+        mutedText: "#8f5f39",
+        headerBg: "rgba(255,243,218,0.92)",
+        headerBorder: "rgba(214,162,116,0.45)",
+        headerShadow: "0 14px 32px rgba(123,68,22,0.15)",
+        pillBg: "rgba(255,238,204,0.94)",
+        pillBorder: "rgba(214,162,116,0.4)",
+        pillShadow: "0 10px 24px rgba(145,90,25,0.12)",
+        cardBg: "rgba(255,243,218,0.88)",
+        cardBorder: "rgba(214,162,116,0.35)",
+        cardShadow: "0 18px 38px rgba(145,90,25,0.16)",
+        divider: "rgba(214,162,116,0.28)",
+        surfaceHover: "rgba(248,214,161,0.35)",
+        inputBg: "rgba(255,244,223,0.82)",
+        tone: {
+          info: "#EA580C",
+          infoSoft: "rgba(234,88,12,0.2)",
+          positive: "#2f7a3d",
+          warning: "#b45309",
+          muted: "#8f5f39"
+        }
+      } as const;
+    }
+    return {
+      bodyBg: "linear-gradient(135deg,#2f2a3d,#2a2438,#1e1a2b)",
+      bodyText: "#d6d1f2",
+      secondaryText: "#c5bdf5",
+      mutedText: "#a9a0d7",
+      headerBg: "rgba(24,20,36,0.94)",
+      headerBorder: "rgba(118,104,168,0.4)",
+      headerShadow: "0 16px 36px rgba(0,0,0,0.55)",
+      pillBg: "rgba(40,33,60,0.92)",
+      pillBorder: "rgba(118,104,168,0.45)",
+      pillShadow: "0 14px 32px rgba(0,0,0,0.45)",
+      cardBg: "rgba(28,23,44,0.92)",
+      cardBorder: "rgba(118,104,168,0.4)",
+      cardShadow: "0 20px 40px rgba(0,0,0,0.55)",
+      divider: "rgba(118,104,168,0.28)",
+      surfaceHover: "rgba(69,58,102,0.45)",
+      inputBg: "rgba(39,31,56,0.88)",
+      tone: {
+        info: "#fb923c",
+        infoSoft: "rgba(251,146,60,0.25)",
+        positive: "#6ee7a2",
+        warning: "#fbbf63",
+        muted: "#a9a0d7"
+      }
+    } as const;
+  }, [isDay]);
 
   // --- Mnożniki: dzień/noc * sezon * wydarzenie pogodowe ---
   const dayNightMultipliers: Record<ResKey, number> = useMemo(() => (
@@ -1751,7 +1805,18 @@ export default function ViessmannGame() {
   }, []);
 
   // --- styles ---
-  const pill: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, borderRadius: 14, background: "rgba(255,255,255,0.7)", padding: "6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" };
+  const pill: React.CSSProperties = {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    borderRadius: 16,
+    background: theme.pillBg,
+    padding: "6px 14px",
+    border: `1px solid ${theme.pillBorder}`,
+    boxShadow: theme.pillShadow,
+    color: theme.bodyText,
+    transition: "background 0.2s ease, transform 0.2s ease"
+  };
   const headerStyle: React.CSSProperties = {
     position: "sticky",
     top: 0,
@@ -1759,10 +1824,11 @@ export default function ViessmannGame() {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 16,
-    borderBottom: isDay ? "1px solid rgba(0,0,0,0.08)" : "1px solid #334155",
-    background: isDay ? "rgba(255,255,255,0.6)" : "rgba(30,41,59,0.98)",
-    padding: "10px 16px",
-  zIndex: 200
+    borderBottom: `1px solid ${theme.headerBorder}`,
+    background: theme.headerBg,
+    padding: "12px 18px",
+    boxShadow: theme.headerShadow,
+    zIndex: 200
   };
   const gridWrap: React.CSSProperties = { display: "grid", gridTemplateColumns: "300px 1fr 340px", gap: 16, padding: 16, width: "100vw", boxSizing: "border-box" };
 
@@ -1883,26 +1949,38 @@ export default function ViessmannGame() {
   }, [weatherEvent]);
   const card: React.CSSProperties = {
     borderRadius: 16,
-    background: isDay ? "rgba(255,255,255,0.7)" : "rgba(30,41,59,0.92)",
-    padding: 12,
-    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-    color: isDay ? undefined : "#F1F5F9"
+    background: theme.cardBg,
+    padding: 14,
+    border: `1px solid ${theme.cardBorder}`,
+    boxShadow: theme.cardShadow,
+    color: theme.bodyText
   };
-  const btn = (active: boolean): React.CSSProperties => ({ padding: "6px 12px", borderRadius: 999, fontSize: 13, border: "none", cursor: "pointer", background: active ? "#0a0a0a" : "#e5e5e5", color: active ? "#fff" : "#111" });
+  const btn = (active: boolean): React.CSSProperties => ({
+    padding: "6px 12px",
+    borderRadius: 999,
+    fontSize: 13,
+    border: active ? `1px solid ${theme.tone.info}` : `1px solid ${theme.pillBorder}`,
+    cursor: "pointer",
+    background: active ? theme.tone.info : theme.inputBg,
+    color: active ? (isDay ? "#0f172a" : "#0f172a") : theme.secondaryText,
+    boxShadow: active ? `0 0 0 3px ${theme.tone.infoSoft}` : undefined,
+    transition: "all 0.2s ease"
+  });
   const miniPillBase: React.CSSProperties = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: 8,
     borderRadius: 12,
-    background: isDay ? 'rgba(255,255,255,0.7)' : '#0f172a',
+    background: theme.pillBg,
     padding: '4px 10px',
     paddingLeft: 8,
     minWidth: 72,
-    boxShadow: isDay ? '0 1px 3px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.4)',
+    boxShadow: theme.pillShadow,
+    border: `1px solid ${theme.pillBorder}`,
     fontFamily: 'Manrope, system-ui, sans-serif',
     fontSize: 13,
     fontWeight: 600,
-    color: isDay ? '#0f172a' : '#e5e7eb',
+    color: theme.bodyText,
     cursor: 'default',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
@@ -1913,7 +1991,7 @@ export default function ViessmannGame() {
 
   // Render
   return (
-  <div className="font-sans" style={{ minHeight: "100vh", width: "100vw", maxWidth: "100vw", boxSizing: "border-box", overflowX: "hidden", background: isDay ? "linear-gradient(135deg,#FFF7ED,#FEF3C7,#FFE4E6)" : "linear-gradient(135deg,#0f172a,#111827,#312e81)", color: isDay ? "#111" : "#E5E7EB" }}>
+  <div className="font-sans" style={{ minHeight: "100vh", width: "100vw", maxWidth: "100vw", boxSizing: "border-box", overflowX: "hidden", background: theme.bodyBg, color: theme.bodyText }}>
       {/* Toast stack */}
       {toasts.length > 0 && (
         <div style={{ position: 'fixed', right: 12, top: 12, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1200, maxWidth: 'min(92vw,640px)' }}>
@@ -1938,324 +2016,316 @@ export default function ViessmannGame() {
         isDay={isDay}
       />
       {/* top bar */}
-  <header style={headerStyle}>
-  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <header style={headerStyle}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ width: 24, height: 24, borderRadius: 6, background: "#EA580C" }} />
           <span className="font-extrabold text-base font-sans">Viessmann</span>
         </div>
-  <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2 }}>
-          <div style={{
-            ...pill,
-            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px",
-            paddingLeft: 12
-          }}>
+
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2 }}>
+          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
             <span style={{ fontSize: 18 }}>☀️</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Słońce</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FBBF24" }}>{fmt(resources.sun)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('sun') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('sun')}</div>
+              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>Słońce</div>
+              <div className="font-semibold font-sans tabular-nums" style={{ color: theme.tone.info }}>{fmt(resources.sun)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('sun') ? theme.tone.muted : theme.secondaryText }}>{rateText('sun')}</div>
             </div>
           </div>
-          {/* spacer between resource pills and the rest */}
-          <div style={{
-            ...pill,
-            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px",
-            paddingLeft: 12
-          }}>
+
+          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
             <span style={{ fontSize: 18 }}>💧</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Woda</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#38BDF8" }}>{fmt(resources.water)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('water') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('water')}</div>
+              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>Woda</div>
+              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? '#0f766e' : '#38bdf8' }}>{fmt(resources.water)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('water') ? theme.tone.muted : theme.secondaryText }}>{rateText('water')}</div>
             </div>
           </div>
-          <div style={{
-            ...pill,
-            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px",
-            paddingLeft: 12
-          }}>
+
+          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
             <span style={{ fontSize: 18 }}>🌬️</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Wiatr</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#A5B4FC" }}>{fmt(resources.wind)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('wind') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('wind')}</div>
+              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>Wiatr</div>
+              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? '#1d4ed8' : '#a5b4fc' }}>{fmt(resources.wind)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('wind') ? theme.tone.muted : theme.secondaryText }}>{rateText('wind')}</div>
             </div>
           </div>
-          <div style={{
-            ...pill,
-            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px",
-            paddingLeft: 12
-          }}>
+
+          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
             <span style={{ fontSize: 18 }}>💰</span>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>
                 <span>ViCoins</span>
               </div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FDE68A" }}>{fmt(resources.coins)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('coins')}</div>
+              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? '#92400e' : '#fde68a' }}>{fmt(resources.coins)}</div>
+              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? theme.tone.muted : theme.secondaryText }}>{rateText('coins')}</div>
             </div>
           </div>
-          {/* przerwa między zasobami a Sezon/Pogoda/Smog */}
+
           <div style={{ width: 16 }} />
-          {/* Weather Event Pill - zawsze widoczny */}
-          <div style={{
-            ...pill,
-            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px",
-            paddingLeft: 12,
-            minWidth: 120,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            position: 'relative'
-          }}
-          onMouseEnter={(e) => {
-            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-            setLegendOpen(true);
-          }}
-          onMouseLeave={() => setLegendOpen(false)}
-          onFocus={(e) => {
-            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-            setLegendOpen(true);
-          }}
-          onBlur={() => setLegendOpen(false)}
-          >
-            <span style={{ fontSize: 20 }}>
-              {weatherEvent.type === "clouds" && "☁️"}
-              {weatherEvent.type === "sunny" && "🌞"}
-              {weatherEvent.type === "rain" && "🌧️"}
-              {weatherEvent.type === "wind" && "🌬️"}
-              {weatherEvent.type === "storm" && "⛈️"}
-              {weatherEvent.type === "frost" && "❄️"}
-              {weatherEvent.type === "none" && "🌤️"}
-            </span>
-            <div style={{ minWidth: 0, flex: 1 }}>
-              {/* Label to vertically align with other pills */}
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Pogoda</div>
-              <div style={{ fontWeight: 700, fontSize: 12, color: isDay ? "#0ea5e9" : "#bae6fd", marginTop: 2 }}>
-                {weatherEvent.type === "clouds" && "Chmury"}
-                {weatherEvent.type === "sunny" && "Słońce"}
-                {weatherEvent.type === "rain" && "Deszcz"}
-                {weatherEvent.type === "wind" && "Wiatr"}
-                {weatherEvent.type === "storm" && "Burza"}
-                {weatherEvent.type === "frost" && "Mróz"}
-                {weatherEvent.type === "none" && "Brak wydarzenia"}
+
+          <div style={{ display: "flex", alignItems: "stretch", gap: 12, flex: "0 0 auto" }}>
+            <div
+              style={{
+                ...pill,
+                padding: "10px 22px",
+                paddingLeft: 16,
+                minWidth: 150,
+                display: "flex",
+                alignItems: "center",
+                gap: 14,
+                position: "relative"
+              }}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setLegendOpen(true);
+              }}
+              onMouseLeave={() => setLegendOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setLegendOpen(true);
+              }}
+              onBlur={() => setLegendOpen(false)}
+            >
+              <span style={{ fontSize: 20 }}>
+                {weatherEvent.type === "clouds" && "☁️"}
+                {weatherEvent.type === "sunny" && "🌞"}
+                {weatherEvent.type === "rain" && "🌧️"}
+                {weatherEvent.type === "wind" && "🌬️"}
+                {weatherEvent.type === "storm" && "⛈️"}
+                {weatherEvent.type === "frost" && "❄️"}
+                {weatherEvent.type === "none" && "🌤️"}
+              </span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Pogoda</div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: theme.tone.info, marginTop: 2 }}>
+                  {weatherEvent.type === "clouds" && "Chmury"}
+                  {weatherEvent.type === "sunny" && "Słońce"}
+                  {weatherEvent.type === "rain" && "Deszcz"}
+                  {weatherEvent.type === "wind" && "Wiatr"}
+                  {weatherEvent.type === "storm" && "Burza"}
+                  {weatherEvent.type === "frost" && "Mróz"}
+                  {weatherEvent.type === "none" && "Brak wydarzenia"}
+                </div>
+                <div style={{ fontSize: 12, color: theme.bodyText, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {weatherEvent.type === "clouds" && "Brak produkcji ☀️"}
+                  {weatherEvent.type === "sunny" && "x2 ☀️"}
+                  {weatherEvent.type === "rain" && "x2 💧"}
+                  {weatherEvent.type === "wind" && "x2 🌬️, -50% ☀️, -30% 💧"}
+                  {weatherEvent.type === "storm" && "x3 🌬️, x1.5 💧, ☀️ = 0"}
+                  {weatherEvent.type === "frost" && "Wszystkie produkcje zatrzymane"}
+                  {weatherEvent.type === "none" && "Brak efektu"}
+                </div>
               </div>
-              <div style={{ fontSize: 13, color: isDay ? "#334155" : "#e0f2fe", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
-                {weatherEvent.type === "clouds" && "Brak produkcji ☀️"}
-                {weatherEvent.type === "sunny" && "x2 ☀️"}
-                {weatherEvent.type === "rain" && "x2 💧"}
-                {weatherEvent.type === "wind" && "x2 🌬️, -50% ☀️, -30% 💧"}
-                {weatherEvent.type === "storm" && "x3 🌬️, x1.5 💧, ☀️ = 0"}
-                {weatherEvent.type === "frost" && "Wszystkie produkcje zatrzymane"}
-                {weatherEvent.type === "none" && "Brak efektu"}
-              </div>
+              {weatherEvent.type !== "none" && (
+                <span style={{ fontSize: 12, fontWeight: 700, color: theme.tone.info, whiteSpace: 'nowrap' }}>{weatherEvent.remaining}s</span>
+              )}
             </div>
-            {weatherEvent.type !== "none" && (
-              <span style={{ fontSize: 13, fontWeight: 600, marginLeft: 8, color: isDay ? "#0ea5e9" : "#bae6fd" }}>{weatherEvent.remaining}s</span>
-            )}
-          </div>
-          <div style={{
-            ...pill,
-            background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px",
-            paddingLeft: 12
-          }}
-          onMouseEnter={(e) => {
-            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-            setPollTipOpen(true);
-          }}
-          onMouseLeave={() => setPollTipOpen(false)}
-          onFocus={(e) => {
-            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-            setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-            setPollTipOpen(true);
-          }}
-          onBlur={() => setPollTipOpen(false)}
-          >
-            <span style={{ fontSize: 18 }}>🏭</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Smog</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FCA5A5" }}>{Math.round(pollution)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                <span style={{ color: pollutionRate < 0 ? '#059669' : '#ef4444' }}>
-                  {pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s
-                </span>
-                {smogMultiplier < 1 && (
-                  <span style={{ color: isDay ? '#64748b' : '#94a3b8' }}>
-                    Produkcja −{Math.round((1 - smogMultiplier) * 100)}%
+
+            <div
+              style={{
+                ...pill,
+                padding: "10px 20px",
+                paddingLeft: 16,
+                minWidth: 140,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                position: "relative"
+              }}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setPollTipOpen(true);
+              }}
+              onMouseLeave={() => setPollTipOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setPollTipOpen(true);
+              }}
+              onBlur={() => setPollTipOpen(false)}
+            >
+              <span style={{ fontSize: 18 }}>🏭</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Smog</div>
+                <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#7c3a0c" : "#fca5a5", fontSize: 18 }}>{Math.round(pollution)}</div>
+                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 10 }}>
+                  <span style={{ color: pollutionRate >= 0 ? theme.tone.warning : theme.tone.positive }}>
+                    {pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s
                   </span>
-                )}
+                  {smogMultiplier < 1 && (
+                    <span style={{ color: theme.mutedText }}>
+                      Produkcja -{Math.round((1 - smogMultiplier) * 100)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                ...pill,
+                padding: "10px 20px",
+                paddingLeft: 16,
+                minWidth: 180,
+                maxWidth: 320,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                position: 'relative',
+                cursor: 'pointer'
+              }}
+              tabIndex={0}
+              role="button"
+              title={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : 'Kliknij, aby zobaczyć wydarzenia'}
+              onClick={() => setIsEventsCenterOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsEventsCenterOpen(true);
+                }
+              }}
+            >
+              <span style={{ fontSize: 18, flex: '0 0 auto' }}>📣</span>
+              <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Eventy</div>
+                <div style={{ fontWeight: 700, fontSize: 13, color: theme.bodyText, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  {eventsSummary.subtitle}
+                </div>
+                <div style={{ fontSize: 12, color: theme.mutedText, marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                  {eventsSummary.count === 0
+                    ? (discountSummary ? `${discountSummary.title} • ${discountSummary.subtitle}` : 'Śledzimy sytuację')
+                    : eventsSummary.detail}
+                </div>
+              </div>
+              {badgeCount > 0 && (
+                <span
+                  aria-hidden={true}
+                  style={{
+                    position: 'absolute',
+                    top: -6,
+                    right: -6,
+                    minWidth: 18,
+                    height: 18,
+                    padding: '0 6px',
+                    background: theme.tone.warning,
+                    color: '#fff',
+                    borderRadius: 999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    boxShadow: isDay ? '0 4px 12px rgba(123,68,22,0.25)' : '0 4px 12px rgba(0,0,0,0.45)'
+                  }}
+                >
+                  {badgeCount > 9 ? '9+' : badgeCount}
+                </span>
+              )}
+            </div>
+
+            <div
+              style={{
+                ...pill,
+                padding: "10px 20px",
+                paddingLeft: 16,
+                minWidth: 160,
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                position: "relative",
+                cursor: "pointer"
+              }}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setEcoTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setEcoTipOpen(true);
+              }}
+              onMouseLeave={() => setEcoTipOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setEcoTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setEcoTipOpen(true);
+              }}
+              onBlur={() => setEcoTipOpen(false)}
+              tabIndex={0}
+              title="Eko-reputacja"
+            >
+              <span style={{ fontSize: 18 }}>🌿</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Eko-reputacja</div>
+                <div className="font-semibold font-sans tabular-nums" style={{ color: theme.tone.positive, fontSize: 18 }}>{ecoRep}</div>
+                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: coinBonusPct > 0 ? theme.tone.positive : theme.mutedText }}>
+                  {coinBonusPct > 0 ? `Bonus monet +${coinBonusPct}%` : 'Brak bonusu'}
+                </div>
               </div>
             </div>
           </div>
-          {/* Eco‑Reputacja */}
-          <div
-            style={{
-              ...pill,
-              background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-              padding: "6px 24px",
-              paddingLeft: 12
-            }}
-            onMouseEnter={(e) => {
-              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              setEcoTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-              setEcoTipOpen(true);
-            }}
-            onMouseLeave={() => setEcoTipOpen(false)}
-            onFocus={(e) => {
-              const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-              setEcoTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-              setEcoTipOpen(true);
-            }}
-            onBlur={() => setEcoTipOpen(false)}
-            tabIndex={0}
-            title="Eko‑reputacja"
-          >
-            <span style={{ fontSize: 18 }}>🌿</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Eko‑reputacja</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#86efac" }}>{ecoRep}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: coinBonusPct > 0 ? (isDay ? '#166534' : '#86efac') : (isDay ? '#64748b' : '#94a3b8') }}>
-                {coinBonusPct > 0 ? `Bonus monet +${coinBonusPct}%` : 'Brak bonusu'}
-              </div>
+
+          <div style={{ width: 16 }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', minWidth: 112 }}>
+            <div
+              role="group"
+              tabIndex={0}
+              title={isDay ? 'Trwa dzień' : 'Trwa noc'}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setDayInfoOpen(true);
+              }}
+              onMouseLeave={() => setDayInfoOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setDayInfoOpen(true);
+              }}
+              onBlur={() => setDayInfoOpen(false)}
+              style={{ ...miniPillBase, paddingRight: 10 }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
+              <span>{isDay ? 'Dzień' : 'Noc'}</span>
+            </div>
+            <div
+              role="group"
+              tabIndex={0}
+              title={seasonInfoMap[season.type].name}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setSeasonInfoOpen(true);
+              }}
+              onMouseLeave={() => setSeasonInfoOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setSeasonInfoOpen(true);
+              }}
+              onBlur={() => setSeasonInfoOpen(false)}
+              style={{ ...miniPillBase, maxWidth: 220 }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
+              <span>{seasonInfoMap[season.type].name}</span>
             </div>
           </div>
         </div>
 
-          {/* Eventy pill */}
+        {/* Profile Menu */}
+        <div style={{ position: "relative" }}>
           <div
             style={{
               ...pill,
-              background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-              padding: "6px 14px",
-              paddingLeft: 12,
-              minWidth: 140,
-              maxWidth: 320,
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              flex: '0 0 auto',
-              cursor: 'pointer'
-            }}
-            tabIndex={0}
-            role="button"
-            title={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : 'Kliknij, aby zobaczyć wydarzenia'}
-            onClick={() => setIsEventsCenterOpen(true)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                setIsEventsCenterOpen(true);
-              }
-            }}
-          >
-            <span style={{ fontSize: 18, flex: '0 0 auto' }}>📣</span>
-            <div style={{ minWidth: 0, overflow: 'hidden' }}>
-              <div style={{ fontWeight: 700, fontSize: 11, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9", overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>Eventy</div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: isDay ? '#111' : '#e5e7eb', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                {eventsSummary.subtitle}
-              </div>
-              <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                {eventsSummary.count === 0
-                  ? (discountSummary ? `${discountSummary.title} • ${discountSummary.subtitle}` : 'Śledzimy sytuację')
-                  : eventsSummary.detail}
-              </div>
-            </div>
-            {badgeCount > 0 && (
-              <span
-                aria-hidden={true}
-                style={{
-                  position: 'absolute',
-                  top: -6,
-                  right: -6,
-                  minWidth: 18,
-                  height: 18,
-                  padding: '0 6px',
-                  background: '#ef4444',
-                  color: '#fff',
-                  borderRadius: 999,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  boxShadow: isDay ? '0 2px 6px rgba(0,0,0,0.12)' : '0 2px 6px rgba(0,0,0,0.4)'
-                }}
-              >
-                {badgeCount > 9 ? '9+' : badgeCount}
-              </span>
-            )}
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', minWidth: 112 }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <div
-                role="group"
-                tabIndex={0}
-                title={isDay ? 'Trwa dzień' : 'Trwa noc'}
-                onMouseEnter={(e) => {
-                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                  setDayInfoOpen(true);
-                }}
-                onMouseLeave={() => setDayInfoOpen(false)}
-                onFocus={(e) => {
-                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                  setDayInfoOpen(true);
-                }}
-                onBlur={() => setDayInfoOpen(false)}
-                style={{ ...miniPillBase, paddingRight: 10 }}
-              >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
-                <span>{isDay ? 'Dzień' : 'Noc'}</span>
-              </div>
-              <div
-                role="group"
-                tabIndex={0}
-                title={seasonInfoMap[season.type].name}
-                onMouseEnter={(e) => {
-                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                  setSeasonInfoOpen(true);
-                }}
-                onMouseLeave={() => setSeasonInfoOpen(false)}
-                onFocus={(e) => {
-                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                  setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                  setSeasonInfoOpen(true);
-                }}
-                onBlur={() => setSeasonInfoOpen(false)}
-                style={{ ...miniPillBase, maxWidth: 220 }}
-              >
-                <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
-                <span>{seasonInfoMap[season.type].name}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* duplicate Eventy block removed */}
-
-  {/* Season pill removed – season info moved to the headline ticker */}
-
-        {/* Profile Menu */}
-        <div style={{ position: "relative" }}>
-          <div 
-            style={{
-              ...pill,
-              background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-              padding: "6px 16px",
+              padding: "8px 18px",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
               cursor: "pointer",
-              border: showProfileMenu ? "1px solid #0ea5e9" : "1px solid transparent",
+              border: showProfileMenu ? `1px solid ${theme.tone.info}` : `1px solid ${theme.pillBorder}`,
+              boxShadow: showProfileMenu ? `0 0 0 3px ${theme.tone.infoSoft}` : theme.pillShadow,
+              background: showProfileMenu ? theme.surfaceHover : theme.inputBg,
               transition: "all 0.2s ease"
             }}
             onClick={() => setShowProfileMenu(!showProfileMenu)}
@@ -2275,31 +2345,31 @@ export default function ViessmannGame() {
                 height: 10,
                 background: '#ef4444',
                 borderRadius: 999,
-                border: `2px solid ${isDay ? 'rgba(255,255,255,0.7)' : '#0f172a'}`,
+                border: `2px solid ${theme.headerBg}`,
                 pointerEvents: 'none'
               }}
             />
           )}
 
-          {/* Profile Dropdown */}
           {showProfileMenu && (
-            <div style={{
-              position: "absolute",
-              top: "calc(100% + 8px)",
-              right: 0,
-              background: isDay ? "#ffffff" : "#0f172a",
-              color: isDay ? "#0f172a" : "#e5e7eb",
-              borderRadius: 8,
-              boxShadow: isDay ? "0 4px 12px rgba(0,0,0,0.15)" : "0 8px 20px rgba(0,0,0,0.35)",
-              border: isDay ? "1px solid rgba(0,0,0,0.1)" : "1px solid #334155",
-              minWidth: 180,
-              zIndex: 100
-            }}>
-              {/* (Eco‑reputation quick summary removed as redundant; info available in header pill tooltip) */}
-              <div 
-                style={{ 
-                  padding: "12px 16px", 
-                  cursor: "pointer", 
+            <div
+              style={{
+                position: "absolute",
+                top: "calc(100% + 8px)",
+                right: 0,
+                background: isDay ? "#ffffff" : "#0f172a",
+                color: isDay ? "#0f172a" : "#e5e7eb",
+                borderRadius: 8,
+                boxShadow: isDay ? "0 4px 12px rgba(0,0,0,0.15)" : "0 8px 20px rgba(0,0,0,0.35)",
+                border: isDay ? "1px solid rgba(0,0,0,0.1)" : "1px solid #334155",
+                minWidth: 180,
+                zIndex: 100
+              }}
+            >
+              <div
+                style={{
+                  padding: "12px 16px",
+                  cursor: "pointer",
                   borderRadius: "8px 8px 0 0",
                   fontSize: 14,
                   display: "flex",
@@ -2339,8 +2409,8 @@ export default function ViessmannGame() {
                 )}
               </div>
               <div
-                style={{ 
-                  padding: "12px 16px", 
+                style={{
+                  padding: "12px 16px",
                   cursor: "pointer",
                   fontSize: 14,
                   display: "flex",
@@ -2348,9 +2418,9 @@ export default function ViessmannGame() {
                   gap: 8,
                   color: isDay ? '#0f172a' : '#e5e7eb'
                 }}
-                onClick={() => { 
-                  setShowLog(true); 
-                  setShowProfileMenu(false); 
+                onClick={() => {
+                  setShowLog(true);
+                  setShowProfileMenu(false);
                   const now = Date.now();
                   setLastSeenLog(now);
                   try { localStorage.setItem('vm_seen_log', String(now)); } catch { /* ignore */ }
@@ -2379,11 +2449,9 @@ export default function ViessmannGame() {
                   <span aria-label="nowe" title="Nowe" style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
                 )}
               </div>
-
-              {/* Kompendium wiedzy */}
               <div
-                style={{ 
-                  padding: "12px 16px", 
+                style={{
+                  padding: "12px 16px",
                   cursor: "pointer",
                   fontSize: 14,
                   display: "flex",
@@ -2391,7 +2459,7 @@ export default function ViessmannGame() {
                   gap: 8,
                   color: isDay ? '#0f172a' : '#e5e7eb'
                 }}
-                onClick={() => { 
+                onClick={() => {
                   setShowCompendium(true);
                   setShowProfileMenu(false);
                 }}
@@ -2410,12 +2478,7 @@ export default function ViessmannGame() {
                 <span>📚</span>
                 <span>Kompedium wiedzy</span>
               </div>
-              
-
-              {/* Divider */}
               <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
-
-              {/* Save actions */}
               <div
                 style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
                 onClick={() => { exportSave(); setShowProfileMenu(false); }}
@@ -2434,9 +2497,7 @@ export default function ViessmannGame() {
                 <span>⬆️</span>
                 <span>Wczytaj grę</span>
               </div>
-              {/* Hidden file input for import */}
               <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFileChange} />
-
               <div
                 style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
                 onClick={() => { resetGame(); }}
@@ -2506,7 +2567,7 @@ export default function ViessmannGame() {
               style={{
                 width: `${dayPhase.progressPct}%`,
                 height: '100%',
-                background: isDay ? '#0ea5e9' : '#6366f1'
+                background: theme.tone.info
               }}
             />
           </div>
@@ -3032,7 +3093,7 @@ export default function ViessmannGame() {
           )}
           {/* Sekcja aktywne misje */}
           <div style={{ marginBottom: 18 }}>
-            <div className="font-semibold text-sm mb-2" style={{ color: isDay ? "#0ea5e9" : "#bae6fd" }}>Aktywne misje</div>
+            <div className="font-semibold text-sm mb-2" style={{ color: theme.tone.info }}>Aktywne misje</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               {missions.filter(m => !m.completed).length === 0 && (
                 <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak aktywnych misji 🎉</div>
@@ -3380,7 +3441,7 @@ export default function ViessmannGame() {
                               aria-label="Informacja o relacji: Społeczność lokalna"
                               style={{ marginLeft: 2, cursor: 'help' }}
                             >
-                              <span style={{ fontSize: 16, color: isDay ? '#0ea5e9' : '#bae6fd', fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
+                              <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
                             </span>
                             <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{rel('community')}</div>
                           </div>
@@ -3401,7 +3462,7 @@ export default function ViessmannGame() {
                               aria-label="Informacja o relacji: Dostawcy"
                               style={{ marginLeft: 2, cursor: 'help' }}
                             >
-                              <span style={{ fontSize: 16, color: isDay ? '#0ea5e9' : '#bae6fd', fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
+                              <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
                             </span>
                             <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{rel('suppliers')}</div>
                           </div>
@@ -3448,7 +3509,7 @@ export default function ViessmannGame() {
                               const dAttr = data.map((p, i) => `${i === 0 ? 'M' : 'L'}${toX(i)},${toY(p.v)}`).join(' ');
                               return (
                                 <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="56" preserveAspectRatio="none" style={{ marginTop: 8 }}>
-                                  <path d={dAttr} fill="none" stroke={isDay ? '#0ea5e9' : '#93c5fd'} strokeWidth="2" />
+                                  <path d={dAttr} fill="none" stroke={theme.tone.info} strokeWidth="2" />
                                 </svg>
                               );
                             })()}
