@@ -120,3 +120,206 @@ button:focus-visible {
 ::-webkit-scrollbar-corner {
   background: transparent;
 }
+
+/* Scroll-style tooltip inspired by parchment UI */
+.scroll-tooltip {
+  position: fixed;
+  transform: translateX(-50%);
+  pointer-events: none;
+  min-width: 240px;
+  max-width: min(92vw, 360px);
+  padding: 48px 20px 40px;
+  color: #6b4027;
+  font-family: 'Manrope', system-ui, sans-serif;
+  background: linear-gradient(180deg, #fff3da 0%, #fde2b9 55%, #f7d2a1 100%);
+  border-radius: 22px;
+  box-shadow: 0 18px 40px rgba(67, 38, 15, 0.28);
+  text-align: left;
+  isolation: isolate;
+  z-index: 1200;
+}
+
+body.is-night .scroll-tooltip {
+  background: linear-gradient(180deg, #2f2a3d 0%, #2a2438 55%, #1e1a2b 100%);
+  color: #d6d1f2;
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.55);
+}
+
+.scroll-tooltip::before,
+.scroll-tooltip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 88%;
+  height: 24px;
+  border-radius: 999px;
+  box-shadow: 0 8px 16px rgba(67, 38, 15, 0.18);
+  z-index: -1;
+}
+
+body.is-night .scroll-tooltip::before,
+body.is-night .scroll-tooltip::after {
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.42);
+}
+
+.scroll-tooltip::before {
+  top: -18px;
+  background: linear-gradient(180deg, #f8d6a1 0%, #f1c684 100%);
+}
+
+body.is-night .scroll-tooltip::before {
+  background: linear-gradient(180deg, #453a66 0%, #3a3157 100%);
+}
+
+.scroll-tooltip::after {
+  bottom: -20px;
+  background: linear-gradient(180deg, #f0c27d 0%, #f9dca9 100%);
+  box-shadow: 0 10px 18px rgba(67, 38, 15, 0.22);
+}
+
+body.is-night .scroll-tooltip::after {
+  background: linear-gradient(180deg, #3b315a 0%, #2b2443 100%);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+.scroll-tooltip--wide {
+  max-width: min(92vw, 520px);
+  padding: 52px 24px 44px;
+}
+
+.scroll-tooltip__title {
+  font-weight: 800;
+  font-size: 18px;
+  text-align: center;
+  color: #5b2d16;
+  letter-spacing: 0.02em;
+}
+
+body.is-night .scroll-tooltip__title {
+  color: #edeaff;
+}
+
+.scroll-tooltip__subtitle {
+  margin-top: 6px;
+  font-size: 13px;
+  text-align: center;
+  color: #865836;
+}
+
+body.is-night .scroll-tooltip__subtitle {
+  color: #b4a7ff;
+}
+
+.scroll-tooltip__subtitle--muted {
+  color: #9a7254;
+}
+
+body.is-night .scroll-tooltip__subtitle--muted {
+  color: #877bb8;
+}
+
+.scroll-tooltip__subtitle--positive {
+  color: #2f7a3d;
+  font-weight: 600;
+}
+
+body.is-night .scroll-tooltip__subtitle--positive {
+  color: #6ee7a2;
+}
+
+.scroll-tooltip__subtitle--warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+body.is-night .scroll-tooltip__subtitle--warning {
+  color: #fbbf63;
+}
+
+.scroll-tooltip__body {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b4027;
+}
+
+body.is-night .scroll-tooltip__body {
+  color: #d6d1f2;
+}
+
+.scroll-tooltip__line {
+  line-height: 1.45;
+}
+
+.scroll-tooltip__line--muted {
+  color: #9a7254;
+}
+
+body.is-night .scroll-tooltip__line--muted {
+  color: #9286c8;
+}
+
+.scroll-tooltip__line--positive {
+  color: #2f7a3d;
+  font-weight: 600;
+}
+
+body.is-night .scroll-tooltip__line--positive {
+  color: #6ee7a2;
+}
+
+.scroll-tooltip__line--warning {
+  color: #b45309;
+  font-weight: 600;
+}
+
+body.is-night .scroll-tooltip__line--warning {
+  color: #fbbf63;
+}
+
+.scroll-tooltip__footer {
+  margin-top: 18px;
+  text-align: center;
+  font-size: 12px;
+  color: #916548;
+  letter-spacing: 0.01em;
+}
+
+body.is-night .scroll-tooltip__footer {
+  color: #a69ad9;
+}
+
+.scroll-tooltip__section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(125, 83, 32, 0.24);
+}
+
+body.is-night .scroll-tooltip__section {
+  border-top: 1px solid rgba(192, 191, 255, 0.25);
+}
+
+.scroll-tooltip__section-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #5b2d16;
+  text-align: center;
+}
+
+body.is-night .scroll-tooltip__section-title {
+  color: #e6e2ff;
+}
+
+.scroll-tooltip__section-text {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #7d5436;
+  text-align: center;
+}
+
+body.is-night .scroll-tooltip__section-text {
+  color: #b9b2e8;
+}

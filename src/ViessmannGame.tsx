@@ -61,6 +61,15 @@ type EffectsContext = {
   multiplyAll: (mult: number) => void;
   discountNextPurchasesPct: (pct: number) => void;
 };
+type TooltipTone = 'muted' | 'positive' | 'warning';
+type TooltipLine = { text: string; tone?: TooltipTone };
+type TooltipContent = {
+  title: string;
+  subtitle?: string;
+  subtitleTone?: TooltipTone;
+  lines: TooltipLine[];
+  footer?: string;
+};
 
 // --- Klucze pomocnicze ---
 const houseUpgradeKeys: EntityType[] = [
@@ -460,13 +469,19 @@ export default function ViessmannGame() {
       case 'winter': return { sun: 0.7, water: 0.9, wind: 1.2, coins: 1.0 };
     }
   }, [season.type]);
-  const phasePct = useMemo(() => {
+  const dayLengthSeconds = Math.round(DAY_LENGTH * DAY_FRACTION);
+  const nightLengthSeconds = Math.round(DAY_LENGTH - dayLengthSeconds);
+  const dayPhase = useMemo(() => {
     const mod = elapsed % DAY_LENGTH;
     const dayLen = DAY_LENGTH * DAY_FRACTION;
     const nightLen = DAY_LENGTH - dayLen;
-    if (mod < dayLen) return (mod / dayLen) * 100;
-    return ((mod - dayLen) / nightLen) * 100;
-  }, [elapsed]);
+    const phaseDuration = isDay ? dayLen : nightLen;
+    const phaseElapsed = isDay ? mod : Math.max(0, mod - dayLen);
+    const progressPct = phaseDuration > 0 ? Math.min(100, (phaseElapsed / phaseDuration) * 100) : 0;
+    const remainingSeconds = Math.max(0, Math.ceil(phaseDuration - phaseElapsed));
+    return { progressPct, remainingSeconds, totalSeconds: phaseDuration };
+  }, [elapsed, isDay]);
+  const dayPhasePercent = Math.round(dayPhase.progressPct);
 
   // --- Mnożniki: dzień/noc * sezon * wydarzenie pogodowe ---
   const dayNightMultipliers: Record<ResKey, number> = useMemo(() => (
@@ -936,6 +951,9 @@ export default function ViessmannGame() {
   // Eco‑reputation tooltip state
   const [ecoTipOpen, setEcoTipOpen] = useState(false);
   const [ecoTipPos, setEcoTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  // Day/Night tooltip state
+  const [dayInfoOpen, setDayInfoOpen] = useState(false);
+  const [dayInfoPos, setDayInfoPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   // Season info tooltip state (for mini-pill under Day/Night)
   const [seasonInfoOpen, setSeasonInfoOpen] = useState(false);
   const [seasonInfoPos, setSeasonInfoPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
@@ -951,16 +969,25 @@ export default function ViessmannGame() {
   }, [tiles, pollution]);
 
   // Eco‑reputation tooltip text
-  const ecoTooltip = useMemo(() => {
+  const ecoTooltip = useMemo<TooltipContent>(() => {
     const forests = tiles.filter(t => t.entity?.type === 'forest').length;
-    const lines = [
-      `Eko‑reputacja: ${ecoRep}/100`,
-      `Formuła: 100 − smog (${Math.round(pollution)}) + min(20, 5×lasy=${5 * forests})`,
-      coinBonusPct > 0 ? `Bonus monet: +${coinBonusPct}% (czyste powietrze)` : 'Bonus monet: 0% (smog zbyt wysoki)',
-      'Jak poprawić: sadź lasy 🌲, wymień kocioł na czystszy, ogranicz smog.',
-      'Efekt: wpływa na wydarzenia i premię do ViCoins.'
-    ];
-    return lines.join('\n');
+    const subtitleTone: TooltipTone = ecoRep >= 70 ? 'positive' : (ecoRep < 40 ? 'warning' : 'muted');
+    return {
+      title: 'Eko‑reputacja',
+      subtitle: `Poziom: ${ecoRep}/100`,
+      subtitleTone,
+      lines: [
+        { text: `Formuła: 100 − smog (${Math.round(pollution)}) + min(20, 5×lasy=${5 * forests})`, tone: 'muted' },
+        {
+          text: coinBonusPct > 0
+            ? `Bonus monet: +${coinBonusPct}% (czyste powietrze)`
+            : 'Bonus monet: 0% (smog zbyt wysoki)',
+          tone: coinBonusPct > 0 ? 'positive' : 'warning'
+        },
+        { text: 'Jak poprawić: sadź lasy 🌲, wymień kocioł na czystszy, ogranicz smog.' },
+        { text: 'Efekt: wpływa na wydarzenia i premię do ViCoins.', tone: 'muted' }
+      ]
+    };
   }, [ecoRep, pollution, tiles, coinBonusPct]);
 
   // EcoReputation history (ring buffer, persisted) sampled ~every 5s
@@ -1334,6 +1361,19 @@ export default function ViessmannGame() {
     return () => clearInterval(id);
   }, [effectiveRates, hasECharger, pollutionRate, clamp, tiles, placedCounts, season.type, weatherEvent.type, pollution, renewablesUnlocked, ecoRep, storyFlags, factions, resources]);
 
+  // Sync body class with day/night for tooltip theming
+  useEffect(() => {
+    const cls = 'is-night';
+    if (!isDay) {
+      document.body.classList.add(cls);
+    } else {
+      document.body.classList.remove(cls);
+    }
+    return () => {
+      document.body.classList.remove(cls);
+    };
+  }, [isDay]);
+
   // Story API adapter
   const storyApi = useMemo<StoryApi>(() => ({
     grantCoins: (amount) => setResources(r => ({ ...r, coins: r.coins + amount })),
@@ -1605,23 +1645,64 @@ export default function ViessmannGame() {
   })();
 
   // Tooltip for pollution pill: breakdown of sources and total rate
-  const pollutionTooltip = useMemo(() => {
+  const pollutionTooltip = useMemo<TooltipContent>(() => {
     const home = tiles.find(t => t.isHome);
     const houseType = home?.entity?.type as EntityType | undefined;
     const forests = tiles.filter(t => t.entity?.type === 'forest').length;
     const house = housePollutionFor(houseType);
     const forest = -0.5 * forests;
     const total = pollutionRate;
-  const nameMap: Partial<Record<EntityType, string>> = {
+    const nameMap: Partial<Record<EntityType, string>> = {
       coal: 'Kocioł żeliwny', pellet: 'Kocioł stalowy', gas: 'Kocioł gazowy Triola',
       parola1965: 'Parola 1965', stainless1972: 'Stal nierdzewna 1972', heatpump1978: 'Pompa ciepła 1978',
       vitola1978: 'Vitola 1978', vitodens1989: 'Vitodens 1989', heatpump: 'Vitocal'
-  };
-  const hk = (houseType ?? undefined) as EntityType | undefined;
-  const houseName = (hk ? nameMap[hk] : undefined) || '—';
+    };
+    const hk = (houseType ?? undefined) as EntityType | undefined;
+    const houseName = (hk ? nameMap[hk] : undefined) || '—';
     const fmtSign = (n: number) => `${n >= 0 ? '+' : ''}${fmt(n)}/s`;
-    return `Dom (${houseName}): ${fmtSign(house)}\nLasy (${forests}): ${fmtSign(forest)}\nŁącznie: ${fmtSign(total)}`;
+    const houseTone: TooltipTone = house > 0 ? 'warning' : (house < 0 ? 'positive' : 'muted');
+    const forestTone: TooltipTone = forest < 0 ? 'positive' : (forest > 0 ? 'warning' : 'muted');
+    const subtitleTone: TooltipTone = total > 0 ? 'warning' : (total < 0 ? 'positive' : 'muted');
+    return {
+      title: 'Smog',
+      subtitle: `Tempo łączne: ${fmtSign(total)}`,
+      subtitleTone,
+      lines: [
+        { text: `Dom (${houseName}): ${fmtSign(house)}`, tone: houseTone },
+        { text: `Lasy (${forests}): ${fmtSign(forest)}`, tone: forestTone }
+      ],
+      footer: 'Dodatnie tempo zwiększa smog, ujemne go redukuje.'
+    };
   }, [tiles, pollutionRate, housePollutionFor]);
+  const weatherTooltip = useMemo<TooltipContent>(() => {
+    const entries: Array<{ key: WeatherEventType; icon: string; title: string; effect: string }> = [
+      { key: 'none', icon: '🌤️', title: 'Brak wydarzenia', effect: 'Produkcja standardowa' },
+      { key: 'clouds', icon: '☁️', title: 'Chmury', effect: 'Brak produkcji ☀️' },
+      { key: 'sunny', icon: '🌞', title: 'Słońce', effect: 'x2 ☀️' },
+      { key: 'rain', icon: '🌧️', title: 'Deszcz', effect: 'x2 💧' },
+      { key: 'wind', icon: '🌬️', title: 'Wiatr', effect: 'x2 🌬️, -50% ☀️, -30% 💧' },
+      { key: 'storm', icon: '⛈️', title: 'Burza', effect: 'x3 🌬️, x1.5 💧, ☀️ = 0 (20s)' },
+      { key: 'frost', icon: '❄️', title: 'Mróz', effect: 'Wszystkie produkcje zatrzymane (30s)' },
+    ];
+    const toneForWeather = (type: WeatherEventType): TooltipTone => {
+      if (type === 'sunny' || type === 'rain' || type === 'wind') return 'positive';
+      if (type === 'clouds' || type === 'storm' || type === 'frost') return 'warning';
+      return 'muted';
+    };
+    const active = entries.find(e => e.key === weatherEvent.type) ?? entries[0];
+    return {
+      title: 'Pogoda',
+      subtitle: `${active.icon} ${active.title}`.trim(),
+      subtitleTone: toneForWeather(weatherEvent.type),
+      lines: entries.map(entry => ({
+        text: `${entry.icon} ${entry.title} — ${entry.effect}`,
+        tone: entry.key === weatherEvent.type ? toneForWeather(entry.key) : 'muted'
+      })),
+      footer: weatherEvent.type !== 'none'
+        ? `Pozostały czas: ${weatherEvent.remaining}s`
+        : 'Brak aktywnych efektów.'
+    };
+  }, [weatherEvent]);
 
   // Season tooltip removed; season details are now shown in the headline pill
 
@@ -1808,6 +1889,25 @@ export default function ViessmannGame() {
     color: isDay ? undefined : "#F1F5F9"
   };
   const btn = (active: boolean): React.CSSProperties => ({ padding: "6px 12px", borderRadius: 999, fontSize: 13, border: "none", cursor: "pointer", background: active ? "#0a0a0a" : "#e5e5e5", color: active ? "#fff" : "#111" });
+  const miniPillBase: React.CSSProperties = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 8,
+    borderRadius: 12,
+    background: isDay ? 'rgba(255,255,255,0.7)' : '#0f172a',
+    padding: '4px 10px',
+    paddingLeft: 8,
+    minWidth: 72,
+    boxShadow: isDay ? '0 1px 3px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.4)',
+    fontFamily: 'Manrope, system-ui, sans-serif',
+    fontSize: 13,
+    fontWeight: 600,
+    color: isDay ? '#0f172a' : '#e5e7eb',
+    cursor: 'default',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis'
+  };
 
   // (season mapping exists earlier in headlineInfo useMemo)
 
@@ -1902,7 +2002,6 @@ export default function ViessmannGame() {
           {/* przerwa między zasobami a Sezon/Pogoda/Smog */}
           <div style={{ width: 16 }} />
           {/* Weather Event Pill - zawsze widoczny */}
-          {/* Weather Event Pill - zawsze widoczny */}
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
@@ -1913,7 +2012,20 @@ export default function ViessmannGame() {
             alignItems: "center",
             gap: 10,
             position: 'relative'
-          }}>
+          }}
+          onMouseEnter={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+            setLegendOpen(true);
+          }}
+          onMouseLeave={() => setLegendOpen(false)}
+          onFocus={(e) => {
+            const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+            setLegendOpen(true);
+          }}
+          onBlur={() => setLegendOpen(false)}
+          >
             <span style={{ fontSize: 20 }}>
               {weatherEvent.type === "clouds" && "☁️"}
               {weatherEvent.type === "sunny" && "🌞"}
@@ -1948,25 +2060,6 @@ export default function ViessmannGame() {
             {weatherEvent.type !== "none" && (
               <span style={{ fontSize: 13, fontWeight: 600, marginLeft: 8, color: isDay ? "#0ea5e9" : "#bae6fd" }}>{weatherEvent.remaining}s</span>
             )}
-            {/* Weather legend trigger (fixed overlay renders outside header) */}
-            <span
-              style={{ marginLeft: 10, cursor: 'pointer', position: 'relative', display: 'inline-block' }}
-              tabIndex={0}
-              onMouseEnter={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setLegendOpen(true);
-              }}
-              onMouseLeave={() => setLegendOpen(false)}
-              onFocus={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setLegendOpen(true);
-              }}
-              onBlur={() => setLegendOpen(false)}
-            >
-              <span style={{ fontSize: 17, color: isDay ? '#0ea5e9' : '#bae6fd', fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
-            </span>
           </div>
           <div style={{
             ...pill,
@@ -2103,57 +2196,52 @@ export default function ViessmannGame() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }} className="text-base font-medium font-sans">
-            <span className="font-medium font-sans">{isDay ? "☀️ Dzień" : "🌙 Noc"}</span>
-            <div style={{ width: 80, height: 8, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${phasePct}%`, background: "#111" }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start', minWidth: 112 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <div
+                role="group"
+                tabIndex={0}
+                title={isDay ? 'Trwa dzień' : 'Trwa noc'}
+                onMouseEnter={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setDayInfoOpen(true);
+                }}
+                onMouseLeave={() => setDayInfoOpen(false)}
+                onFocus={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setDayInfoOpen(true);
+                }}
+                onBlur={() => setDayInfoOpen(false)}
+                style={{ ...miniPillBase, paddingRight: 10 }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
+                <span>{isDay ? 'Dzień' : 'Noc'}</span>
+              </div>
+              <div
+                role="group"
+                tabIndex={0}
+                title={seasonInfoMap[season.type].name}
+                onMouseEnter={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setSeasonInfoOpen(true);
+                }}
+                onMouseLeave={() => setSeasonInfoOpen(false)}
+                onFocus={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setSeasonInfoOpen(true);
+                }}
+                onBlur={() => setSeasonInfoOpen(false)}
+                style={{ ...miniPillBase, maxWidth: 220 }}
+              >
+                <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
+                <span>{seasonInfoMap[season.type].name}</span>
+              </div>
             </div>
           </div>
-          {/* Season mini-pill under Day/Night (styled like other pills) */}
-          <div style={{ display: 'flex', marginTop: 4 }}>
-            <div
-              role="group"
-              tabIndex={0}
-              title={seasonInfoMap[season.type].name}
-              onMouseEnter={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setSeasonInfoOpen(true);
-              }}
-              onMouseLeave={() => setSeasonInfoOpen(false)}
-              onFocus={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setSeasonInfoOpen(true);
-              }}
-              onBlur={() => setSeasonInfoOpen(false)}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                borderRadius: 12,
-                background: isDay ? 'rgba(255,255,255,0.7)' : '#0f172a',
-                padding: '4px 8px',
-                paddingLeft: 8,
-                minWidth: 72,
-                maxWidth: 220,
-                boxShadow: isDay ? '0 1px 3px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.4)',
-                fontFamily: 'Manrope, system-ui, sans-serif',
-                fontSize: 13,
-                fontWeight: 600,
-                color: isDay ? '#0f172a' : '#e5e7eb',
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                cursor: 'default'
-              }}
-            >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
-              <span style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{seasonInfoMap[season.type].name}</span>
-            </div>
-          </div>
-        </div>
 
           {/* duplicate Eventy block removed */}
 
@@ -2366,73 +2454,114 @@ export default function ViessmannGame() {
       {/* Eco‑reputacja tooltip */}
       {ecoTipOpen && (
         <div
-          style={{
-            position: 'fixed',
-            left: ecoTipPos.left,
-            top: ecoTipPos.top,
-            transform: 'translateX(-50%)',
-            minWidth: 240,
-            maxWidth: '92vw',
-            background: isDay ? '#ffffff' : '#0f172a',
-            color: isDay ? '#0f172a' : '#e5e7eb',
-            border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
-            borderRadius: 10,
-            boxShadow: isDay ? '0 8px 24px rgba(0,0,0,0.12)' : '0 8px 24px rgba(0,0,0,0.35)',
-            padding: '10px 12px',
-            fontSize: 13,
-            zIndex: 1200,
-            pointerEvents: 'none',
-          }}
+          className="scroll-tooltip"
+          style={{ left: ecoTipPos.left, top: ecoTipPos.top }}
           aria-hidden={true}
         >
-          {ecoTooltip.split('\n').map((line, i) => (
-            <div key={i} style={{ color: i === 2 && coinBonusPct > 0 ? (isDay ? '#166534' : '#86efac') : (isDay ? '#334155' : '#94a3b8'), fontWeight: i <= 1 ? 700 : 500 }}>
-              {line}
+          <div className="scroll-tooltip__title">{ecoTooltip.title}</div>
+          {ecoTooltip.subtitle && (
+            <div className={`scroll-tooltip__subtitle${ecoTooltip.subtitleTone ? ` scroll-tooltip__subtitle--${ecoTooltip.subtitleTone}` : ''}`}>
+              {ecoTooltip.subtitle}
             </div>
-          ))}
+          )}
+          <div className="scroll-tooltip__body">
+            {ecoTooltip.lines.map((line, idx) => (
+              <div
+                key={idx}
+                className={`scroll-tooltip__line${line.tone ? ` scroll-tooltip__line--${line.tone}` : ''}`}
+              >
+                {line.text}
+              </div>
+            ))}
+          </div>
+          {ecoTooltip.footer && <div className="scroll-tooltip__footer">{ecoTooltip.footer}</div>}
+        </div>
+      )}
+      {dayInfoOpen && (
+        <div
+          className="scroll-tooltip"
+          style={{ left: dayInfoPos.left, top: dayInfoPos.top }}
+          aria-hidden={true}
+        >
+          <div className="scroll-tooltip__title">Pora dnia</div>
+          <div className={`scroll-tooltip__subtitle${isDay ? ' scroll-tooltip__subtitle--positive' : ' scroll-tooltip__subtitle--muted'}`}>
+            {isDay ? '☀️ Dzień' : '🌙 Noc'}
+          </div>
+          <div className="scroll-tooltip__body">
+            <div className="scroll-tooltip__line">Pozostały czas: {dayPhase.remainingSeconds}s</div>
+            <div className="scroll-tooltip__line">Postęp cyklu: {dayPhasePercent}%</div>
+            <div className="scroll-tooltip__line scroll-tooltip__line--muted">Dzień: {dayLengthSeconds}s • Noc: {nightLengthSeconds}s</div>
+          </div>
+          <div
+            style={{
+              marginTop: 16,
+              height: 10,
+              borderRadius: 999,
+              background: isDay ? 'rgba(14,165,233,0.18)' : 'rgba(148,163,184,0.22)',
+              overflow: 'hidden',
+              border: isDay ? '1px solid rgba(14,165,233,0.28)' : '1px solid rgba(148,163,184,0.3)'
+            }}
+          >
+            <div
+              style={{
+                width: `${dayPhase.progressPct}%`,
+                height: '100%',
+                background: isDay ? '#0ea5e9' : '#6366f1'
+              }}
+            />
+          </div>
         </div>
       )}
       {seasonInfoOpen && (
-        <div style={{ position: 'fixed', left: seasonInfoPos.left, top: seasonInfoPos.top, transform: 'translate(-50%, 8px)', zIndex: 1100 }}>
-          <div style={{ borderRadius: 10, padding: '10px 14px', minWidth: 260, maxWidth: 560, width: 'min(86vw,560px)', background: isDay ? '#ffffff' : '#0f172a', color: isDay ? '#0f172a' : '#e5e7eb', border: isDay ? '1px solid rgba(0,0,0,0.06)' : '1px solid #334155', boxShadow: isDay ? '0 8px 24px rgba(0,0,0,0.12)' : '0 8px 24px rgba(0,0,0,0.5)' }}>
-            <div style={{ fontWeight: 800, marginBottom: 4 }}>{seasonInfoMap[season.type].name}</div>
-            <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1', marginBottom: 6 }}>{seasonInfoMap[season.type].eff}</div>
-            <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>Pozostały czas: {season.remaining}s</div>
-            {discountSummary && (
-              <div style={{ marginTop: 10, paddingTop: 10, borderTop: isDay ? '1px solid rgba(0,0,0,0.06)' : '1px solid #334155', fontSize: 12, color: isDay ? '#0f172a' : '#e5e7eb' }}>
-                <div style={{ fontWeight: 700 }}>{discountSummary.title}</div>
-                <div style={{ color: isDay ? '#475569' : '#cbd5e1' }}>{discountSummary.subtitle}{discountSummary.meta ? ` • ${discountSummary.meta}` : ''}</div>
-              </div>
-            )}
+        <div
+          className="scroll-tooltip scroll-tooltip--wide"
+          style={{ left: seasonInfoPos.left, top: seasonInfoPos.top, transform: 'translate(-50%, 8px)', zIndex: 1100 }}
+          aria-hidden={true}
+        >
+          <div className="scroll-tooltip__title">
+            <span style={{ marginRight: 6 }}>{seasonInfoMap[season.type].icon}</span>
+            {seasonInfoMap[season.type].name}
           </div>
+          <div className="scroll-tooltip__subtitle scroll-tooltip__subtitle--muted">
+            {seasonInfoMap[season.type].eff}
+          </div>
+          <div className="scroll-tooltip__body">
+            <div className="scroll-tooltip__line scroll-tooltip__line--muted">Pozostały czas: {season.remaining}s</div>
+          </div>
+          {discountSummary && (
+            <div className="scroll-tooltip__section">
+              <div className="scroll-tooltip__section-title">{discountSummary.title}</div>
+              <div className="scroll-tooltip__section-text">
+                {discountSummary.subtitle}
+                {discountSummary.meta ? ` • ${discountSummary.meta}` : ''}
+              </div>
+            </div>
+          )}
         </div>
       )}
       {pollTipOpen && (
         <div
-          style={{
-            position: 'fixed',
-            left: pollTipPos.left,
-            top: pollTipPos.top,
-            transform: 'translateX(-50%)',
-            minWidth: 220,
-            maxWidth: '92vw',
-            background: isDay ? '#ffffff' : '#0f172a',
-            color: isDay ? '#0f172a' : '#e5e7eb',
-            border: isDay ? '1px solid #e5e7eb' : '1px solid #334155',
-            borderRadius: 10,
-            boxShadow: isDay ? '0 8px 24px rgba(0,0,0,0.12)' : '0 8px 24px rgba(0,0,0,0.35)',
-            padding: '10px 12px',
-            fontSize: 13,
-            zIndex: 1200,
-            pointerEvents: 'none',
-          }}
+          className="scroll-tooltip"
+          style={{ left: pollTipPos.left, top: pollTipPos.top }}
           aria-hidden={true}
         >
-          {pollutionTooltip.split('\n').map((line, i) => (
-            <div key={i} style={{ color: i === 2 ? (pollutionRate < 0 ? '#059669' : '#ef4444') : (isDay ? '#334155' : '#94a3b8'), fontWeight: i === 2 ? 700 : 500 }}>
-              {line}
+          <div className="scroll-tooltip__title">{pollutionTooltip.title}</div>
+          {pollutionTooltip.subtitle && (
+            <div className={`scroll-tooltip__subtitle${pollutionTooltip.subtitleTone ? ` scroll-tooltip__subtitle--${pollutionTooltip.subtitleTone}` : ''}`}>
+              {pollutionTooltip.subtitle}
             </div>
-          ))}
+          )}
+          <div className="scroll-tooltip__body">
+            {pollutionTooltip.lines.map((line, idx) => (
+              <div
+                key={idx}
+                className={`scroll-tooltip__line${line.tone ? ` scroll-tooltip__line--${line.tone}` : ''}`}
+              >
+                {line.text}
+              </div>
+            ))}
+          </div>
+          {pollutionTooltip.footer && <div className="scroll-tooltip__footer">{pollutionTooltip.footer}</div>}
         </div>
       )}
       {relTip && (
@@ -2460,52 +2589,37 @@ export default function ViessmannGame() {
           {relTip.text}
         </div>
       )}
-  {/* Fixed weather legend overlay (outside scroll containers) */}
+      {/* Fixed weather legend overlay (outside scroll containers) */}
       {legendOpen && (
         <div
+          className="scroll-tooltip"
           style={{
             position: 'fixed',
             left: legendPos.left,
             top: legendPos.top,
             transform: 'translateX(-50%)',
-            minWidth: 220,
-            maxWidth: '90vw',
-            background: isDay ? '#fff' : '#1e293b',
-            color: isDay ? '#0f172a' : '#e0f2fe',
-            border: '1px solid #bae6fd',
-            borderRadius: 10,
-            boxShadow: '0 8px 24px rgba(30,64,175,0.18)',
-            padding: '14px 18px',
-            fontSize: 13,
-            zIndex: 1200,
-            pointerEvents: 'none',
           }}
           aria-hidden={true}
         >
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>☁️</span><span style={{ fontWeight: 700 }}>Chmury</span></span>
-            <span style={{ color: '#64748b', fontSize: 12, marginLeft: 28 }}>brak produkcji ☀️</span>
+          <div className="scroll-tooltip__title">{weatherTooltip.title}</div>
+          {weatherTooltip.subtitle && (
+            <div className={`scroll-tooltip__subtitle${weatherTooltip.subtitleTone ? ` scroll-tooltip__subtitle--${weatherTooltip.subtitleTone}` : ''}`}>
+              {weatherTooltip.subtitle}
+            </div>
+          )}
+          <div className="scroll-tooltip__body">
+            {weatherTooltip.lines.map((line, idx) => (
+              <div
+                key={idx}
+                className={`scroll-tooltip__line${line.tone ? ` scroll-tooltip__line--${line.tone}` : ''}`}
+              >
+                {line.text}
+              </div>
+            ))}
           </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌞</span><span style={{ fontWeight: 700 }}>Słońce</span></span>
-            <span style={{ color: '#fbbf24', fontSize: 12, marginLeft: 28 }}>x2 ☀️</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌧️</span><span style={{ fontWeight: 700 }}>Deszcz</span></span>
-            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 💧</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌬️</span><span style={{ fontWeight: 700 }}>Wiatr</span></span>
-            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 🌬️, -50% ☀️, -30% 💧</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>⛈️</span><span style={{ fontWeight: 700 }}>Burza</span></span>
-            <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>x3 🌬️, x1.5 💧, ☀️ = 0 (20s)</span>
-          </div>
-          <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>❄️</span><span style={{ fontWeight: 700 }}>Mróz</span></span>
-            <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>Stop produkcji na 30s</span>
-          </div>
+          {weatherTooltip.footer && (
+            <div className="scroll-tooltip__footer">{weatherTooltip.footer}</div>
+          )}
         </div>
       )}
 
