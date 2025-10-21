@@ -3,7 +3,7 @@ import { canAfford as canAffordHelper, discountedCost as discountedCostHelper, d
 import { clamp as clampHelper, seasonPollutionFor as seasonPollutionForHelper, housePollutionFor as housePollutionForHelper } from './lib/pollution';
 import { getSampleEvents } from './lib/story';
 import type { StoryEvent, StoryApi, StoryContext, StoryChoice } from './lib/story';
-import StoryModal from './components/StoryModal';
+import EventsCenterModal from './components/EventsCenterModal.tsx';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -510,10 +510,13 @@ export default function ViessmannGame() {
   // ---------- Shop ----------
   const [priceDiscountPct, setPriceDiscountPct] = useState(0);
   // Story system state
-  const [activeStory, setActiveStory] = useState<StoryEvent | null>(null);
+  const [pendingEvents, setPendingEvents] = useState<StoryEvent[]>([]);
+  const pendingEventsRef = useRef<StoryEvent[]>([]);
+  const [isEventsCenterOpen, setIsEventsCenterOpen] = useState(false);
   const storyShownRef = useRef<Set<string>>(new Set());
   const storyEventsRef = useRef<ReturnType<typeof getSampleEvents> | null>(null);
   const storyCooldownsRef = useRef<Record<string, number>>({});
+  useEffect(() => { pendingEventsRef.current = pendingEvents; }, [pendingEvents]);
   const [storyFlags, setStoryFlags] = useState<Record<string, boolean>>(() => {
     try { return JSON.parse(localStorage.getItem('vm_story_flags') || '{}') as Record<string, boolean>; } catch { return {}; }
   });
@@ -750,9 +753,12 @@ export default function ViessmannGame() {
     setShowProfileMenu(false);
   // Story reset
   storyShownRef.current = new Set();
-  setActiveStory(null);
+    setPendingEvents([]);
+    pendingEventsRef.current = [];
+    setIsEventsCenterOpen(false);
   setStoryDiscountPct(0);
   setStoryDiscountTimer(0);
+    setStoryDiscountLabel(null);
   }, [createInitialTiles]);
 
   // -------- Missions progress --------
@@ -808,6 +814,9 @@ export default function ViessmannGame() {
   // Eco‑reputation tooltip state
   const [ecoTipOpen, setEcoTipOpen] = useState(false);
   const [ecoTipPos, setEcoTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  // Season info tooltip state (for mini-pill under Day/Night)
+  const [seasonInfoOpen, setSeasonInfoOpen] = useState(false);
+  const [seasonInfoPos, setSeasonInfoPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   // Relations tooltip (for Compendium → Relacje)
   const [relTip, setRelTip] = useState<{ left: number; top: number; text: string } | null>(null);
   // (Ekonomia panel state removed)
@@ -1110,8 +1119,8 @@ export default function ViessmannGame() {
         return t - 1;
       });
 
-      // Trigger next eligible story event (at most one active at a time)
-      if (!activeStory && storyEventsRef.current) {
+      // Trigger next eligible story events and queue them for the Events Center
+      if (storyEventsRef.current) {
         const ctx: StoryContext = {
           elapsed: elapsedRef.current,
           pollution,
@@ -1124,19 +1133,31 @@ export default function ViessmannGame() {
           factions,
           resources,
         };
-        // respect cooldowns and once flag
         const now = Date.now();
-        const eligible = storyEventsRef.current.filter(e => e.condition(ctx) && !storyShownRef.current.has(e.id) && (!storyCooldownsRef.current[e.id] || storyCooldownsRef.current[e.id] <= now));
-        // weighted pick (default weight 1)
-        let ev: typeof eligible[number] | undefined;
+        const alreadyQueued = new Set(pendingEventsRef.current.map(e => e.id));
+        const eligible = storyEventsRef.current.filter(e => {
+          if (!e.condition(ctx)) return false;
+          if (storyShownRef.current.has(e.id)) return false;
+          if (alreadyQueued.has(e.id)) return false;
+          const cd = storyCooldownsRef.current[e.id];
+          if (cd && cd > now) return false;
+          return true;
+        });
         if (eligible.length > 0) {
           const weights = eligible.map(e => Math.max(1, e.weight ?? 1));
-          const total = weights.reduce((a,b)=>a+b,0);
-          let r = Math.random() * total;
-          for (let i=0;i<eligible.length;i++){ r -= weights[i]; if (r<=0){ ev = eligible[i]; break; } }
-          ev = ev || eligible[eligible.length-1];
+          const total = weights.reduce((a, b) => a + b, 0);
+          let roll = Math.random() * total;
+          let picked = eligible[eligible.length - 1];
+          for (let i = 0; i < eligible.length; i++) {
+            roll -= weights[i];
+            if (roll <= 0) { picked = eligible[i]; break; }
+          }
+          setPendingEvents(prev => {
+            if (prev.some(evt => evt.id === picked.id)) return prev;
+            pushToast({ icon: '📣', text: `Nowe wydarzenie: ${picked.title}` });
+            return [...prev, picked];
+          });
         }
-        if (ev) setActiveStory(ev);
       }
 
       // Konsumpcja zasobów i koszty utrzymania (co 1s)
@@ -1179,7 +1200,7 @@ export default function ViessmannGame() {
       });
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [effectiveRates, hasECharger, pollutionRate, clamp, tiles, placedCounts, season.type, weatherEvent.type, pollution, activeStory, renewablesUnlocked, ecoRep, storyFlags, factions, resources]);
+  }, [effectiveRates, hasECharger, pollutionRate, clamp, tiles, placedCounts, season.type, weatherEvent.type, pollution, renewablesUnlocked, ecoRep, storyFlags, factions, resources]);
 
   // Story API adapter
   const storyApi = useMemo<StoryApi>(() => ({
@@ -1204,27 +1225,30 @@ export default function ViessmannGame() {
     setEventCooldown: (eventId, seconds) => { storyCooldownsRef.current[eventId] = Date.now() + seconds * 1000; },
   }), [clamp]);
 
-  const handleStoryChoice = useCallback((choice: StoryChoice) => {
+  const handleStoryChoice = useCallback((event: StoryEvent, choice: StoryChoice) => {
     try { choice.apply(storyApi); } catch { /* ignore */ }
     // Record decision in a dedicated story decisions log
     try {
       const entry = {
         id: `${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
         ts: Date.now(),
-        eventId: activeStory?.id || 'unknown',
-        eventTitle: activeStory?.title || 'Wydarzenie',
+        eventId: event.id,
+        eventTitle: event.title,
         choiceId: choice.id,
         choiceLabel: choice.label,
       };
       setStoryDecisions(prev => [entry, ...prev].slice(0, 100));
     } catch { /* ignore */ }
-    if (activeStory?.once !== false) storyShownRef.current.add(activeStory!.id);
-    // Apply event cooldown if specified
-    if (activeStory?.cooldownSec && activeStory.cooldownSec > 0) {
-      storyCooldownsRef.current[activeStory.id] = Date.now() + activeStory.cooldownSec * 1000;
+    if (event.once !== false) storyShownRef.current.add(event.id);
+    if (event.cooldownSec && event.cooldownSec > 0) {
+      storyCooldownsRef.current[event.id] = Date.now() + event.cooldownSec * 1000;
     }
-    setActiveStory(null);
-  }, [activeStory, storyApi]);
+    setPendingEvents(prev => {
+      const next = prev.filter(e => e.id !== event.id);
+      if (next.length === 0) setIsEventsCenterOpen(false);
+      return next;
+    });
+  }, [storyApi]);
 
   // Widoki list
   const visibleDevices = useMemo(() => {
@@ -1389,37 +1413,48 @@ export default function ViessmannGame() {
   // Season tooltip removed; season details are now shown in the headline pill
 
   // Headline ticker: three-line layout (title, second line, third line) to match other pills
-  const headlineInfo = useMemo(() => {
-    // Discount active
+  // Composite pill items: build ordered list (event first, then discount, then headline)
+  const eventsSummary = useMemo(() => {
+    const count = pendingEvents.length;
+    if (count === 0) {
+      return {
+        count,
+        subtitle: 'Brak eventów',
+        detail: 'Brak nowych wydarzeń',
+      } as const;
+    }
+  const noun = count === 1 ? 'nowy event' : (count >= 2 && count <= 4 ? 'nowe eventy' : 'nowych eventów');
+    return {
+      count,
+      subtitle: `${count} ${noun}`,
+      detail: pendingEvents[0]?.title ?? 'Sprawdź nowe wydarzenia',
+    } as const;
+  }, [pendingEvents]);
+  const discountSummary = useMemo(() => {
     if (storyDiscountTimer > 0 && storyDiscountPct > 0) {
       return {
         title: storyDiscountLabel || 'Zniżka',
-        line2: `−${Math.round(storyDiscountPct)}%`,
-        line3: `${storyDiscountTimer}s`,
+        subtitle: `−${Math.round(storyDiscountPct)}%`,
+        meta: `${storyDiscountTimer}s`,
       } as const;
     }
-    // Smog pressure warning
-    if (pollution > 50 && smogMultiplier < 1) {
-      return {
-        title: 'Smog',
-        line2: `Produkcja −${Math.round((1 - smogMultiplier) * 100)}%`,
-        line3: '',
-      } as const;
-    }
-    // Season default: name on second line, effects + remaining on third
-    const seasonMap: Record<SeasonType, { name: string; icon: string; eff: string }> = {
-      spring: { name: 'Wiosna', icon: '🌸', eff: '💧 x1.3, smog −0.01/s' },
-      summer: { name: 'Lato', icon: '☀️', eff: '☀️ x1.3, smog −0.02/s' },
-      autumn: { name: 'Jesień', icon: '🍂', eff: '🌧️/🌬️ x1.2, smog ±0' },
-      winter: { name: 'Zima', icon: '❄️', eff: '☀️ x0.7, smog +0.05/s' },
-    };
-    const s = seasonMap[season.type];
-    return {
-      title: 'Sezon',
-      line2: s.name,
-      line3: `${s.eff} • ${season.remaining}s`,
-    } as const;
-  }, [storyDiscountTimer, storyDiscountPct, storyDiscountLabel, pollution, smogMultiplier, season.type, season.remaining]);
+    return null;
+  }, [storyDiscountTimer, storyDiscountPct, storyDiscountLabel]);
+  const badgeCount = eventsSummary.count;
+
+  // Local season info mapping for small pill under Day/Night
+  const seasonInfoMap: Record<SeasonType, { icon: string; name: string; eff: string }> = {
+    spring: { icon: '🌸', name: 'Wiosna', eff: '💧 x1.3, smog −0.01/s' },
+    summer: { icon: '☀️', name: 'Lato', eff: '☀️ x1.3, smog −0.02/s' },
+    autumn: { icon: '🍂', name: 'Jesień', eff: '🌧️/🌬️ x1.2, smog ±0' },
+    winter: { icon: '❄️', name: 'Zima', eff: '☀️ x0.7, smog +0.05/s' },
+  };
+
+  useEffect(() => {
+    // Debug log to ensure latest ViessmannGame.tsx is bundled
+    // Remove after verifying season pill rendering
+    console.log('SEASON_PILL_DEBUG_ACTIVE');
+  }, []);
 
   // --- styles ---
   const pill: React.CSSProperties = { display: "flex", alignItems: "center", gap: 8, borderRadius: 14, background: "rgba(255,255,255,0.7)", padding: "6px 12px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" };
@@ -1561,16 +1596,18 @@ export default function ViessmannGame() {
   };
   const btn = (active: boolean): React.CSSProperties => ({ padding: "6px 12px", borderRadius: 999, fontSize: 13, border: "none", cursor: "pointer", background: active ? "#0a0a0a" : "#e5e5e5", color: active ? "#fff" : "#111" });
 
+  // (season mapping exists earlier in headlineInfo useMemo)
+
   // Render
   return (
   <div className="font-sans" style={{ minHeight: "100vh", width: "100vw", maxWidth: "100vw", boxSizing: "border-box", overflowX: "hidden", background: isDay ? "linear-gradient(135deg,#FFF7ED,#FEF3C7,#FFE4E6)" : "linear-gradient(135deg,#0f172a,#111827,#312e81)", color: isDay ? "#111" : "#E5E7EB" }}>
       {/* Toast stack */}
       {toasts.length > 0 && (
-        <div style={{ position: 'fixed', right: 12, top: 12, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1200 }}>
+        <div style={{ position: 'fixed', right: 12, top: 12, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1200, maxWidth: 'min(92vw,640px)' }}>
           {toasts.map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 12, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 12, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: 'min(92vw,560px)', overflow: 'hidden' }}>
               <span>{t.icon ?? '🔔'}</span>
-              <span style={{ fontSize: 13 }}>{t.text}</span>
+              <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.text}</span>
               <button onClick={() => removeToast(t.id)} title="Zamknij" aria-label="Zamknij"
                 style={{ marginLeft: 6, marginRight: -4, background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>
                 ✕
@@ -1579,8 +1616,14 @@ export default function ViessmannGame() {
           ))}
         </div>
       )}
-  {/* Story modal */}
-  <StoryModal event={activeStory} onChoose={handleStoryChoice} onClose={() => setActiveStory(null)} isDay={isDay} />
+      <EventsCenterModal
+        open={isEventsCenterOpen}
+        events={pendingEvents}
+        discount={discountSummary}
+        onClose={() => setIsEventsCenterOpen(false)}
+        onChoose={handleStoryChoice}
+        isDay={isDay}
+      />
       {/* top bar */}
   <header style={headerStyle}>
   <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1591,7 +1634,8 @@ export default function ViessmannGame() {
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px"
+            padding: "6px 24px",
+            paddingLeft: 12
           }}>
             <span style={{ fontSize: 18 }}>☀️</span>
             <div>
@@ -1604,7 +1648,8 @@ export default function ViessmannGame() {
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px"
+            padding: "6px 24px",
+            paddingLeft: 12
           }}>
             <span style={{ fontSize: 18 }}>💧</span>
             <div>
@@ -1616,7 +1661,8 @@ export default function ViessmannGame() {
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px"
+            padding: "6px 24px",
+            paddingLeft: 12
           }}>
             <span style={{ fontSize: 18 }}>🌬️</span>
             <div>
@@ -1628,7 +1674,8 @@ export default function ViessmannGame() {
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px"
+            padding: "6px 24px",
+            paddingLeft: 12
           }}>
             <span style={{ fontSize: 18 }}>💰</span>
             <div>
@@ -1639,34 +1686,15 @@ export default function ViessmannGame() {
               <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? (isDay ? '#94a3b8' : '#64748b') : (isDay ? '#64748b' : '#94a3b8') }}>{rateText('coins')}</div>
             </div>
           </div>
-          {/* przerwa między zasobami a Sezon/Pogoda/Zanieczyszczenie */}
+          {/* przerwa między zasobami a Sezon/Pogoda/Smog */}
           <div style={{ width: 16 }} />
-          {/* Headline ticker (Sezon) */}
-          <div
-            style={{
-              ...pill,
-              background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-              padding: "6px 16px",
-              minWidth: 160,
-              maxWidth: 260,
-              overflow: 'hidden'
-            }}
-            title={[headlineInfo.title, headlineInfo.line2, headlineInfo.line3].filter(Boolean).join(' • ')}
-          >
-            <span style={{ fontSize: 16 }}>📰</span>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>{headlineInfo.title}</div>
-              <div className="font-semibold font-sans" style={{ color: isDay ? "#111" : "#F1F5F9" }}>{headlineInfo.line2}</div>
-              {headlineInfo.line3 ? (
-                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isDay ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{headlineInfo.line3}</div>
-              ) : null}
-            </div>
-          </div>
+          {/* Weather Event Pill - zawsze widoczny */}
           {/* Weather Event Pill - zawsze widoczny */}
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
             padding: "6px 24px",
+            paddingLeft: 12,
             minWidth: 120,
             display: "flex",
             alignItems: "center",
@@ -1696,12 +1724,12 @@ export default function ViessmannGame() {
               </div>
               <div style={{ fontSize: 13, color: isDay ? "#334155" : "#e0f2fe", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: 2 }}>
                 {weatherEvent.type === "clouds" && "Brak produkcji ☀️"}
-                {weatherEvent.type === "sunny" && "x2 produkcja ☀️"}
-                {weatherEvent.type === "rain" && "x2 produkcja 💧"}
-                {weatherEvent.type === "wind" && "x2 produkcja 🌬️, -50% ☀️, -30% 💧"}
+                {weatherEvent.type === "sunny" && "x2 ☀️"}
+                {weatherEvent.type === "rain" && "x2 💧"}
+                {weatherEvent.type === "wind" && "x2 🌬️, -50% ☀️, -30% 💧"}
                 {weatherEvent.type === "storm" && "x3 🌬️, x1.5 💧, ☀️ = 0"}
                 {weatherEvent.type === "frost" && "Wszystkie produkcje zatrzymane"}
-                {weatherEvent.type === "none" && "Brak efektu specjalnego"}
+                {weatherEvent.type === "none" && "Brak efektu"}
               </div>
             </div>
             {weatherEvent.type !== "none" && (
@@ -1730,7 +1758,8 @@ export default function ViessmannGame() {
           <div style={{
             ...pill,
             background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-            padding: "6px 24px"
+            padding: "6px 24px",
+            paddingLeft: 12
           }}
           onMouseEnter={(e) => {
             const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -1747,7 +1776,7 @@ export default function ViessmannGame() {
           >
             <span style={{ fontSize: 18 }}>🏭</span>
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Zanieczyszczenie</div>
+              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9" }}>Smog</div>
               <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#111" : "#FCA5A5" }}>{Math.round(pollution)}</div>
               <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 8 }}>
                 <span style={{ color: pollutionRate < 0 ? '#059669' : '#ef4444' }}>
@@ -1766,7 +1795,8 @@ export default function ViessmannGame() {
             style={{
               ...pill,
               background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
-              padding: "6px 24px"
+              padding: "6px 24px",
+              paddingLeft: 12
             }}
             onMouseEnter={(e) => {
               const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -1793,12 +1823,126 @@ export default function ViessmannGame() {
             </div>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }} className="text-base font-medium font-sans">
-          <span className="font-medium font-sans">{isDay ? "☀️ Dzień" : "🌙 Noc"}</span>
-          <div style={{ width: 80, height: 8, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${phasePct}%`, background: "#111" }} />
+
+          {/* Eventy pill */}
+          <div
+            style={{
+              ...pill,
+              background: isDay ? "rgba(255,255,255,0.7)" : "#0f172a",
+              padding: "6px 14px",
+              paddingLeft: 12,
+              minWidth: 140,
+              maxWidth: 320,
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              flex: '0 0 auto',
+              cursor: 'pointer'
+            }}
+            tabIndex={0}
+            role="button"
+            title={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : 'Kliknij, aby zobaczyć wydarzenia'}
+            onClick={() => setIsEventsCenterOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setIsEventsCenterOpen(true);
+              }
+            }}
+          >
+            <span style={{ fontSize: 18, flex: '0 0 auto' }}>📣</span>
+            <div style={{ minWidth: 0, overflow: 'hidden' }}>
+              <div style={{ fontWeight: 700, fontSize: 11, fontFamily: 'Manrope, system-ui, sans-serif', color: isDay ? "#334155" : "#F1F5F9", overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>Eventy</div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: isDay ? '#111' : '#e5e7eb', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                {eventsSummary.subtitle}
+              </div>
+              <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                {eventsSummary.count === 0
+                  ? (discountSummary ? `${discountSummary.title} • ${discountSummary.subtitle}` : 'Śledzimy sytuację')
+                  : eventsSummary.detail}
+              </div>
+            </div>
+            {badgeCount > 0 && (
+              <span
+                aria-hidden={true}
+                style={{
+                  position: 'absolute',
+                  top: -6,
+                  right: -6,
+                  minWidth: 18,
+                  height: 18,
+                  padding: '0 6px',
+                  background: '#ef4444',
+                  color: '#fff',
+                  borderRadius: 999,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 12,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  boxShadow: isDay ? '0 2px 6px rgba(0,0,0,0.12)' : '0 2px 6px rgba(0,0,0,0.4)'
+                }}
+              >
+                {badgeCount > 9 ? '9+' : badgeCount}
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }} className="text-base font-medium font-sans">
+            <span className="font-medium font-sans">{isDay ? "☀️ Dzień" : "🌙 Noc"}</span>
+            <div style={{ width: 80, height: 8, borderRadius: 6, background: "#e5e7eb", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${phasePct}%`, background: "#111" }} />
+            </div>
+          </div>
+          {/* Season mini-pill under Day/Night (styled like other pills) */}
+          <div style={{ display: 'flex', marginTop: 4 }}>
+            <div
+              role="group"
+              tabIndex={0}
+              title={seasonInfoMap[season.type].name}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setSeasonInfoOpen(true);
+              }}
+              onMouseLeave={() => setSeasonInfoOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setSeasonInfoOpen(true);
+              }}
+              onBlur={() => setSeasonInfoOpen(false)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                borderRadius: 12,
+                background: isDay ? 'rgba(255,255,255,0.7)' : '#0f172a',
+                padding: '4px 8px',
+                paddingLeft: 8,
+                minWidth: 72,
+                maxWidth: 220,
+                boxShadow: isDay ? '0 1px 3px rgba(0,0,0,0.08)' : '0 1px 3px rgba(0,0,0,0.4)',
+                fontFamily: 'Manrope, system-ui, sans-serif',
+                fontSize: 13,
+                fontWeight: 600,
+                color: isDay ? '#0f172a' : '#e5e7eb',
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+                textOverflow: 'ellipsis',
+                cursor: 'default'
+              }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
+              <span style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{seasonInfoMap[season.type].name}</span>
+            </div>
           </div>
         </div>
+
+          {/* duplicate Eventy block removed */}
 
   {/* Season pill removed – season info moved to the headline ticker */}
 
@@ -2035,6 +2179,21 @@ export default function ViessmannGame() {
           ))}
         </div>
       )}
+      {seasonInfoOpen && (
+        <div style={{ position: 'fixed', left: seasonInfoPos.left, top: seasonInfoPos.top, transform: 'translate(-50%, 8px)', zIndex: 1100 }}>
+          <div style={{ borderRadius: 10, padding: '10px 14px', minWidth: 260, maxWidth: 560, width: 'min(86vw,560px)', background: isDay ? '#ffffff' : '#0f172a', color: isDay ? '#0f172a' : '#e5e7eb', border: isDay ? '1px solid rgba(0,0,0,0.06)' : '1px solid #334155', boxShadow: isDay ? '0 8px 24px rgba(0,0,0,0.12)' : '0 8px 24px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontWeight: 800, marginBottom: 4 }}>{seasonInfoMap[season.type].name}</div>
+            <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1', marginBottom: 6 }}>{seasonInfoMap[season.type].eff}</div>
+            <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>Pozostały czas: {season.remaining}s</div>
+            {discountSummary && (
+              <div style={{ marginTop: 10, paddingTop: 10, borderTop: isDay ? '1px solid rgba(0,0,0,0.06)' : '1px solid #334155', fontSize: 12, color: isDay ? '#0f172a' : '#e5e7eb' }}>
+                <div style={{ fontWeight: 700 }}>{discountSummary.title}</div>
+                <div style={{ color: isDay ? '#475569' : '#cbd5e1' }}>{discountSummary.subtitle}{discountSummary.meta ? ` • ${discountSummary.meta}` : ''}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {pollTipOpen && (
         <div
           style={{
@@ -2110,22 +2269,21 @@ export default function ViessmannGame() {
           }}
           aria-hidden={true}
         >
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>Legenda wydarzeń pogodowych:</div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>☁️</span><span style={{ fontWeight: 700 }}>Chmury</span></span>
             <span style={{ color: '#64748b', fontSize: 12, marginLeft: 28 }}>brak produkcji ☀️</span>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌞</span><span style={{ fontWeight: 700 }}>Słońce</span></span>
-            <span style={{ color: '#fbbf24', fontSize: 12, marginLeft: 28 }}>x2 produkcja ☀️</span>
+            <span style={{ color: '#fbbf24', fontSize: 12, marginLeft: 28 }}>x2 ☀️</span>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌧️</span><span style={{ fontWeight: 700 }}>Deszcz</span></span>
-            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 💧</span>
+            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 💧</span>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>🌬️</span><span style={{ fontWeight: 700 }}>Wiatr</span></span>
-            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 produkcja 🌬️, -50% ☀️, -30% 💧</span>
+            <span style={{ color: '#38bdf8', fontSize: 12, marginLeft: 28 }}>x2 🌬️, -50% ☀️, -30% 💧</span>
           </div>
           <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>⛈️</span><span style={{ fontWeight: 700 }}>Burza</span></span>
@@ -2133,7 +2291,7 @@ export default function ViessmannGame() {
           </div>
           <div style={{ display: 'flex', gap: 8, flexDirection: 'column', alignItems: 'flex-start' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span>❄️</span><span style={{ fontWeight: 700 }}>Mróz</span></span>
-            <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>wszystkie produkcje zatrzymane na 30s</span>
+            <span style={{ color: '#60a5fa', fontSize: 12, marginLeft: 28 }}>Stop produkcji na 30s</span>
           </div>
         </div>
       )}
