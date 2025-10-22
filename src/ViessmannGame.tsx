@@ -14,6 +14,18 @@ import settingsDM from './assets/ui/Settings_DM.png';
 import checkImg from './assets/ui/Check.png';
 import eventsLM from './assets/ui/Events_LM.png';
 import eventsDM from './assets/ui/Events_DM.png';
+import sunLM from './assets/ui/Sun_LM.png';
+import sunDM from './assets/ui/Sun_DM.png';
+import waterLM from './assets/ui/Water_LM.png';
+import waterDM from './assets/ui/Water_DM.png';
+import windLM from './assets/ui/Wind_LM.png';
+import windDM from './assets/ui/Wind_DM.png';
+import viCoinLM from './assets/ui/ViCoin_LM.png';
+import viCoinDM from './assets/ui/ViCoin_DM.png';
+import smogLM from './assets/ui/Smog_LM.png';
+import smogDM from './assets/ui/Smog_DM.png';
+import ecoLM from './assets/ui/Eco_LM.png';
+import ecoDM from './assets/ui/Eco_DM.png';
 import logo from './assets/ui/Logo.svg';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
@@ -987,12 +999,10 @@ export default function ViessmannGame() {
   // Weather legend fixed overlay state
   const [legendOpen, setLegendOpen] = useState(false);
   const [legendPos, setLegendPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  // Content for the fixed legend (used by resource pills)
+  const [legendContent, setLegendContent] = useState<TooltipContent | null>(null);
   // Custom tooltip only for Pollution (season info is shown in headline pill)
-  const [pollTipOpen, setPollTipOpen] = useState(false);
-  const [pollTipPos, setPollTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
-  // Eco‑reputation tooltip state
-  const [ecoTipOpen, setEcoTipOpen] = useState(false);
-  const [ecoTipPos, setEcoTipPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
+  // Eco‑reputation tooltip state (now shown via shared legendContent)
   // Day/Night tooltip state
   const [dayInfoOpen, setDayInfoOpen] = useState(false);
   const [dayInfoPos, setDayInfoPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
@@ -1675,7 +1685,6 @@ export default function ViessmannGame() {
     setBuildQueue(rescheduleQueue(remaining));
   }, [buildQueue, elapsed, finalizeBuild, rescheduleQueue]);
   const rateText = (k: ResKey) => `+${fmt(effectiveRates[k])}/s`;
-  const isNearZeroRate = (k: ResKey) => Math.abs(effectiveRates[k]) < 1e-4;
   const nowMs = Date.now();
   const buildQueueSnapshot = buildQueue.length === 0 ? null : (() => {
     const [current, ...rest] = buildQueue;
@@ -1705,17 +1714,21 @@ export default function ViessmannGame() {
     const houseTone: TooltipTone = house > 0 ? 'warning' : (house < 0 ? 'positive' : 'muted');
     const forestTone: TooltipTone = forest < 0 ? 'positive' : (forest > 0 ? 'warning' : 'muted');
     const subtitleTone: TooltipTone = total > 0 ? 'warning' : (total < 0 ? 'positive' : 'muted');
+    const lines: TooltipLine[] = [
+      { text: `Dom (${houseName}): ${fmtSign(house)}`, tone: houseTone },
+      { text: `Lasy (${forests}): ${fmtSign(forest)}`, tone: forestTone }
+    ];
+    if (smogMultiplier < 1) {
+      lines.push({ text: `Produkcja -${Math.round((1 - smogMultiplier) * 100)}%`, tone: 'warning' });
+    }
     return {
       title: 'Smog',
       subtitle: `Tempo łączne: ${fmtSign(total)}`,
       subtitleTone,
-      lines: [
-        { text: `Dom (${houseName}): ${fmtSign(house)}`, tone: houseTone },
-        { text: `Lasy (${forests}): ${fmtSign(forest)}`, tone: forestTone }
-      ],
+      lines,
       footer: 'Dodatnie tempo zwiększa smog, ujemne go redukuje.'
     };
-  }, [tiles, pollutionRate, housePollutionFor]);
+  }, [tiles, pollutionRate, housePollutionFor, smogMultiplier]);
   const weatherTooltip = useMemo<TooltipContent>(() => {
     const entries: Array<{ key: WeatherEventType; icon: string; title: string; effect: string }> = [
       { key: 'none', icon: '🌤️', title: 'Brak wydarzenia', effect: 'Produkcja standardowa' },
@@ -2007,6 +2020,46 @@ export default function ViessmannGame() {
     textOverflow: 'ellipsis'
   };
 
+  // Small ResourcePill component to render icon, value and rate
+  const ResourcePill: React.FC<{iconSrc: string, label: string, value: string | number, rate: string, onHover?: (e: React.MouseEvent<HTMLElement> | React.FocusEvent<HTMLElement>) => void, onLeave?: () => void}> = ({ iconSrc, label, value, rate, onHover, onLeave }) => (
+    <div
+      style={{ ...pill, padding: '8px 14px', paddingLeft: 12, height: 56, minHeight: 56 }}
+      onMouseEnter={(e) => onHover && onHover(e)}
+      onFocus={(e) => onHover && onHover(e)}
+      onMouseLeave={onLeave}
+      onBlur={onLeave}
+      tabIndex={0}
+      role="group"
+      aria-label={label}
+    >
+      <img src={iconSrc} alt={label} style={{ width: 36, height: 36, flex: '0 0 36px' }} />
+      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+        {/* Visible label moved into tooltip per request — keep aria-label for accessibility */}
+        <div className="font-semibold font-sans tabular-nums" style={{ color: theme.bodyText }}>{value}</div>
+        <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: theme.mutedText }}>{rate}</div>
+      </div>
+    </div>
+  );
+
+  // Helper to open legend with resource-specific content
+  const showResourceLegend = (e: React.MouseEvent<HTMLElement> | React.FocusEvent<HTMLElement>, key: ResKey, label: string) => {
+    const el = (e.currentTarget as HTMLElement);
+    const r = el.getBoundingClientRect();
+    setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+    const content: TooltipContent = {
+      title: label,
+      subtitle: `${fmt(resources[key])} — ${rateText(key)}`,
+      subtitleTone: 'muted',
+      lines: [
+        { text: `Aktualnie: ${fmt(resources[key])}` },
+        { text: `Tempo: ${rateText(key)}` },
+        { text: key === 'coins' ? 'Waluta używana do zakupów i ulepszeń.' : 'Zasób używany do budowy i operacji.' }
+      ]
+    };
+    setLegendContent(content);
+    setLegendOpen(true);
+  };
+
   // (season mapping exists earlier in headlineInfo useMemo)
 
   // Render
@@ -2042,146 +2095,172 @@ export default function ViessmannGame() {
         </div>
 
   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2, justifyContent: 'center' }}>
-          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
-            <span style={{ fontSize: 18 }}>☀️</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>Słońce</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: theme.tone.info }}>{fmt(resources.sun)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('sun') ? theme.tone.muted : theme.secondaryText }}>{rateText('sun')}</div>
-            </div>
-          </div>
+          <ResourcePill
+            iconSrc={isDay ? sunLM : sunDM}
+            label="Słońce"
+            value={fmt(resources.sun)}
+            rate={rateText('sun')}
+            onHover={(e) => showResourceLegend(e, 'sun', 'Słońce')}
+            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+          />
 
-          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
-            <span style={{ fontSize: 18 }}>💧</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>Woda</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? '#0f766e' : '#38bdf8' }}>{fmt(resources.water)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('water') ? theme.tone.muted : theme.secondaryText }}>{rateText('water')}</div>
-            </div>
-          </div>
+          <ResourcePill
+            iconSrc={isDay ? waterLM : waterDM}
+            label="Woda"
+            value={fmt(resources.water)}
+            rate={rateText('water')}
+            onHover={(e) => showResourceLegend(e, 'water', 'Woda')}
+            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+          />
 
-          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
-            <span style={{ fontSize: 18 }}>🌬️</span>
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>Wiatr</div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? '#1d4ed8' : '#a5b4fc' }}>{fmt(resources.wind)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('wind') ? theme.tone.muted : theme.secondaryText }}>{rateText('wind')}</div>
-            </div>
-          </div>
+          <ResourcePill
+            iconSrc={isDay ? windLM : windDM}
+            label="Wiatr"
+            value={fmt(resources.wind)}
+            rate={rateText('wind')}
+            onHover={(e) => showResourceLegend(e, 'wind', 'Wiatr')}
+            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+          />
 
-          <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
-            <span style={{ fontSize: 18 }}>💰</span>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, fontSize: 12, fontFamily: 'Manrope, system-ui, sans-serif', color: theme.secondaryText }}>
-                <span>ViCoins</span>
-              </div>
-              <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? '#92400e' : '#fde68a' }}>{fmt(resources.coins)}</div>
-              <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: isNearZeroRate('coins') ? theme.tone.muted : theme.secondaryText }}>{rateText('coins')}</div>
-            </div>
-          </div>
+          <ResourcePill
+            iconSrc={isDay ? viCoinLM : viCoinDM}
+            label="ViCoins"
+            value={fmt(resources.coins)}
+            rate={rateText('coins')}
+            onHover={(e) => showResourceLegend(e, 'coins', 'ViCoins')}
+            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+          />
 
 
-          <div style={{ display: "flex", alignItems: "stretch", gap: 12, flex: "0 0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 20, flex: "0 0 auto" }}>
+            {/* Smog pill */}
             <div
               style={{
                 ...pill,
-                padding: "10px 22px",
-                paddingLeft: 16,
-                minWidth: 150,
-                display: "flex",
-                alignItems: "center",
-                gap: 14,
-                position: "relative"
+                padding: '8px 14px',
+                paddingLeft: 12,
+                minWidth: 72,
+                height: 56,
+                minHeight: 56,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                position: 'relative'
               }}
               onMouseEnter={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
                 setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setLegendContent(pollutionTooltip);
                 setLegendOpen(true);
               }}
-              onMouseLeave={() => setLegendOpen(false)}
+              onMouseLeave={() => { setLegendOpen(false); setLegendContent(null); }}
               onFocus={(e) => {
                 const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
                 setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setLegendContent(pollutionTooltip);
                 setLegendOpen(true);
               }}
-              onBlur={() => setLegendOpen(false)}
+              onBlur={() => { setLegendOpen(false); setLegendContent(null); }}
+              tabIndex={0}
+              role="group"
+              aria-label="Smog"
             >
-              <span style={{ fontSize: 20 }}>
-                {weatherEvent.type === "clouds" && "☁️"}
-                {weatherEvent.type === "sunny" && "🌞"}
-                {weatherEvent.type === "rain" && "🌧️"}
-                {weatherEvent.type === "wind" && "🌬️"}
-                {weatherEvent.type === "storm" && "⛈️"}
-                {weatherEvent.type === "frost" && "❄️"}
-                {weatherEvent.type === "none" && "🌤️"}
-              </span>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Pogoda</div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: theme.tone.info, marginTop: 2 }}>
-                  {weatherEvent.type === "clouds" && "Chmury"}
-                  {weatherEvent.type === "sunny" && "Słońce"}
-                  {weatherEvent.type === "rain" && "Deszcz"}
-                  {weatherEvent.type === "wind" && "Wiatr"}
-                  {weatherEvent.type === "storm" && "Burza"}
-                  {weatherEvent.type === "frost" && "Mróz"}
-                  {weatherEvent.type === "none" && "Brak wydarzenia"}
-                </div>
-                <div style={{ fontSize: 12, color: theme.bodyText, marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {weatherEvent.type === "clouds" && "Brak produkcji ☀️"}
-                  {weatherEvent.type === "sunny" && "x2 ☀️"}
-                  {weatherEvent.type === "rain" && "x2 💧"}
-                  {weatherEvent.type === "wind" && "x2 🌬️, -50% ☀️, -30% 💧"}
-                  {weatherEvent.type === "storm" && "x3 🌬️, x1.5 💧, ☀️ = 0"}
-                  {weatherEvent.type === "frost" && "Produkcja wstrzymana"}
-                  {weatherEvent.type === "none" && "Brak efektu"}
+              <img src={isDay ? smogLM : smogDM} alt="Smog" style={{ width: 36, height: 36, flex: '0 0 36px' }} />
+              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                <div className="font-semibold font-sans tabular-nums" style={{ color: theme.bodyText }}>{Math.round(pollution)}</div>
+                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: theme.mutedText }}>
+                  <span style={{ color: pollutionRate >= 0 ? theme.tone.warning : theme.tone.positive }}>{pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s</span>
                 </div>
               </div>
-              {weatherEvent.type !== "none" && (
-                <span style={{ fontSize: 12, fontWeight: 700, color: theme.tone.info, whiteSpace: 'nowrap' }}>{weatherEvent.remaining}s</span>
+            </div>
+
+            {/* Weather pill (separate wrapper) */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: 8 }}>
+              <button
+                onMouseEnter={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setLegendContent(weatherTooltip);
+                  setLegendOpen(true);
+                }}
+                onMouseLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+                onFocus={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setLegendContent(weatherTooltip);
+                  setLegendOpen(true);
+                }}
+                onBlur={() => { setLegendOpen(false); setLegendContent(null); }}
+                aria-label={
+                  weatherEvent.type === "clouds" ? 'Chmury' :
+                  weatherEvent.type === "sunny" ? 'Słońce' :
+                  weatherEvent.type === "rain" ? 'Deszcz' :
+                  weatherEvent.type === "wind" ? 'Wiatr' :
+                  weatherEvent.type === "storm" ? 'Burza' :
+                  weatherEvent.type === "frost" ? 'Mróz' : 'Brak wydarzenia'
+                }
+                title={
+                  weatherEvent.type === "clouds" ? 'Chmury' :
+                  weatherEvent.type === "sunny" ? 'Słońce' :
+                  weatherEvent.type === "rain" ? 'Deszcz' :
+                  weatherEvent.type === "wind" ? 'Wiatr' :
+                  weatherEvent.type === "storm" ? 'Burza' :
+                  weatherEvent.type === "frost" ? 'Mróz' : 'Brak wydarzenia'
+                }
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  border: `2px solid ${theme.pillBorder}`,
+                  boxShadow: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <span style={{ fontSize: 44, lineHeight: 1 }}>
+                  {weatherEvent.type === "clouds" && "☁️"}
+                  {weatherEvent.type === "sunny" && "🌞"}
+                  {weatherEvent.type === "rain" && "🌧️"}
+                  {weatherEvent.type === "wind" && "🌬️"}
+                  {weatherEvent.type === "storm" && "⛈️"}
+                  {weatherEvent.type === "frost" && "❄️"}
+                  {weatherEvent.type === "none" && "🌤️"}
+                </span>
+              </button>
+              {weatherEvent.type !== 'none' && (
+                <span
+                  aria-hidden={true}
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: -6,
+                    zIndex: 1300,
+                    minWidth: 18,
+                    height: 18,
+                    padding: '0 6px',
+                    background: theme.tone.warning,
+                    color: '#fff',
+                    borderRadius: 999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    border: `2px solid ${theme.headerBg}`
+                  }}
+                >
+                  !
+                </span>
               )}
             </div>
 
-            <div
-              style={{
-                ...pill,
-                padding: "8px 14px",
-                paddingLeft: 12,
-                minWidth: 110,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                position: "relative"
-              }}
-              onMouseEnter={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setPollTipOpen(true);
-              }}
-              onMouseLeave={() => setPollTipOpen(false)}
-              onFocus={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setPollTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setPollTipOpen(true);
-              }}
-              onBlur={() => setPollTipOpen(false)}
-            >
-              <span style={{ fontSize: 18 }}>🏭</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Smog</div>
-                <div className="font-semibold font-sans tabular-nums" style={{ color: isDay ? "#7c3a0c" : "#fca5a5", fontSize: 18 }}>{Math.round(pollution)}</div>
-                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, display: 'flex', alignItems: 'baseline', gap: 10 }}>
-                  <span style={{ color: pollutionRate >= 0 ? theme.tone.warning : theme.tone.positive }}>
-                    {pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s
-                  </span>
-                  {smogMultiplier < 1 && (
-                    <span style={{ color: theme.mutedText }}>
-                      Produkcja -{Math.round((1 - smogMultiplier) * 100)}%
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
+            {/* Events pill */}
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <button
                 onClick={() => setIsEventsCenterOpen(true)}
@@ -2208,10 +2287,10 @@ export default function ViessmannGame() {
               {badgeCount > 0 && (
                 <span
                   aria-hidden={true}
-                    style={{
-                      position: 'absolute',
-                      top: 4,
-                      right: -6,
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: -6,
                     minWidth: 18,
                     height: 18,
                     padding: '0 6px',
@@ -2232,41 +2311,68 @@ export default function ViessmannGame() {
               )}
             </div>
 
-            <div
-              style={{
-                ...pill,
-                padding: "10px 20px",
-                paddingLeft: 16,
-                minWidth: 160,
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                position: "relative",
-                cursor: "pointer"
-              }}
-              onMouseEnter={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setEcoTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setEcoTipOpen(true);
-              }}
-              onMouseLeave={() => setEcoTipOpen(false)}
-              onFocus={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setEcoTipPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setEcoTipOpen(true);
-              }}
-              onBlur={() => setEcoTipOpen(false)}
-              tabIndex={0}
-              title="Eko-reputacja"
-            >
-              <span style={{ fontSize: 18 }}>🌿</span>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Eko-reputacja</div>
-                <div className="font-semibold font-sans tabular-nums" style={{ color: theme.tone.positive, fontSize: 18 }}>{ecoRep}</div>
-                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: coinBonusPct > 0 ? theme.tone.positive : theme.mutedText }}>
-                  {coinBonusPct > 0 ? `Bonus monet +${coinBonusPct}%` : 'Brak bonusu'}
-                </div>
-              </div>
+            {/* Eco pill */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <button
+                onMouseEnter={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setLegendContent(ecoTooltip);
+                  setLegendOpen(true);
+                }}
+                onMouseLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+                onFocus={(e) => {
+                  const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                  setLegendPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                  setLegendContent(ecoTooltip);
+                  setLegendOpen(true);
+                }}
+                onBlur={() => { setLegendOpen(false); setLegendContent(null); }}
+                aria-label="Eko-reputacja"
+                title="Eko-reputacja"
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowAchievements(true); } }}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  border: `2px solid ${theme.pillBorder}`,
+                  boxShadow: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <img src={isDay ? ecoLM : ecoDM} alt="Eko-reputacja" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </button>
+              {ecoRep < 40 && (
+                <span
+                  aria-hidden={true}
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: -6,
+                    minWidth: 18,
+                    height: 18,
+                    padding: '0 6px',
+                    background: theme.tone.warning,
+                    color: '#fff',
+                    borderRadius: 999,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    border: `2px solid ${theme.headerBg}`
+                  }}
+                >
+                  !
+                </span>
+              )}
             </div>
           </div>
 
@@ -2546,32 +2652,7 @@ export default function ViessmannGame() {
         </div>
       </header>
   {/* Season tooltip removed – unified into headline ticker */}
-      {/* Eco‑reputacja tooltip */}
-      {ecoTipOpen && (
-        <div
-          className="scroll-tooltip"
-          style={{ left: ecoTipPos.left, top: ecoTipPos.top }}
-          aria-hidden={true}
-        >
-          <div className="scroll-tooltip__title">{ecoTooltip.title}</div>
-          {ecoTooltip.subtitle && (
-            <div className={`scroll-tooltip__subtitle${ecoTooltip.subtitleTone ? ` scroll-tooltip__subtitle--${ecoTooltip.subtitleTone}` : ''}`}>
-              {ecoTooltip.subtitle}
-            </div>
-          )}
-          <div className="scroll-tooltip__body">
-            {ecoTooltip.lines.map((line, idx) => (
-              <div
-                key={idx}
-                className={`scroll-tooltip__line${line.tone ? ` scroll-tooltip__line--${line.tone}` : ''}`}
-              >
-                {line.text}
-              </div>
-            ))}
-          </div>
-          {ecoTooltip.footer && <div className="scroll-tooltip__footer">{ecoTooltip.footer}</div>}
-        </div>
-      )}
+      {/* Eco tooltip is shown via the shared legend (legendContent set to ecoTooltip) */}
       {dayInfoOpen && (
         <div
           className="scroll-tooltip"
@@ -2634,31 +2715,7 @@ export default function ViessmannGame() {
           )}
         </div>
       )}
-      {pollTipOpen && (
-        <div
-          className="scroll-tooltip"
-          style={{ left: pollTipPos.left, top: pollTipPos.top }}
-          aria-hidden={true}
-        >
-          <div className="scroll-tooltip__title">{pollutionTooltip.title}</div>
-          {pollutionTooltip.subtitle && (
-            <div className={`scroll-tooltip__subtitle${pollutionTooltip.subtitleTone ? ` scroll-tooltip__subtitle--${pollutionTooltip.subtitleTone}` : ''}`}>
-              {pollutionTooltip.subtitle}
-            </div>
-          )}
-          <div className="scroll-tooltip__body">
-            {pollutionTooltip.lines.map((line, idx) => (
-              <div
-                key={idx}
-                className={`scroll-tooltip__line${line.tone ? ` scroll-tooltip__line--${line.tone}` : ''}`}
-              >
-                {line.text}
-              </div>
-            ))}
-          </div>
-          {pollutionTooltip.footer && <div className="scroll-tooltip__footer">{pollutionTooltip.footer}</div>}
-        </div>
-      )}
+      {/* pollution tooltip is shown via the shared legend (legendContent set to pollutionTooltip) */}
       {relTip && (
         <div
           style={{
@@ -2696,14 +2753,17 @@ export default function ViessmannGame() {
           }}
           aria-hidden={true}
         >
-          <div className="scroll-tooltip__title">{weatherTooltip.title}</div>
-          {weatherTooltip.subtitle && (
-            <div className={`scroll-tooltip__subtitle${weatherTooltip.subtitleTone ? ` scroll-tooltip__subtitle--${weatherTooltip.subtitleTone}` : ''}`}>
-              {weatherTooltip.subtitle}
+          {/* Use resource-specific legendContent when present; otherwise fall back to weatherTooltip */}
+          {((legendContent ?? weatherTooltip) as TooltipContent).title && (
+            <div className="scroll-tooltip__title">{(legendContent ?? weatherTooltip)!.title}</div>
+          )}
+          {((legendContent ?? weatherTooltip)!.subtitle) && (
+            <div className={`scroll-tooltip__subtitle${((legendContent ?? weatherTooltip)!.subtitleTone) ? ` scroll-tooltip__subtitle--${((legendContent ?? weatherTooltip)!.subtitleTone)}` : ''}`}>
+              {(legendContent ?? weatherTooltip)!.subtitle}
             </div>
           )}
           <div className="scroll-tooltip__body">
-            {weatherTooltip.lines.map((line, idx) => (
+            {((legendContent ?? weatherTooltip)!.lines).map((line, idx) => (
               <div
                 key={idx}
                 className={`scroll-tooltip__line${line.tone ? ` scroll-tooltip__line--${line.tone}` : ''}`}
@@ -2712,8 +2772,8 @@ export default function ViessmannGame() {
               </div>
             ))}
           </div>
-          {weatherTooltip.footer && (
-            <div className="scroll-tooltip__footer">{weatherTooltip.footer}</div>
+          {((legendContent ?? weatherTooltip)!.footer) && (
+            <div className="scroll-tooltip__footer">{(legendContent ?? weatherTooltip)!.footer}</div>
           )}
         </div>
       )}
