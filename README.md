@@ -52,7 +52,7 @@ Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urzą
 - Powiadomienia (dzwonek):
   - Toasty pojawiają się tylko przy nowych osiągnięciach.
   - Wpisy dotyczące misji i pogody trafiają do Dziennika bez toastów.
-  - Przyciski w prawym górnym rogu: „Mój profil” ma czerwoną kropkę, gdy są nowe osiągnięcia lub wpisy w Dzienniku.
+  - Przyciski w prawym górnym rogu: „Mój profil” ma czerwoną kropkę, gdy są nowe osiągnięcia lub wpisy w Dzienniku. Po prawej od profilu znajduje się przycisk "Ustawienia" — odstęp między nimi to 32px; tylko profil może pokazywać badge (czerwoną kropkę), ustawienia nie pokazują badge.
 - Tryb nocny:
   - Menu profilu, popupy Osiągnięć i Dziennika oraz karty mają ciemne tło i jasne teksty.
 

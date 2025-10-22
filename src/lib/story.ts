@@ -97,7 +97,7 @@ export function getSampleEvents(): StoryEvent[] {
           label: 'Bon budżetowy (+10 ViCoins)',
           apply: (api) => {
             api.grantCoins(10, 'Bon budżetowy');
-            api.toast('💰', 'Otrzymano 10 ViCoins.');
+            api.toast('ViCoin', 'Otrzymano 10 ViCoins.');
           },
         },
       ],
@@ -129,7 +129,7 @@ export function getSampleEvents(): StoryEvent[] {
           apply: (api) => {
             api.grantCoins(8, 'Oszczędności');
             api.adjustFaction?.('community', -6);
-            api.toast('💰', 'Odmowa wsparcia ogrodu.');
+            api.toast('ViCoin', 'Odmowa wsparcia ogrodu.');
           },
         },
       ],
@@ -156,7 +156,7 @@ export function getSampleEvents(): StoryEvent[] {
           label: 'Przeznacz na budżet (+20 ViCoins)',
           apply: (api) => {
             api.grantCoins(20, 'Nagroda Zielony Lider');
-            api.toast('💰', 'Nagroda przyznana: +20 ViCoins.');
+            api.toast('ViCoin', 'Nagroda przyznana: +20 ViCoins.');
           },
         },
       ],
@@ -388,7 +388,7 @@ export function getSampleEvents(): StoryEvent[] {
           label: 'Oszczędzaj teraz (+10 ViCoins, +0.02 smog/s na 20 s)',
           apply: (api) => {
             api.grantCoins(10, 'Szybkie oszczędności');
-            api.toast('💰', 'Otrzymano 10 ViCoins. Uwaga na krótkotrwałe emisje.');
+            api.toast('ViCoin', 'Otrzymano 10 ViCoins. Uwaga na krótkotrwałe emisje.');
             // Modelujemy krótkotrwały skok smogu jako impuls natychmiastowy
             api.addPollutionInstant(0.4, 'Krótkotrwałe emisje');
           },
@@ -497,7 +497,7 @@ export function getSampleEvents(): StoryEvent[] {
           label: 'Zrezygnuj (zachowaj niezależność)',
           apply: (api) => {
             api.grantCoins(10, 'Premia za niezależność');
-            api.toast('💰', 'Otrzymano 10 ViCoins za niezależność.');
+            api.toast('ViCoin', 'Otrzymano 10 ViCoins za niezależność.');
           },
         },
       ],

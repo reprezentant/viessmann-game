@@ -6,6 +6,13 @@ import type { StoryEvent, StoryApi, StoryContext, StoryChoice } from './lib/stor
 import EventsCenterModal from './components/EventsCenterModal.tsx';
 import missionBadgeDay from './assets/missions/Missions_LM.png';
 import missionBadgeNight from './assets/missions/Missions_DM.png';
+// (Unused imports removed during header refactor)
+import profileDay from './assets/ui/Profile_LM.png';
+import profileNight from './assets/ui/Profile_DM.png';
+import settingsDay from './assets/ui/Settings_LM.png';
+import settingsNight from './assets/ui/Settings_DM.png';
+import TopAvatar from './components/TopAvatar';
+// --- Typy bazowe ---
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -992,6 +999,7 @@ export default function ViessmannGame() {
 
   // Profile menu states
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -2321,43 +2329,13 @@ export default function ViessmannGame() {
           </div>
         </div>
 
-        {/* Profile Menu */}
-        <div style={{ position: "relative" }}>
-          <div
-            style={{
-              ...pill,
-              padding: "8px 18px",
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              cursor: "pointer",
-              border: showProfileMenu ? `1px solid ${theme.tone.info}` : `1px solid ${theme.pillBorder}`,
-              boxShadow: showProfileMenu ? `0 0 0 3px ${theme.tone.infoSoft}` : theme.pillShadow,
-              background: showProfileMenu ? theme.surfaceHover : theme.inputBg,
-              transition: "all 0.2s ease"
-            }}
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-          >
-            <span style={{ fontSize: 16 }}>👤</span>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Mój profil</span>
-          </div>
+        {/* Profile + Settings avatars */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 32, marginRight: 40 }}>
+          <TopAvatar imgSrc={isDay ? profileDay : profileNight} title="Mój profil" isOpen={showProfileMenu} onToggle={() => setShowProfileMenu(s => !s)} border={isDay ? '1px solid #e5e7eb' : '1px solid #334155'} />
           {(hasNewAchievements || hasNewLog) && (
-            <span
-              aria-label="nowe"
-              title="Nowe"
-              style={{
-                position: 'absolute',
-                top: -4,
-                right: -4,
-                width: 10,
-                height: 10,
-                background: '#ef4444',
-                borderRadius: 999,
-                border: `2px solid ${theme.headerBg}`,
-                pointerEvents: 'none'
-              }}
-            />
+            <span aria-hidden style={{ position: 'relative', width: 0 }}> {/* spacer for absolute badge positioning in menu */}</span>
           )}
+          <TopAvatar imgSrc={isDay ? settingsDay : settingsNight} title="Ustawienia" isOpen={showSettingsMenu} onToggle={() => setShowSettingsMenu(s => !s)} border={isDay ? '1px solid #e5e7eb' : '1px solid #334155'} />
 
           {showProfileMenu && (
             <div
