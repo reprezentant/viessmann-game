@@ -2208,10 +2208,10 @@ export default function ViessmannGame() {
               {badgeCount > 0 && (
                 <span
                   aria-hidden={true}
-                  style={{
-                    position: 'absolute',
-                    top: -6,
-                    right: -6,
+                    style={{
+                      position: 'absolute',
+                      top: 4,
+                      right: -6,
                     minWidth: 18,
                     height: 18,
                     padding: '0 6px',
