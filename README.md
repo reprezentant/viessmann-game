@@ -4,7 +4,7 @@ Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urzą
 
 ### Zasady gry (Rules)
 
-- Zasoby: ☀️ Słońce, 💧 Woda, 🌬️ Wiatr, 💰 ViCoins.
+- Zasoby: ☀️ Słońce, 💧 Woda, 🌬️ Wiatr, ![ViCoin](src/assets/ui/ViCoin_LM.png) ViCoins.
   - Produkcja zależy od pory dnia (dzień/noc) i pogody.
   - Startowe stawki rosną wraz z rozbudową; ViCoins rosną stale, wzrost może być zwiększany przez efekty.
 - Pogoda (losowo, co pewien czas):
@@ -21,7 +21,7 @@ Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urzą
     - PV (Vitovolt): koszt rośnie geometrycznie o ~15% względem bazowej ceny za każdy posiadany panel.
     - E‑Charger: koszt rośnie geometrycznie o ~18% względem bazowej ceny za każdą posiadaną sztukę.
   - Zasady stawiania: kocioł węglowy/pellet/gaz tylko na kafelku domu; pozostałe na wolnych kafelkach (dom musi pozostać wolny, jeśli na nim nic nie ma).
-  - E-Charger: +5 💰/min (pasywny bonus).
+  - E-Charger: +5 ViCoins/min (pasywny bonus).
   - Las: silna redukcja zanieczyszczenia (opis w karcie sklepu), działa stale po postawieniu.
 - Zanieczyszczenie 🏭:
   - Węgiel podnosi, pellet i las redukują; gaz obniża w stosunku do pelletu.
@@ -37,6 +37,7 @@ Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urzą
   - Osobna zakładka z paskami opinii frakcji i dymkami informacyjnymi, z progami korzyści opisanymi kontekstowo.
 - Misje:
   - Panel „Misje” pokazuje postęp (paski) oraz nagrody.
+  - W tej wersji: ikona ViCoin została zaktualizowana na trwały asset (plikiem: `src/assets/ui/ViCoin_LM.png`) zamiast emoji. Panel Misji używa kart misji (medalion po lewej, tytuł/opis po prawej, nagroda poniżej). Ukończone misje pokazują obrazek check (`src/assets/ui/Check.png`) zamiast znaku ✓ oraz mają pogrubioną, zieloną ramkę (#7BB894).
   - Przykłady: Pierwsze kroki (postaw kocioł węglowy) → +10 ViCoins; Ekologiczny wybór (zamień węgiel na pellet) → −20 zanieczyszczenia; Zielona inwestycja (posadź las) → −30 zanieczyszczenia.
   - Ukończenie misji nie jest zapisywane między sesjami (każda sesja to nowa runda pod kątem misji).
   - Zakładki „Aktywne”/„Ukończone” filtrują listę misji, a ozdobny badge (w wariantach dzień/noc) pojawia się nad nagłówkiem.
