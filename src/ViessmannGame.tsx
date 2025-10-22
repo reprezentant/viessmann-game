@@ -12,6 +12,7 @@ import profileDM from './assets/ui/Profile_DM.png';
 import settingsLM from './assets/ui/Settings_LM.png';
 import settingsDM from './assets/ui/Settings_DM.png';
 import checkImg from './assets/ui/Check.png';
+import logo from './assets/ui/Logo.svg';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -1793,10 +1794,12 @@ export default function ViessmannGame() {
   const pill: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
     borderRadius: 16,
     background: theme.pillBg,
-    padding: "6px 14px",
+    padding: "8px 16px",
+    minHeight: 56,
+    flex: '0 0 auto',
     border: `1px solid ${theme.pillBorder}`,
     boxShadow: theme.pillShadow,
     color: theme.bodyText,
@@ -2033,11 +2036,10 @@ export default function ViessmannGame() {
       {/* top bar */}
       <header style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ width: 24, height: 24, borderRadius: 6, background: "#EA580C" }} />
-          <span className="font-extrabold text-base font-sans">Viessmann</span>
+          <img src={logo} alt="Viessmann logo" style={{ height: 36, width: 'auto', display: 'block' }} />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2 }}>
+  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2, justifyContent: 'center' }}>
           <div style={{ ...pill, padding: "8px 22px", paddingLeft: 14 }}>
             <span style={{ fontSize: 18 }}>☀️</span>
             <div>
@@ -2076,7 +2078,6 @@ export default function ViessmannGame() {
             </div>
           </div>
 
-          <div style={{ width: 16 }} />
 
           <div style={{ display: "flex", alignItems: "stretch", gap: 12, flex: "0 0 auto" }}>
             <div
@@ -2280,7 +2281,7 @@ export default function ViessmannGame() {
             </div>
           </div>
 
-          <div style={{ width: 16 }} />
+          
         </div>
 
   {/* Profile Menu */}
