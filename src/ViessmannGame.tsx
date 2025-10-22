@@ -6,6 +6,8 @@ import type { StoryEvent, StoryApi, StoryContext, StoryChoice } from './lib/stor
 import EventsCenterModal from './components/EventsCenterModal.tsx';
 import missionBadgeDay from './assets/missions/Missions_LM.png';
 import missionBadgeNight from './assets/missions/Missions_DM.png';
+import MissionCard from './components/MissionCard';
+import checkImg from './assets/ui/Check.png';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -954,31 +956,7 @@ export default function ViessmannGame() {
     setStoryDiscountLabel(null);
   }, [createInitialTiles]);
 
-  // -------- Missions progress --------
-  type MissionProgress = { value: number; max: number; label: string };
-  const missionProgress = useMemo<Record<string, MissionProgress>>(() => {
-    const mp: Record<string, MissionProgress> = {};
-    const bin = (done: boolean): MissionProgress => ({ value: done ? 1 : 0, max: 1, label: done ? '1/1' : '0/1' });
-    const has = (k: EntityType) => (placedCounts[k] ?? 0) > 0;
-    // Binary missions mapped to entities
-    const mapBin: Array<[string, EntityType]> = [
-      ['first-steps','coal'], ['eco-choice','pellet'], ['triola-gas','gas'], ['parola-1965','parola1965'],
-      ['stainless-1972','stainless1972'], ['heatpump-1978','heatpump1978'], ['vitola-1978','vitola1978'], ['vitodens-1989','vitodens1989'],
-      ['vitocal-modern','heatpump'], ['green-investment','forest'], ['collector-1972','collector1972'], ['pv-vitovolt','solar'],
-      ['vitocharge-inverter','inverter'], ['grid-connect','grid'], ['vitovalor-2014','vitovalor2014'], ['floor-heat','floor'],
-      ['thermostats-src','thermostat'], ['inox-radial','inoxRadial']
-    ];
-    for (const [k, ent] of mapBin) mp[k] = bin(has(ent));
-    // Composite: future-home (heatpump + solar + grid)
-    const fhParts = ['heatpump','solar','grid'] as const;
-    const fhHave = fhParts.filter(k => has(k)).length;
-    mp['future-home'] = { value: fhHave, max: fhParts.length, label: `${fhHave}/${fhParts.length}` };
-    // Zero smog: require combo + pollution <= 10; show progress toward 10
-    const comboReady = ['heatpump','inoxRadial','solar','grid'].every(k => has(k as EntityType));
-    const val = pollution <= 10 ? 1 : Math.min(1, 10 / Math.max(10, pollution));
-    mp['zero-smog'] = { value: comboReady ? val : 0, max: 1, label: comboReady ? (pollution <= 10 ? '1/1' : `cel: ≤10 (teraz: ${Math.round(pollution)})`) : '0/1' };
-    return mp;
-  }, [placedCounts, pollution]);
+  // mission progress is shown inline per mission card now; earlier aggregated progress logic removed
   // Allow canceling placement with Escape
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -1872,6 +1850,30 @@ export default function ViessmannGame() {
     { key: "future-home", title: "Dom przyszłości", description: "Miej pompę ciepła + PV + Grid jednocześnie.", completed: false, reward: "+40 ViCoins", accent: "emerald" },
     { key: "zero-smog", title: "Zero smogu", description: "Obniż zanieczyszczenie do 10 lub mniej.", completed: false, reward: "+50 ViCoins", accent: "emerald" },
   ]);
+
+  // Map mission keys to asset paths provided
+  const missionAssetMap: Record<string, string> = {
+    'first-steps': '/src/assets/missions/Start.png',
+    'eco-choice': '/src/assets/missions/StalowyKrok.png',
+    'triola-gas': '/src/assets/missions/Triola.png',
+    'parola-1965': '/src/assets/missions/Parola.png',
+    'stainless-1972': '/src/assets/missions/Nierdzewny.png',
+    'heatpump-1978': '/src/assets/missions/HeatPump.png',
+    'vitola-1978': '/src/assets/missions/Vitola.png',
+    'vitodens-1989': '/src/assets/missions/Vitodens.png',
+    'vitocal-modern': '/src/assets/missions/Vitocal.png',
+    'green-investment': '/src/assets/missions/Las.png',
+    'collector-1972': '/src/assets/missions/Kolektor.png',
+    'pv-vitovolt': '/src/assets/missions/PV.png',
+    'vitocharge-inverter': '/src/assets/missions/Inverter.png',
+    'grid-connect': '/src/assets/missions/Grid.png',
+    'vitovalor-2014': '/src/assets/missions/Vitovalor.png',
+    'floor-heat': '/src/assets/missions/FloorHeating.png',
+    'thermostats-src': '/src/assets/missions/Thermostats.png',
+    'inox-radial': '/src/assets/missions/Inox-Radial.png',
+    'future-home': '/src/assets/missions/SmartHome.png',
+    'zero-smog': '/src/assets/missions/NoSmog.png',
+  };
   const [missionsTab, setMissionsTab] = useState<"active" | "completed">("active");
   const activeMissions = useMemo(() => missions.filter(m => !m.completed), [missions]);
   const completedMissions = useMemo(() => missions.filter(m => m.completed), [missions]);
@@ -2708,28 +2710,15 @@ export default function ViessmannGame() {
             </div>
             <div style={{ display: 'grid', gap: 10 }}>
               {missions.map(m => (
-                <div key={m.key} style={{ padding: 12, borderRadius: 10, border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', background: isDay ? '#ffffff' : '#111827', opacity: m.completed ? 0.85 : 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>{m.accent === 'emerald' ? '✅' : '🎯'}</span>
-                    <div style={{ fontWeight: 700 }}>{m.title}</div>
-                    {m.completed && <span style={{ marginLeft: 'auto', color: '#10b981', fontSize: 12, fontWeight: 700 }}>ukończono</span>}
-                  </div>
-                  <div style={{ fontSize: 12, color: isDay ? '#475569' : '#94a3b8' }}>{m.description}</div>
-                  {/* Progress bar */}
-                  <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {(() => { const p = missionProgress[m.key]; return (
-                      <>
-                        <div style={{ flex: 1, height: 6, background: isDay ? '#e5e7eb' : '#334155', borderRadius: 6, overflow: 'hidden' }}>
-                          <div style={{ height: '100%', width: `${Math.min(100, Math.round(((p?.value ?? 0) / Math.max(1, p?.max ?? 1)) * 100))}%`, background: '#10b981' }} />
-                        </div>
-                        <span style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', minWidth: 64, textAlign: 'right' }}>{p?.label || ''}</span>
-                      </>
-                    ); })()}
-                  </div>
-                  <div style={{ fontSize: 12, marginTop: 6 }}>
-                    Nagroda: <span style={{ fontWeight: 700 }}>{m.reward}</span>
-                  </div>
-                </div>
+                <MissionCard
+                  key={m.key}
+                  title={m.title}
+                  description={m.description}
+                  reward={m.reward}
+                  imgSrc={missionAssetMap[m.key]}
+                  completed={m.completed}
+                  isDay={isDay}
+                />
               ))}
             </div>
           </div>
@@ -3110,12 +3099,12 @@ export default function ViessmannGame() {
               />
             </div>
           </div>
-          <h2 className="font-bold font-sans text-lg text-neutral-900" style={{ marginBottom: 8, marginTop: -8 }}>Misje</h2>
+          <h2 className="font-bold font-sans text-lg text-neutral-900" style={{ marginBottom: 8, marginTop: -8, textAlign: 'center', width: '100%' }}>Misje</h2>
           {missions.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span className="text-xs font-sans text-neutral-500">Postęp misji</span>
-                <span className="text-xs font-sans text-neutral-500">{completedMissionCount} / {missions.length}</span>
+                <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>Postęp misji</span>
+                <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>{completedMissionCount} / {missions.length}</span>
               </div>
               <div style={{ width: "100%", height: 8, background: isDay ? "#E5E7EB" : "#334155", borderRadius: 6, overflow: "hidden" }}>
                 <div style={{
@@ -3146,29 +3135,20 @@ export default function ViessmannGame() {
             </button>
           </div>
           {missionsTab === "active" ? (
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: '56vh', overflowY: 'auto', paddingRight: 6 }}>
               {activeMissionCount === 0 ? (
                 <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak aktywnych misji 🎉</div>
               ) : (
                 activeMissions.map(m => (
-                  <div key={m.key} style={{
-                    borderRadius: 12,
-                    background: isDay ? "#fff" : "#1e293b",
-                    color: isDay ? undefined : "#F1F5F9",
-                    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                    padding: 12,
-                    border: isDay ? "1.5px solid #E5E7EB" : "1.5px solid #334155",
-                    opacity: 1,
-                    transition: "all 0.2s"
-                  }}>
-                    <div className="font-medium font-sans mb-1" style={{ color: isDay ? "#111" : "#F1F5F9", fontSize: 15, fontWeight: ["Pierwsze kroki", "Ekologiczny wybór", "Zielona inwestycja"].includes(m.title) ? 800 : 500 }}>{m.title}</div>
-                    <div className="font-normal font-sans mb-2" style={{ color: isDay ? "#334155" : "#CBD5E1", fontSize: 13 }}>{m.description}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {m.reward.includes('ViCoins') && <span style={{ fontSize: 15, background: '#fbbf24', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>💰</span>}
-                      {m.reward.includes('zanieczyszczenia') && <span style={{ fontSize: 15, background: '#10b981', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>🌱</span>}
-                      <span className={`font-semibold font-sans`} style={{ fontSize: 13, color: m.accent === "emerald" ? (isDay ? "#059669" : "#6ee7b7") : m.accent === "red" ? (isDay ? "#dc2626" : "#f87171") : (isDay ? "#334155" : "#CBD5E1") }}>{m.reward}</span>
-                    </div>
-                  </div>
+                  <MissionCard
+                    key={m.key}
+                    title={m.title}
+                    description={m.description}
+                    reward={m.reward}
+                    imgSrc={missionAssetMap[m.key]}
+                    completed={m.completed}
+                    isDay={isDay}
+                  />
                 ))
               )}
             </div>
@@ -3179,30 +3159,15 @@ export default function ViessmannGame() {
               ) : (
                 <>
                   {completedMissions.map(m => (
-                    <div key={m.key} style={{
-                      borderRadius: 12,
-                      background: isDay ? "#D1FAE5" : "#334155",
-                      color: isDay ? undefined : "#F1F5F9",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                      padding: 12,
-                      border: "1.5px solid #10B981",
-                      opacity: 0.7,
-                      transition: "all 0.2s",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10
-                    }}>
-                      <span style={{ fontSize: 17, color: isDay ? "#10B981" : "#34D399" }}>✓</span>
-                      <div style={{ flex: 1 }}>
-                        <div className="font-medium font-sans mb-1" style={{ color: isDay ? "#10B981" : "#34D399", fontSize: 14, fontWeight: ["Pierwsze kroki", "Ekologiczny wybór", "Zielona inwestycja"].includes(m.title) ? 800 : 500 }}>{m.title}</div>
-                        <div className="font-normal font-sans mb-2" style={{ color: isDay ? "#334155" : "#CBD5E1", fontSize: 12 }}>{m.description}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          {m.reward.includes('ViCoins') && <span style={{ fontSize: 15, background: '#fbbf24', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', animation: 'reward-bounce 0.7s' }}>💰</span>}
-                          {m.reward.includes('zanieczyszczenia') && <span style={{ fontSize: 15, background: '#10b981', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', animation: 'reward-bounce 0.7s' }}>🌱</span>}
-                          <span className={`font-semibold font-sans`} style={{ fontSize: 12, color: m.accent === "emerald" ? (isDay ? "#059669" : "#6ee7b7") : m.accent === "red" ? (isDay ? "#dc2626" : "#f87171") : (isDay ? "#334155" : "#CBD5E1") }}>{m.reward}</span>
-                        </div>
-                      </div>
-                    </div>
+                    <MissionCard
+                      key={m.key}
+                      title={m.title}
+                      description={m.description}
+                      reward={m.reward}
+                      imgSrc={checkImg}
+                      completed={m.completed}
+                      isDay={isDay}
+                    />
                   ))}
                   <style>{`@keyframes reward-bounce{0%{transform:scale(0.7);}60%{transform:scale(1.2);}100%{transform:scale(1);}}`}</style>
                 </>
