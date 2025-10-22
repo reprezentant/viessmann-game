@@ -4,6 +4,8 @@ import { clamp as clampHelper, seasonPollutionFor as seasonPollutionForHelper, h
 import { getSampleEvents } from './lib/story';
 import type { StoryEvent, StoryApi, StoryContext, StoryChoice } from './lib/story';
 import EventsCenterModal from './components/EventsCenterModal.tsx';
+import missionBadgeDay from './assets/missions/Missions_LM.png';
+import missionBadgeNight from './assets/missions/Missions_DM.png';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -1736,7 +1738,7 @@ export default function ViessmannGame() {
       { key: 'rain', icon: '🌧️', title: 'Deszcz', effect: 'x2 💧' },
       { key: 'wind', icon: '🌬️', title: 'Wiatr', effect: 'x2 🌬️, -50% ☀️, -30% 💧' },
       { key: 'storm', icon: '⛈️', title: 'Burza', effect: 'x3 🌬️, x1.5 💧, ☀️ = 0 (20s)' },
-      { key: 'frost', icon: '❄️', title: 'Mróz', effect: 'Wszystkie produkcje zatrzymane (30s)' },
+  { key: 'frost', icon: '❄️', title: 'Mróz', effect: 'Produkcja wstrzymana (30s)' },
     ];
     const toneForWeather = (type: WeatherEventType): TooltipTone => {
       if (type === 'sunny' || type === 'rain' || type === 'wind') return 'positive';
@@ -1870,6 +1872,12 @@ export default function ViessmannGame() {
     { key: "future-home", title: "Dom przyszłości", description: "Miej pompę ciepła + PV + Grid jednocześnie.", completed: false, reward: "+40 ViCoins", accent: "emerald" },
     { key: "zero-smog", title: "Zero smogu", description: "Obniż zanieczyszczenie do 10 lub mniej.", completed: false, reward: "+50 ViCoins", accent: "emerald" },
   ]);
+  const [missionsTab, setMissionsTab] = useState<"active" | "completed">("active");
+  const activeMissions = useMemo(() => missions.filter(m => !m.completed), [missions]);
+  const completedMissions = useMemo(() => missions.filter(m => m.completed), [missions]);
+  const activeMissionCount = activeMissions.length;
+  const completedMissionCount = completedMissions.length;
+  const missionProgressPct = missions.length === 0 ? 0 : Math.round((completedMissionCount / missions.length) * 100);
 
   // Uwaga: świadomie nie utrwalamy stanu misji między restartami gry,
   // aby każda nowa sesja zaczynała z czystą listą (zgodnie z oczekiwaniem).
@@ -2114,7 +2122,7 @@ export default function ViessmannGame() {
                   {weatherEvent.type === "rain" && "x2 💧"}
                   {weatherEvent.type === "wind" && "x2 🌬️, -50% ☀️, -30% 💧"}
                   {weatherEvent.type === "storm" && "x3 🌬️, x1.5 💧, ☀️ = 0"}
-                  {weatherEvent.type === "frost" && "Wszystkie produkcje zatrzymane"}
+                  {weatherEvent.type === "frost" && "Produkcja wstrzymana"}
                   {weatherEvent.type === "none" && "Brak efektu"}
                 </div>
               </div>
@@ -3070,20 +3078,48 @@ export default function ViessmannGame() {
           display: "flex",
           flexDirection: "column",
           gap: 16,
-          overflowY: 'auto',
-          marginRight: 8
+          overflow: 'visible',
+          marginRight: 8,
+          marginTop: 32,
+          paddingTop: 56,
+          position: 'relative'
         }}>
-          <h2 className="font-bold font-sans text-lg text-neutral-900 mb-2">Misje</h2>
-          {/* Mission progress bar */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: -92, marginBottom: 10 }}>
+            <div
+              style={{
+                position: "relative",
+                width: 96,
+                height: 96,
+                borderRadius: "50%",
+                background: isDay
+                  ? "linear-gradient(160deg, #fff8ec 0%, #feddac 60%, #f5c07a 100%)"
+                  : "linear-gradient(160deg, #3a2f4f 0%, #2a2342 55%, #1c172d 100%)",
+                border: isDay ? "3px solid #f3d9ad" : "3px solid #3a3053",
+                boxShadow: isDay ? "0 8px 16px rgba(160, 92, 28, 0.12)" : "0 10px 26px rgba(0, 0, 0, 0.33)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "visible",
+                zIndex: 2
+              }}
+            >
+              <img
+                src={isDay ? missionBadgeDay : missionBadgeNight}
+                alt="Ikona misji"
+                style={{ width: 82, height: 82, objectFit: "contain" }}
+              />
+            </div>
+          </div>
+          <h2 className="font-bold font-sans text-lg text-neutral-900" style={{ marginBottom: 8, marginTop: -8 }}>Misje</h2>
           {missions.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
                 <span className="text-xs font-sans text-neutral-500">Postęp misji</span>
-                <span className="text-xs font-sans text-neutral-500">{missions.filter(m => m.completed).length} / {missions.length}</span>
+                <span className="text-xs font-sans text-neutral-500">{completedMissionCount} / {missions.length}</span>
               </div>
               <div style={{ width: "100%", height: 8, background: isDay ? "#E5E7EB" : "#334155", borderRadius: 6, overflow: "hidden" }}>
                 <div style={{
-                  width: `${Math.round(100 * missions.filter(m => m.completed).length / missions.length)}%`,
+                  width: `${missionProgressPct}%`,
                   height: "100%",
                   background: "linear-gradient(90deg,#10B981,#22D3EE)",
                   transition: "width 0.4s cubic-bezier(.4,2,.6,1)",
@@ -3091,75 +3127,88 @@ export default function ViessmannGame() {
               </div>
             </div>
           )}
-          {/* Sekcja aktywne misje */}
-          <div style={{ marginBottom: 18 }}>
-            <div className="font-semibold text-sm mb-2" style={{ color: theme.tone.info }}>Aktywne misje</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {missions.filter(m => !m.completed).length === 0 && (
-                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak aktywnych misji 🎉</div>
-              )}
-              {missions.filter(m => !m.completed).map(m => (
-                <div key={m.key} style={{
-                  borderRadius: 12,
-                  background: isDay ? "#fff" : "#1e293b",
-                  color: isDay ? undefined : "#F1F5F9",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                  padding: 12,
-                  border: isDay ? "1.5px solid #E5E7EB" : "1.5px solid #334155",
-                  opacity: 1,
-                  transition: "all 0.2s"
-                }}>
-                  <div className="font-medium font-sans mb-1" style={{ color: isDay ? "#111" : "#F1F5F9", fontSize: 15, fontWeight: ["Pierwsze kroki", "Ekologiczny wybór", "Zielona inwestycja"].includes(m.title) ? 800 : 500 }}>{m.title}</div>
-                  <div className="font-normal font-sans mb-2" style={{ color: isDay ? "#334155" : "#CBD5E1", fontSize: 13 }}>{m.description}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {/* Badge/ikona nagrody */}
-                    {m.reward.includes('ViCoins') && <span style={{ fontSize: 15, background: '#fbbf24', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>💰</span>}
-                    {m.reward.includes('zanieczyszczenia') && <span style={{ fontSize: 15, background: '#10b981', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>🌱</span>}
-                    {/* Tekst nagrody */}
-                    <span className={`font-semibold font-sans`} style={{ fontSize: 13, color: m.accent === "emerald" ? (isDay ? "#059669" : "#6ee7b7") : m.accent === "red" ? (isDay ? "#dc2626" : "#f87171") : (isDay ? "#334155" : "#CBD5E1") }}>{m.reward}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            <button
+              className={`font-semibold font-sans ${missionsTab === "active" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`}
+              style={btn(missionsTab === "active")}
+              onClick={() => setMissionsTab("active")}
+              aria-pressed={missionsTab === "active"}
+            >
+              Aktywne
+            </button>
+            <button
+              className={`font-semibold font-sans ${missionsTab === "completed" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`}
+              style={btn(missionsTab === "completed")}
+              onClick={() => setMissionsTab("completed")}
+              aria-pressed={missionsTab === "completed"}
+            >
+              Ukończone
+            </button>
           </div>
-          {/* Sekcja ukończone misje */}
-          <div>
-            <div className="font-semibold text-sm mb-2" style={{ color: isDay ? "#10B981" : "#34D399", marginBottom: 18 }}>Ukończone misje</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-              {missions.filter(m => m.completed).length === 0 && (
-                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak ukończonych misji</div>
-              )}
-              {missions.filter(m => m.completed).map(m => (
-                <div key={m.key} style={{
-                  borderRadius: 12,
-                  background: isDay ? "#D1FAE5" : "#334155",
-                  color: isDay ? undefined : "#F1F5F9",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-                  padding: 12,
-                  border: "1.5px solid #10B981",
-                  opacity: 0.7,
-                  transition: "all 0.2s",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 10
-                }}>
-                  <span style={{ fontSize: 17, color: isDay ? "#10B981" : "#34D399" }}>✓</span>
-                  <div style={{ flex: 1 }}>
-                    <div className="font-medium font-sans mb-1" style={{ color: isDay ? "#10B981" : "#34D399", fontSize: 14, fontWeight: ["Pierwsze kroki", "Ekologiczny wybór", "Zielona inwestycja"].includes(m.title) ? 800 : 500 }}>{m.title}</div>
-                    <div className="font-normal font-sans mb-2" style={{ color: isDay ? "#334155" : "#CBD5E1", fontSize: 12 }}>{m.description}</div>
+          {missionsTab === "active" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              {activeMissionCount === 0 ? (
+                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak aktywnych misji 🎉</div>
+              ) : (
+                activeMissions.map(m => (
+                  <div key={m.key} style={{
+                    borderRadius: 12,
+                    background: isDay ? "#fff" : "#1e293b",
+                    color: isDay ? undefined : "#F1F5F9",
+                    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                    padding: 12,
+                    border: isDay ? "1.5px solid #E5E7EB" : "1.5px solid #334155",
+                    opacity: 1,
+                    transition: "all 0.2s"
+                  }}>
+                    <div className="font-medium font-sans mb-1" style={{ color: isDay ? "#111" : "#F1F5F9", fontSize: 15, fontWeight: ["Pierwsze kroki", "Ekologiczny wybór", "Zielona inwestycja"].includes(m.title) ? 800 : 500 }}>{m.title}</div>
+                    <div className="font-normal font-sans mb-2" style={{ color: isDay ? "#334155" : "#CBD5E1", fontSize: 13 }}>{m.description}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      {/* Badge/ikona nagrody z animacją po ukończeniu */}
-                      {m.reward.includes('ViCoins') && <span style={{ fontSize: 15, background: '#fbbf24', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', animation: 'reward-bounce 0.7s' }}>💰</span>}
-                      {m.reward.includes('zanieczyszczenia') && <span style={{ fontSize: 15, background: '#10b981', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', animation: 'reward-bounce 0.7s' }}>🌱</span>}
-                      <span className={`font-semibold font-sans`} style={{ fontSize: 12, color: m.accent === "emerald" ? (isDay ? "#059669" : "#6ee7b7") : m.accent === "red" ? (isDay ? "#dc2626" : "#f87171") : (isDay ? "#334155" : "#CBD5E1") }}>{m.reward}</span>
+                      {m.reward.includes('ViCoins') && <span style={{ fontSize: 15, background: '#fbbf24', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>💰</span>}
+                      {m.reward.includes('zanieczyszczenia') && <span style={{ fontSize: 15, background: '#10b981', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}>🌱</span>}
+                      <span className={`font-semibold font-sans`} style={{ fontSize: 13, color: m.accent === "emerald" ? (isDay ? "#059669" : "#6ee7b7") : m.accent === "red" ? (isDay ? "#dc2626" : "#f87171") : (isDay ? "#334155" : "#CBD5E1") }}>{m.reward}</span>
                     </div>
                   </div>
-                  {/* Animacja keyframes */}
-                  <style>{`@keyframes reward-bounce{0%{transform:scale(0.7);}60%{transform:scale(1.2);}100%{transform:scale(1);}}`}</style>
-                </div>
-              ))}
+                ))
+              )}
             </div>
-          </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              {completedMissionCount === 0 ? (
+                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak ukończonych misji</div>
+              ) : (
+                <>
+                  {completedMissions.map(m => (
+                    <div key={m.key} style={{
+                      borderRadius: 12,
+                      background: isDay ? "#D1FAE5" : "#334155",
+                      color: isDay ? undefined : "#F1F5F9",
+                      boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
+                      padding: 12,
+                      border: "1.5px solid #10B981",
+                      opacity: 0.7,
+                      transition: "all 0.2s",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10
+                    }}>
+                      <span style={{ fontSize: 17, color: isDay ? "#10B981" : "#34D399" }}>✓</span>
+                      <div style={{ flex: 1 }}>
+                        <div className="font-medium font-sans mb-1" style={{ color: isDay ? "#10B981" : "#34D399", fontSize: 14, fontWeight: ["Pierwsze kroki", "Ekologiczny wybór", "Zielona inwestycja"].includes(m.title) ? 800 : 500 }}>{m.title}</div>
+                        <div className="font-normal font-sans mb-2" style={{ color: isDay ? "#334155" : "#CBD5E1", fontSize: 12 }}>{m.description}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {m.reward.includes('ViCoins') && <span style={{ fontSize: 15, background: '#fbbf24', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', animation: 'reward-bounce 0.7s' }}>💰</span>}
+                          {m.reward.includes('zanieczyszczenia') && <span style={{ fontSize: 15, background: '#10b981', borderRadius: 7, padding: '1.5px 6px', color: '#fff', fontWeight: 700, boxShadow: '0 1px 4px rgba(0,0,0,0.08)', animation: 'reward-bounce 0.7s' }}>🌱</span>}
+                          <span className={`font-semibold font-sans`} style={{ fontSize: 12, color: m.accent === "emerald" ? (isDay ? "#059669" : "#6ee7b7") : m.accent === "red" ? (isDay ? "#dc2626" : "#f87171") : (isDay ? "#334155" : "#CBD5E1") }}>{m.reward}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <style>{`@keyframes reward-bounce{0%{transform:scale(0.7);}60%{transform:scale(1.2);}100%{transform:scale(1);}}`}</style>
+                </>
+              )}
+            </div>
+          )}
         </aside>
       </main>
 

@@ -39,6 +39,7 @@ Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urzą
   - Panel „Misje” pokazuje postęp (paski) oraz nagrody.
   - Przykłady: Pierwsze kroki (postaw kocioł węglowy) → +10 ViCoins; Ekologiczny wybór (zamień węgiel na pellet) → −20 zanieczyszczenia; Zielona inwestycja (posadź las) → −30 zanieczyszczenia.
   - Ukończenie misji nie jest zapisywane między sesjami (każda sesja to nowa runda pod kątem misji).
+  - Zakładki „Aktywne”/„Ukończone” filtrują listę misji, a ozdobny badge (w wariantach dzień/noc) pojawia się nad nagłówkiem.
 - Osiągnięcia (odblokowują się automatycznie):
   - First Steps: postaw pierwsze urządzenie.
   - Heat Source: posiadaj źródło ciepła.
