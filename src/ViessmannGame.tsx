@@ -12,6 +12,8 @@ import profileDM from './assets/ui/Profile_DM.png';
 import settingsLM from './assets/ui/Settings_LM.png';
 import settingsDM from './assets/ui/Settings_DM.png';
 import checkImg from './assets/ui/Check.png';
+import eventsLM from './assets/ui/Events_LM.png';
+import eventsDM from './assets/ui/Events_DM.png';
 import logo from './assets/ui/Logo.svg';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
@@ -2180,42 +2182,29 @@ export default function ViessmannGame() {
               </div>
             </div>
 
-            <div
-              style={{
-                ...pill,
-                padding: "10px 20px",
-                paddingLeft: 16,
-                minWidth: 180,
-                maxWidth: 320,
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                position: 'relative',
-                cursor: 'pointer'
-              }}
-              tabIndex={0}
-              role="button"
-              title={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : 'Kliknij, aby zobaczyć wydarzenia'}
-              onClick={() => setIsEventsCenterOpen(true)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setIsEventsCenterOpen(true);
-                }
-              }}
-            >
-              <span style={{ fontSize: 18, flex: '0 0 auto' }}>📣</span>
-              <div style={{ minWidth: 0, overflow: 'hidden' }}>
-                <div style={{ fontWeight: 700, fontSize: 11, letterSpacing: 0.3, color: theme.secondaryText }}>Eventy</div>
-                <div style={{ fontWeight: 700, fontSize: 13, color: theme.bodyText, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  {eventsSummary.subtitle}
-                </div>
-                <div style={{ fontSize: 12, color: theme.mutedText, marginTop: 4, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                  {eventsSummary.count === 0
-                    ? (discountSummary ? `${discountSummary.title} • ${discountSummary.subtitle}` : 'Śledzimy sytuację')
-                    : eventsSummary.detail}
-                </div>
-              </div>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <button
+                onClick={() => setIsEventsCenterOpen(true)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsEventsCenterOpen(true); } }}
+                aria-label={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : `${eventsSummary.count} nowych wydarzeń`}
+                title={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : `${eventsSummary.count} nowych wydarzeń`}
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  border: `2px solid ${theme.pillBorder}`,
+                  boxShadow: 'none',
+                  background: 'transparent',
+                  padding: 0,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <img src={isDay ? eventsLM : eventsDM} alt="Wydarzenia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              </button>
               {badgeCount > 0 && (
                 <span
                   aria-hidden={true}
@@ -2235,7 +2224,7 @@ export default function ViessmannGame() {
                     fontSize: 12,
                     fontWeight: 700,
                     lineHeight: 1,
-                    boxShadow: isDay ? '0 4px 12px rgba(123,68,22,0.25)' : '0 4px 12px rgba(0,0,0,0.45)'
+                    border: `2px solid ${theme.headerBg}`
                   }}
                 >
                   {badgeCount > 9 ? '9+' : badgeCount}
