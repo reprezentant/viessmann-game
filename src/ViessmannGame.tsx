@@ -2142,12 +2142,12 @@ export default function ViessmannGame() {
             <div
               style={{
                 ...pill,
-                padding: "10px 20px",
-                paddingLeft: 16,
-                minWidth: 140,
+                padding: "8px 14px",
+                paddingLeft: 12,
+                minWidth: 110,
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 10,
                 position: "relative"
               }}
               onMouseEnter={(e) => {
