@@ -65,11 +65,11 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
   (descStyle as unknown as Record<string, string|number>)['WebkitBoxOrient'] = 'vertical';
 
   const imgWrapperStyle: React.CSSProperties = {
-    width: 56,
-    height: 56,
+    width: 70,
+    height: 70,
     borderRadius: '50%',
     overflow: 'hidden',
-    flex: '0 0 56px',
+    flex: '0 0 70px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',

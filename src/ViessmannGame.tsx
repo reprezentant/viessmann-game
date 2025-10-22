@@ -7,6 +7,10 @@ import EventsCenterModal from './components/EventsCenterModal.tsx';
 import missionBadgeDay from './assets/missions/Missions_LM.png';
 import missionBadgeNight from './assets/missions/Missions_DM.png';
 import MissionCard from './components/MissionCard';
+import profileLM from './assets/ui/Profile_LM.png';
+import profileDM from './assets/ui/Profile_DM.png';
+import settingsLM from './assets/ui/Settings_LM.png';
+import settingsDM from './assets/ui/Settings_DM.png';
 import checkImg from './assets/ui/Check.png';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
@@ -970,6 +974,7 @@ export default function ViessmannGame() {
 
   // Profile menu states
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showMissions, setShowMissions] = useState(false);
   const [showLog, setShowLog] = useState(false);
@@ -2276,90 +2281,119 @@ export default function ViessmannGame() {
           </div>
 
           <div style={{ width: 16 }} />
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', minWidth: 112 }}>
-            <div
-              role="group"
-              tabIndex={0}
-              title={isDay ? 'Trwa dzień' : 'Trwa noc'}
-              onMouseEnter={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setDayInfoOpen(true);
-              }}
-              onMouseLeave={() => setDayInfoOpen(false)}
-              onFocus={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setDayInfoOpen(true);
-              }}
-              onBlur={() => setDayInfoOpen(false)}
-              style={{ ...miniPillBase, paddingRight: 10 }}
-            >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
-              <span>{isDay ? 'Dzień' : 'Noc'}</span>
-            </div>
-            <div
-              role="group"
-              tabIndex={0}
-              title={seasonInfoMap[season.type].name}
-              onMouseEnter={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setSeasonInfoOpen(true);
-              }}
-              onMouseLeave={() => setSeasonInfoOpen(false)}
-              onFocus={(e) => {
-                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                setSeasonInfoOpen(true);
-              }}
-              onBlur={() => setSeasonInfoOpen(false)}
-              style={{ ...miniPillBase, maxWidth: 220 }}
-            >
-              <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
-              <span>{seasonInfoMap[season.type].name}</span>
-            </div>
-          </div>
         </div>
 
-        {/* Profile Menu */}
-        <div style={{ position: "relative" }}>
+  {/* Profile Menu */}
+  <div style={{ position: "relative", display: 'flex', alignItems: 'center', gap: 12 }}>
           <div
             style={{
-              ...pill,
-              padding: "8px 18px",
-              display: "flex",
-              alignItems: "center",
+              display: 'flex',
+              alignItems: 'center',
               gap: 8,
-              cursor: "pointer",
-              border: showProfileMenu ? `1px solid ${theme.tone.info}` : `1px solid ${theme.pillBorder}`,
-              boxShadow: showProfileMenu ? `0 0 0 3px ${theme.tone.infoSoft}` : theme.pillShadow,
-              background: showProfileMenu ? theme.surfaceHover : theme.inputBg,
-              transition: "all 0.2s ease"
+              cursor: 'pointer',
+              padding: 0,
+              background: 'transparent',
+              border: 'none'
             }}
             onClick={() => setShowProfileMenu(!showProfileMenu)}
           >
-            <span style={{ fontSize: 16 }}>👤</span>
-            <span style={{ fontWeight: 600, fontSize: 14 }}>Mój profil</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              
+              {/* Day / Season mini-pills (left of profile) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', marginRight: 10 }}>
+                <div
+                  role="group"
+                  tabIndex={0}
+                  title={isDay ? 'Trwa dzień' : 'Trwa noc'}
+                  onMouseEnter={(e) => {
+                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                    setDayInfoOpen(true);
+                  }}
+                  onMouseLeave={() => setDayInfoOpen(false)}
+                  onFocus={(e) => {
+                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                    setDayInfoOpen(true);
+                  }}
+                  onBlur={() => setDayInfoOpen(false)}
+                  style={{ ...miniPillBase, paddingRight: 10 }}
+                >
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
+                  <span>{isDay ? 'Dzień' : 'Noc'}</span>
+                </div>
+                <div
+                  role="group"
+                  tabIndex={0}
+                  title={seasonInfoMap[season.type].name}
+                  onMouseEnter={(e) => {
+                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                    setSeasonInfoOpen(true);
+                  }}
+                  onMouseLeave={() => setSeasonInfoOpen(false)}
+                  onFocus={(e) => {
+                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                    setSeasonInfoOpen(true);
+                  }}
+                  onBlur={() => setSeasonInfoOpen(false)}
+                  style={{ ...miniPillBase, maxWidth: 220 }}
+                >
+                  <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
+                  <span>{seasonInfoMap[season.type].name}</span>
+                </div>
+              </div>
+
+              <div style={{ width: 80, height: 80, borderRadius: 999, border: `2px solid ${showProfileMenu ? theme.tone.info : theme.pillBorder}`, boxShadow: showProfileMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none', position: 'relative', overflow: 'visible' }}>
+                <div style={{ width: '100%', height: '100%', borderRadius: 999, overflow: 'hidden' }}>
+                  <img src={isDay ? profileLM : profileDM} alt="Profil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                {(hasNewAchievements || hasNewLog) && (
+                  <span
+                    aria-label="nowe"
+                    title="Nowe"
+                    style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -4,
+                      width: 10,
+                      height: 10,
+                      background: '#ef4444',
+                      borderRadius: 999,
+                      border: `2px solid ${theme.headerBg}`,
+                      pointerEvents: 'none'
+                    }}
+                  />
+                )}
+              </div>
+              <span style={{ fontWeight: 600, fontSize: 14, display: 'none' }}>Mój profil</span>
+            </div>
           </div>
-          {(hasNewAchievements || hasNewLog) && (
-            <span
-              aria-label="nowe"
-              title="Nowe"
+          
+
+          {/* Settings icon (placeholder for future menu) */}
+          <div style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+            <button
+              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+              aria-label="Ustawienia"
+              title="Ustawienia"
               style={{
-                position: 'absolute',
-                top: -4,
-                right: -4,
-                width: 10,
-                height: 10,
-                background: '#ef4444',
+                width: 80,
+                height: 80,
                 borderRadius: 999,
-                border: `2px solid ${theme.headerBg}`,
-                pointerEvents: 'none'
+                overflow: 'hidden',
+                border: `2px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
+                boxShadow: showSettingsMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+                padding: 0,
               }}
-            />
-          )}
+            >
+              <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </button>
+          </div>
+          
 
           {showProfileMenu && (
             <div
