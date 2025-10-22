@@ -1814,7 +1814,7 @@ export default function ViessmannGame() {
     gap: 16,
     borderBottom: `1px solid ${theme.headerBorder}`,
     background: theme.headerBg,
-    padding: "12px 18px",
+    padding: "12px 18px 12px 32px",
     boxShadow: theme.headerShadow,
     zIndex: 200
   };
@@ -2036,7 +2036,7 @@ export default function ViessmannGame() {
       {/* top bar */}
       <header style={headerStyle}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <img src={logo} alt="Viessmann logo" style={{ height: 36, width: 'auto', display: 'block' }} />
+          <img src={logo} alt="Viessmann logo" style={{ height: 40, width: 'auto', display: 'block' }} />
         </div>
 
   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2, justifyContent: 'center' }}>
@@ -3151,7 +3151,7 @@ export default function ViessmannGame() {
               </div>
             </div>
           )}
-          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12, justifyContent: 'center', width: '100%' }}>
             <button
               className={`font-semibold font-sans ${missionsTab === "active" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`}
               style={btn(missionsTab === "active")}

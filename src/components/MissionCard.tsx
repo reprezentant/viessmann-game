@@ -64,17 +64,29 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
   (descStyle as unknown as Record<string, string|number>)['WebkitLineClamp'] = 2;
   (descStyle as unknown as Record<string, string|number>)['WebkitBoxOrient'] = 'vertical';
 
-  const imgWrapperStyle: React.CSSProperties = {
+  const imgWrapperStyleBase: React.CSSProperties = {
     width: 70,
     height: 70,
-    borderRadius: '50%',
+    borderRadius: 12,
     overflow: 'hidden',
     flex: '0 0 70px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'rgba(0,0,0,0.04)'
   };
+
+  const imgWrapperStyle: React.CSSProperties = isDay ? {
+    ...imgWrapperStyleBase,
+    background: 'linear-gradient(160deg,#fff3da,#fde2b9,#f7d2a1)',
+    border: '1px solid rgba(149,92,32,0.18)'
+  } : {
+    ...imgWrapperStyleBase,
+    background: 'linear-gradient(160deg,#2f2a3d,#262135,#1d192a)',
+    border: '1px solid rgba(122,110,191,0.18)'
+  };
+  if (completed) {
+    (imgWrapperStyle as unknown as Record<string, string>)['border'] = '2px solid #7BB894';
+  }
 
   return (
     <div style={containerStyle}>
