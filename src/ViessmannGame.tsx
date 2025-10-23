@@ -1786,7 +1786,7 @@ export default function ViessmannGame() {
     gap: 16,
     borderBottom: `1px solid ${theme.headerBorder}`,
     background: isDay 
-      ? 'rgba(241, 245, 249, 0.85)' 
+      ? 'rgba(250, 247, 242, 0.88)' 
       : 'rgba(15, 23, 42, 0.85)',
     backdropFilter: 'blur(12px)',
     WebkitBackdropFilter: 'blur(12px)',
@@ -1950,7 +1950,7 @@ export default function ViessmannGame() {
   const card: React.CSSProperties = {
     borderRadius: 16,
     background: isDay 
-      ? 'rgba(255, 255, 255, 0.92)' 
+      ? 'rgba(253, 251, 247, 0.94)' 
       : 'rgba(15, 23, 42, 0.92)',
     backdropFilter: 'blur(16px)',
     WebkitBackdropFilter: 'blur(16px)',
@@ -1976,7 +1976,7 @@ export default function ViessmannGame() {
     gap: 8,
     borderRadius: 12,
     background: isDay 
-      ? 'rgba(255, 255, 255, 0.9)' 
+      ? 'rgba(255, 252, 245, 0.92)' 
       : 'rgba(30, 41, 59, 0.9)',
     backdropFilter: 'blur(8px)',
     WebkitBackdropFilter: 'blur(8px)',
@@ -2065,7 +2065,7 @@ export default function ViessmannGame() {
       position: "fixed",
       inset: 0,
       background: isDay 
-        ? "linear-gradient(to bottom, rgba(241,245,249,0.3) 0%, rgba(241,245,249,0.6) 100%)"
+        ? "linear-gradient(to bottom, rgba(250,247,242,0.25) 0%, rgba(245,240,230,0.55) 100%)"
         : "linear-gradient(to bottom, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.7) 100%)",
       zIndex: -1,
       transition: "background 0.8s ease-in-out"
