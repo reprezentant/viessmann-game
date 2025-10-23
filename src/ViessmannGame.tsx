@@ -512,13 +512,13 @@ export default function ViessmannGame() {
         mutedText: "#8f5f39",
         headerBg: "rgba(255,243,218,0.92)",
         headerBorder: "rgba(214,162,116,0.45)",
-        headerShadow: "0 14px 32px rgba(123,68,22,0.15)",
+        headerShadow: "0 4px 12px rgba(123,68,22,0.08)",
         pillBg: "rgba(255,238,204,0.94)",
         pillBorder: "rgba(214,162,116,0.4)",
-        pillShadow: "0 10px 24px rgba(145,90,25,0.12)",
+        pillShadow: "0 2px 8px rgba(145,90,25,0.06)",
         cardBg: "rgba(255,243,218,0.88)",
         cardBorder: "rgba(214,162,116,0.35)",
-        cardShadow: "0 18px 38px rgba(145,90,25,0.16)",
+        cardShadow: "0 4px 14px rgba(145,90,25,0.08)",
         divider: "rgba(214,162,116,0.28)",
         surfaceHover: "rgba(248,214,161,0.35)",
         inputBg: "rgba(255,244,223,0.82)",
@@ -2044,7 +2044,7 @@ export default function ViessmannGame() {
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
-      opacity: 0.25,
+      opacity: isDay ? 0.5 : 0.3,
       zIndex: -2,
       transition: "opacity 0.8s ease-in-out"
     }} />
@@ -2053,7 +2053,7 @@ export default function ViessmannGame() {
       position: "fixed",
       inset: 0,
       background: isDay 
-        ? "linear-gradient(to bottom, rgba(250,247,242,0.6) 0%, rgba(245,240,230,0.8) 100%)"
+        ? "linear-gradient(to bottom, rgba(250,247,242,0.3) 0%, rgba(245,240,230,0.5) 100%)"
         : "linear-gradient(to bottom, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.85) 100%)",
       zIndex: -1,
       transition: "background 0.8s ease-in-out"
