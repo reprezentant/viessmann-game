@@ -49,17 +49,31 @@
     "solarPriceScaleTitle": "Każdy kolejny panel PV drożeje geometrycznie (+15% od bazowej ceny za każdą posiadaną sztukę).",
     "solarPriceScale": "Cena rośnie: ~+15% względem bazowej za każdy posiadany panel.",
     "eChargerPriceScaleTitle": "Każdy kolejny E‑Charger drożeje geometrycznie (+18% od bazowej ceny za każdą posiadaną sztukę).",
-    "eChargerPriceScale": "Cena rośnie: ~+18% względem bazowej za każdy posiadany E‑Charger."
+    "eChargerPriceScale": "Cena rośnie: ~+18% względem bazowej za każdy posiadany E‑Charger.",
+    "devices": "Urządzenia",
+    "production": "Produkcja"
   },
   "missions": {
     "completedAlt": "ukończone",
-    "completed": "Ukończono misję: {{title}}"
+    "completedMessage": "Ukończono misję: {{title}}",
+    "completedPrefix": "Ukończono misję:",
+    "progress": "Postęp: {{completed}}/{{total}}",
+    "progressPercent": "Postęp: {{pct}}%",
+    "progressLabel": "Postęp misji",
+    "noActive": "Brak aktywnych misji 🎉",
+    "noCompleted": "Brak ukończonych misji",
+    "noActiveOrders": "Brak aktywnych zleceń",
+    "active": "Aktywne",
+    "completed": "Ukończone",
+    "title": "Misje"
   },
   "build": {
     "started": "Rozpoczęto budowę: {{name}}",
     "startedShort": "Budowa rozpoczęta: {{name}}",
     "finished": "Budowa ukończona: {{name}}",
-    "finishedPrefix": "Ukończono:"
+    "finishedPrefix": "Ukończono:",
+    "queue": "Kolejka budowy",
+    "placeBoilerToStart": "Umieść kocioł na domu, aby rozpocząć."
   },
   "smog": {
     "low": "Smog niski – pełna produkcja.",
@@ -84,5 +98,52 @@
   "milestone": {
     "title": "Kamień milowy: {{label}} {{value}}",
     "description": "Osiągnięto poziom {{value}} dla {{label}}."
+  },
+  "weather": {
+    "none": "",
+    "clouds": "Chmury",
+    "sunny": "Słońce",
+    "rain": "Deszcz",
+    "wind": "Wiatr",
+    "storm": "Burza",
+    "frost": "Mróz",
+    "eventStarted": "Zdarzenie pogodowe: {{name}}",
+    "noEvent": "Brak wydarzenia",
+    "standardProduction": "Produkcja standardowa",
+    "noSolarProduction": "Brak produkcji ☀️",
+    "noActiveEffects": "Brak aktywnych efektów.",
+    "cycleProgress": "Postęp cyklu: {{percent}}%",
+    "remainingTime": "Pozostały czas: {{seconds}}s",
+    "productionHalted": "Produkcja wstrzymana (30s)",
+    "productionPenalty": "Produkcja -{{percent}}%"
+  },
+  "season": {
+    "spring": "Wiosna",
+    "summer": "Lato",
+    "autumn": "Jesień",
+    "winter": "Zima",
+    "springEffect": "💧 x1.3, smog −0.01/s",
+    "summerEffect": "☀️ x1.3, smog −0.02/s",
+    "autumnEffect": "🌧️/🌬️ x1.2, smog ±0",
+    "winterEffect": "☀️ x0.7, smog +0.05/s",
+    "dayNightLabel": "Dzień: {{day}}s • Noc: {{night}}s"
+  },
+  "discount": {
+    "defaultLabel": "Zniżka"
+  },
+  "events": {
+    "noEvents": "Brak eventów",
+    "noNewEvents": "Brak nowych wydarzeń",
+    "newEvent": "nowy event",
+    "newEvents_2_4": "nowe eventy",
+    "newEvents_many": "nowych eventów",
+    "checkNewEvents": "Sprawdź nowe wydarzenia",
+    "ariaLabel_none": "Brak nowych wydarzeń",
+    "ariaLabel_some": "{{count}} nowych wydarzeń",
+    "altText": "Wydarzenia"
+  },
+  "devices": {
+    "onHouse": "Na domu:",
+    "noDevices": "Brak urządzeń"
   }
 }

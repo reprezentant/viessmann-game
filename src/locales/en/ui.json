@@ -49,18 +49,32 @@
     "solarPriceScaleTitle": "Each additional PV panel scales price geometrically (~+15% per owned unit).",
     "solarPriceScale": "Price increases: ~+15% vs base per owned panel.",
     "eChargerPriceScaleTitle": "Each additional E‑Charger scales price geometrically (~+18% per owned unit).",
-    "eChargerPriceScale": "Price increases: ~+18% vs base per owned E‑Charger."
+    "eChargerPriceScale": "Price increases: ~+18% vs base per owned E‑Charger.",
+    "devices": "Devices",
+    "production": "Production"
   }
   ,
   "missions": {
     "completedAlt": "completed",
-    "completed": "Mission completed: {{title}}"
+    "completedMessage": "Mission completed: {{title}}",
+    "completedPrefix": "Mission completed:",
+    "progress": "Progress: {{completed}}/{{total}}",
+    "progressPercent": "Progress: {{pct}}%",
+    "progressLabel": "Mission progress",
+    "noActive": "No active missions 🎉",
+    "noCompleted": "No completed missions",
+    "noActiveOrders": "No active orders",
+    "active": "Active",
+    "completed": "Completed",
+    "title": "Missions"
   },
   "build": {
     "started": "Construction started: {{name}}",
     "startedShort": "Build started: {{name}}",
     "finished": "Construction complete: {{name}}",
-    "finishedPrefix": "Completed:"
+    "finishedPrefix": "Complete:",
+    "queue": "Build queue",
+    "placeBoilerToStart": "Place a boiler on the house to begin."
   },
   "smog": {
     "low": "Low smog – full production.",
@@ -85,5 +99,52 @@
   "milestone": {
     "title": "Milestone: {{label}} {{value}}",
     "description": "Reached level {{value}} for {{label}}."
+  },
+  "weather": {
+    "none": "",
+    "clouds": "Clouds",
+    "sunny": "Sunny",
+    "rain": "Rain",
+    "wind": "Wind",
+    "storm": "Storm",
+    "frost": "Frost",
+    "eventStarted": "Weather event: {{name}}",
+    "noEvent": "No event",
+    "standardProduction": "Standard production",
+    "noSolarProduction": "No ☀️ production",
+    "noActiveEffects": "No active effects.",
+    "cycleProgress": "Cycle progress: {{percent}}%",
+    "remainingTime": "Remaining time: {{seconds}}s",
+    "productionHalted": "Production halted (30s)",
+    "productionPenalty": "Production -{{percent}}%"
+  },
+  "season": {
+    "spring": "Spring",
+    "summer": "Summer",
+    "autumn": "Autumn",
+    "winter": "Winter",
+    "springEffect": "💧 x1.3, smog −0.01/s",
+    "summerEffect": "☀️ x1.3, smog −0.02/s",
+    "autumnEffect": "🌧️/🌬️ x1.2, smog ±0",
+    "winterEffect": "☀️ x0.7, smog +0.05/s",
+    "dayNightLabel": "Day: {{day}}s • Night: {{night}}s"
+  },
+  "discount": {
+    "defaultLabel": "Discount"
+  },
+  "events": {
+    "noEvents": "No events",
+    "noNewEvents": "No new events",
+    "newEvent": "new event",
+    "newEvents_2_4": "new events",
+    "newEvents_many": "new events",
+    "checkNewEvents": "Check new events",
+    "ariaLabel_none": "No new events",
+    "ariaLabel_some": "{{count}} new events",
+    "altText": "Events"
+  },
+  "devices": {
+    "onHouse": "On house:",
+    "noDevices": "No devices"
   }
 }

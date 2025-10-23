@@ -186,14 +186,15 @@ const itemByKey: Record<EntityType, ShopItem> = Object.fromEntries(
   [...deviceItems, ...productionItems].map(i => [i.key, i])
 ) as Record<EntityType, ShopItem>;
 
-const instanceFor = (k: EntityType): EntityInstance => {
-  const item = itemByKey[k];
-  const label = i18n.t(`items.${k}.name`, { ns: 'items', defaultValue: String(k) });
-  return { type: k, label, icon: item?.icon ?? '❓' };
-};
-
 export default function ViessmannGame() {
-  const { t } = useTranslation('ui');
+  const { t } = useTranslation(['ui', 'items', 'missions', 'achievements']);
+  
+  const instanceFor = useCallback((k: EntityType): EntityInstance => {
+    const item = itemByKey[k];
+    const label = t(`${k}.name`, { ns: 'items', defaultValue: String(k) });
+    return { type: k, label, icon: item?.icon ?? '❓' };
+  }, [t]);
+  
   // helper to resolve story translation keys if present
   const resolveStoryText = useCallback((keyOrText: string) => {
     try {
@@ -242,13 +243,13 @@ export default function ViessmannGame() {
   // Activity log (hoisted so effects can reference pushLog/pushToast earlier)
   const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
     if (e.type) return e.type;
-    const t = (e.title || "").toLowerCase();
-    if (t.startsWith("zakupiono:")) return 'purchase';
-    if (t.startsWith("ustawiono:")) return 'placement';
-    if (t.startsWith("ukończono misję:") || t.startsWith("ukonczono misję:") || t.startsWith("ukonczono misje:")) return 'mission';
-    if (t.startsWith("zdarzenie pogodowe:")) return 'weather';
-    if (t.startsWith("osiągnięcie:") || t.startsWith("osiagniecie:")) return 'achievement';
-    if (t.startsWith("kamień milowy:") || t.startsWith("kamien milowy:")) return 'milestone';
+    const titleLower = (e.title || "").toLowerCase();
+    if (titleLower.startsWith("zakupiono:")) return 'purchase';
+    if (titleLower.startsWith("ustawiono:")) return 'placement';
+    if (titleLower.startsWith("ukończono misję:") || titleLower.startsWith("ukonczono misję:") || titleLower.startsWith("ukonczono misje:")) return 'mission';
+    if (titleLower.startsWith("zdarzenie pogodowe:")) return 'weather';
+    if (titleLower.startsWith("osiągnięcie:") || titleLower.startsWith("osiagniecie:")) return 'achievement';
+    if (titleLower.startsWith("kamień milowy:") || titleLower.startsWith("kamien milowy:")) return 'milestone';
     return 'other';
   };
   const [log, setLog] = useState<LogEntry[]>([]);
@@ -412,13 +413,13 @@ export default function ViessmannGame() {
       const k = e.key;
       const map: Record<string, WeatherEventType> = { '0': 'none', '1': 'clouds', '2': 'sunny', '3': 'rain', '4': 'wind', '5': 'frost', '6': 'storm' };
       if (!(k in map)) return;
-      const t = map[k];
-      if (t === 'none') {
+      const weatherType = map[k];
+      if (weatherType === 'none') {
         setWeatherEvent({ type: 'none', duration: 0, remaining: 0 });
-      } else if (t === 'frost') {
+      } else if (weatherType === 'frost') {
         setWeatherEvent({ type: 'frost', duration: FROST_EVENT_DURATION, remaining: FROST_EVENT_DURATION });
       } else {
-        setWeatherEvent({ type: t, duration: WEATHER_EVENT_DURATION, remaining: WEATHER_EVENT_DURATION });
+        setWeatherEvent({ type: weatherType, duration: WEATHER_EVENT_DURATION, remaining: WEATHER_EVENT_DURATION });
       }
     };
     window.addEventListener('keydown', onKey);
@@ -441,14 +442,14 @@ export default function ViessmannGame() {
     if (p >= 95) return 0.2;
     if (p >= 80) {
       // 80 -> 0.3 down to 95 -> 0.2
-      const t = (p - 80) / 15;
-      return +(0.3 - 0.1 * t);
+      const ratio1 = (p - 80) / 15;
+      return +(0.3 - 0.1 * ratio1);
     }
     if (p >= 60) return 0.6;
     if (p >= 40) return 0.9;
     // 20-40 soft approach from 1.0 to 0.95
-    const t = (p - 20) / 20;
-    return +(1 - 0.05 * t);
+    const ratio2 = (p - 20) / 20;
+    return +(1 - 0.05 * ratio2);
   }, [pollution]);
   // Clean-air bonus: reward low smog with a small coin boost (stacks after smog multiplier)
   const ecoBonusMultiplier = useMemo(() => {
@@ -745,7 +746,7 @@ export default function ViessmannGame() {
         }
       }
     } catch { /* ignore */ }
-  }, [seasonPollutionFor, housePollutionFor]);
+  }, [seasonPollutionFor, housePollutionFor, instanceFor]);
   // Persist on changes
   useEffect(() => {
     try {
@@ -912,7 +913,7 @@ export default function ViessmannGame() {
     reader.readAsText(f);
     // reset input to allow importing the same file again if needed
     e.target.value = '';
-  }, [createInitialTiles, seasonPollutionFor, housePollutionFor]);
+  }, [createInitialTiles, seasonPollutionFor, housePollutionFor, instanceFor]);
 
   // Reset game (Nowa gra)
   const resetGame = useCallback(() => {
@@ -1216,8 +1217,8 @@ export default function ViessmannGame() {
       added.forEach(id => {
         const def = achievementDefs.find(d => d.id === id);
         if (def) {
-          const name = t(`achievements.${id}.name`, { ns: 'achievements' });
-          const desc = t(`achievements.${id}.desc`, { ns: 'achievements' });
+          const name = t(`${id}.name`, { ns: 'achievements' });
+          const desc = t(`${id}.desc`, { ns: 'achievements' });
           pushLog({ type: 'achievement', icon: def.icon, title: `${t('ui:profile.achievementPrefix', { defaultValue: 'Osiągnięcie:' })} ${name}`, description: desc });
           pushToast({ icon: '🔔', text: t('ui:profile.newAchievement', { name }) });
         }
@@ -1472,7 +1473,7 @@ export default function ViessmannGame() {
   const handleBuy = (item: ShopItem) => {
     const alreadyQueued = buildQueue.some(task => task.itemKey === item.key);
     if (isSinglePurchase(item.key) && ((owned[item.key] ?? 0) > 0 || alreadyQueued)) {
-  if (alreadyQueued) pushToast({ icon: '⏳', text: `${i18n.t(`items.${item.key}.name`, { ns: 'items' })} już w kolejce` });
+  if (alreadyQueued) pushToast({ icon: '⏳', text: `${t(`${item.key}.name`, { ns: 'items' })} już w kolejce` });
       return;
     }
     const cost = dynamicCost(item);
@@ -1523,10 +1524,10 @@ export default function ViessmannGame() {
       task.cost.coins ? `${task.cost.coins} 💰` : null,
     ].filter(Boolean).join(' + ') || '—';
     pushLog({ type: 'placement', icon: instance.icon, title: `${t('ui:build.finishedPrefix', { defaultValue: 'Ukończono:' })} ${instance.label}`, description: `Kafelek: ${task.tileId} • Koszt: ${costStr}` });
-  pushToast({ icon: '🏗️', text: t('ui:build.finished', { ns: 'ui', name: i18n.t(`items.${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Budowa ukończona: ${i18n.t(`items.${placingItem.key}.name`, { ns: 'items' })}` }) });
+  pushToast({ icon: '🏗️', text: t('ui:build.finished', { ns: 'ui', name: t(`${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Budowa ukończona: ${t(`${placingItem.key}.name`, { ns: 'items' })}` }) });
     setLastPlacedKey(task.tileId);
     setBuildHistoryCount(c => c + 1);
-  }, [setTiles, housePollutionFor, addPollutionRate, setOwned, setRenewablesUnlocked, setBaseRates, setResources, setHasECharger, effectsCtx, pushLog, pushToast, t]);
+  }, [setTiles, housePollutionFor, addPollutionRate, setOwned, setRenewablesUnlocked, setBaseRates, setResources, setHasECharger, effectsCtx, pushLog, pushToast, t, instanceFor]);
 
   // Place currently pending item on a tile
   const placeOnTile = useCallback((tile: Tile) => {
@@ -1594,16 +1595,16 @@ export default function ViessmannGame() {
       placeCost.wind ? `${placeCost.wind} 🌬️` : null,
       placeCost.coins ? `${placeCost.coins} 💰` : null,
     ].filter(Boolean).join(' + ') || '—';
-  pushLog({ type: 'placement', icon: placingItem.icon, title: t('ui:build.started', { ns: 'ui', name: i18n.t(`items.${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Rozpoczęto budowę: ${i18n.t(`items.${placingItem.key}.name`, { ns: 'items' })}` }), description: `Kafelek: ${tile.id} • Czas: ${formatShortDuration(duration)} • Koszt: ${startCostStr}` });
-  pushToast({ icon: '🏗️', text: t('ui:build.startedShort', { ns: 'ui', name: i18n.t(`items.${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Budowa rozpoczęta: ${i18n.t(`items.${placingItem.key}.name`, { ns: 'items' })}` }) });
+  pushLog({ type: 'placement', icon: placingItem.icon, title: t('ui:build.started', { ns: 'ui', name: t(`${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Rozpoczęto budowę: ${t(`${placingItem.key}.name`, { ns: 'items' })}` }), description: `Kafelek: ${tile.id} • Czas: ${formatShortDuration(duration)} • Koszt: ${startCostStr}` });
+  pushToast({ icon: '🏗️', text: t('ui:build.startedShort', { ns: 'ui', name: t(`${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Budowa rozpoczęta: ${t(`${placingItem.key}.name`, { ns: 'items' })}` }) });
     setPendingPlacement(null);
     setLastPlacedKey(tile.id);
-  }, [pendingPlacement, dynamicCost, canAfford, setResources, tiles, homeTileId, buildQueue, buildHistoryCount, pushLog, pushToast, t]);
+  }, [pendingPlacement, dynamicCost, canAfford, setResources, tiles, homeTileId, buildQueue, buildHistoryCount, pushLog, pushToast, t, instanceFor]);
 
   useEffect(() => {
     if (!lastPlacedKey) return;
-    const t = setTimeout(() => setLastPlacedKey(null), 400);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setLastPlacedKey(null), 400);
+    return () => clearTimeout(timer);
   }, [lastPlacedKey]);
 
   // --- UI helpers ---
@@ -1678,7 +1679,7 @@ export default function ViessmannGame() {
       { text: `Lasy (${forests}): ${fmtSign(forest)}`, tone: forestTone }
     ];
     if (smogMultiplier < 1) {
-      lines.push({ text: `Produkcja -${Math.round((1 - smogMultiplier) * 100)}%`, tone: 'warning' });
+      lines.push({ text: t('weather.productionPenalty', { ns: 'ui', percent: Math.round((1 - smogMultiplier) * 100) }), tone: 'warning' });
     }
     return {
       title: 'Smog',
@@ -1687,16 +1688,16 @@ export default function ViessmannGame() {
       lines,
       footer: 'Dodatnie tempo zwiększa smog, ujemne go redukuje.'
     };
-  }, [tiles, pollutionRate, housePollutionFor, smogMultiplier]);
+  }, [tiles, pollutionRate, housePollutionFor, smogMultiplier, t]);
   const weatherTooltip = useMemo<TooltipContent>(() => {
     const entries: Array<{ key: WeatherEventType; icon: string; title: string; effect: string }> = [
-      { key: 'none', icon: '🌤️', title: 'Brak wydarzenia', effect: 'Produkcja standardowa' },
-      { key: 'clouds', icon: '☁️', title: 'Chmury', effect: 'Brak produkcji ☀️' },
-      { key: 'sunny', icon: '🌞', title: 'Słońce', effect: 'x2 ☀️' },
-      { key: 'rain', icon: '🌧️', title: 'Deszcz', effect: 'x2 💧' },
-      { key: 'wind', icon: '🌬️', title: 'Wiatr', effect: 'x2 🌬️, -50% ☀️, -30% 💧' },
-      { key: 'storm', icon: '⛈️', title: 'Burza', effect: 'x3 🌬️, x1.5 💧, ☀️ = 0 (20s)' },
-  { key: 'frost', icon: '❄️', title: 'Mróz', effect: 'Produkcja wstrzymana (30s)' },
+      { key: 'none', icon: '🌤️', title: t('weather.noEvent', { ns: 'ui' }), effect: t('weather.standardProduction', { ns: 'ui' }) },
+      { key: 'clouds', icon: '☁️', title: t('weather.clouds', { ns: 'ui' }), effect: t('weather.noSolarProduction', { ns: 'ui' }) },
+      { key: 'sunny', icon: '🌞', title: t('weather.sunny', { ns: 'ui' }), effect: 'x2 ☀️' },
+      { key: 'rain', icon: '🌧️', title: t('weather.rain', { ns: 'ui' }), effect: 'x2 💧' },
+      { key: 'wind', icon: '🌬️', title: t('weather.wind', { ns: 'ui' }), effect: 'x2 🌬️, -50% ☀️, -30% 💧' },
+      { key: 'storm', icon: '⛈️', title: t('weather.storm', { ns: 'ui' }), effect: 'x3 🌬️, x1.5 💧, ☀️ = 0 (20s)' },
+  { key: 'frost', icon: '❄️', title: t('weather.frost', { ns: 'ui' }), effect: t('weather.productionHalted', { ns: 'ui' }) },
     ];
     const toneForWeather = (type: WeatherEventType): TooltipTone => {
       if (type === 'sunny' || type === 'rain' || type === 'wind') return 'positive';
@@ -1713,10 +1714,10 @@ export default function ViessmannGame() {
         tone: entry.key === weatherEvent.type ? toneForWeather(entry.key) : 'muted'
       })),
       footer: weatherEvent.type !== 'none'
-        ? `Pozostały czas: ${weatherEvent.remaining}s`
-        : 'Brak aktywnych efektów.'
+        ? t('weather.remainingTime', { ns: 'ui', seconds: weatherEvent.remaining })
+        : t('weather.noActiveEffects', { ns: 'ui' })
     };
-  }, [weatherEvent]);
+  }, [weatherEvent, t]);
 
   // Season tooltip removed; season details are now shown in the headline pill
 
@@ -1727,17 +1728,17 @@ export default function ViessmannGame() {
     if (count === 0) {
       return {
         count,
-        subtitle: 'Brak eventów',
-        detail: 'Brak nowych wydarzeń',
+        subtitle: t('events.noEvents', { ns: 'ui' }),
+        detail: t('events.noNewEvents', { ns: 'ui' }),
       } as const;
     }
-  const noun = count === 1 ? 'nowy event' : (count >= 2 && count <= 4 ? 'nowe eventy' : 'nowych eventów');
+  const noun = count === 1 ? t('events.newEvent', { ns: 'ui' }) : (count >= 2 && count <= 4 ? t('events.newEvents_2_4', { ns: 'ui' }) : t('events.newEvents_many', { ns: 'ui' }));
     return {
       count,
       subtitle: `${count} ${noun}`,
-      detail: pendingEvents[0]?.title ?? 'Sprawdź nowe wydarzenia',
+      detail: pendingEvents[0]?.title ?? t('events.checkNewEvents', { ns: 'ui' }),
     } as const;
-  }, [pendingEvents]);
+  }, [pendingEvents, t]);
   const discountSummary = useMemo(() => {
     if (storyDiscountTimer > 0 && storyDiscountPct > 0) {
       return {
@@ -1805,32 +1806,32 @@ export default function ViessmannGame() {
   };
   const [missions, setMissions] = useState<Mission[]>([
     // Ścieżka domu (historyczna)
-    { key: "first-steps", title: "missions.first-steps.title", description: "missions.first-steps.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-  { key: "eco-choice", title: "missions.eco-choice.title", description: "missions.eco-choice.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "triola-gas", title: "missions.triola-gas.title", description: "missions.triola-gas.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-  { key: "parola-1965", title: "missions.parola-1965.title", description: "missions.parola-1965.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "stainless-1972", title: "missions.stainless-1972.title", description: "missions.stainless-1972.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-  { key: "heatpump-1978", title: "missions.heatpump-1978.title", description: "missions.heatpump-1978.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "vitola-1978", title: "missions.vitola-1978.title", description: "missions.vitola-1978.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-  { key: "vitodens-1989", title: "missions.vitodens-1989.title", description: "missions.vitodens-1989.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "vitocal-modern", title: "missions.vitocal-modern.title", description: "missions.vitocal-modern.desc", completed: false, reward: "+30 ViCoins", accent: "emerald" },
+    { key: "first-steps", title: "first-steps.title", description: "first-steps.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+  { key: "eco-choice", title: "eco-choice.title", description: "eco-choice.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "triola-gas", title: "triola-gas.title", description: "triola-gas.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+  { key: "parola-1965", title: "parola-1965.title", description: "parola-1965.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "stainless-1972", title: "stainless-1972.title", description: "stainless-1972.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+  { key: "heatpump-1978", title: "heatpump-1978.title", description: "heatpump-1978.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "vitola-1978", title: "vitola-1978.title", description: "vitola-1978.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+  { key: "vitodens-1989", title: "vitodens-1989.title", description: "vitodens-1989.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "vitocal-modern", title: "vitocal-modern.title", description: "vitocal-modern.desc", completed: false, reward: "+30 ViCoins", accent: "emerald" },
 
     // Zielona energia
-  { key: "green-investment", title: "missions.green-investment.title", description: "missions.green-investment.desc", completed: false, reward: "+30 ViCoins", accent: "emerald" },
-    { key: "collector-1972", title: "missions.collector-1972.title", description: "missions.collector-1972.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "pv-vitovolt", title: "missions.pv-vitovolt.title", description: "missions.pv-vitovolt.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "vitocharge-inverter", title: "missions.vitocharge-inverter.title", description: "missions.vitocharge-inverter.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "grid-connect", title: "missions.grid-connect.title", description: "missions.grid-connect.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-  { key: "vitovalor-2014", title: "missions.vitovalor-2014.title", description: "missions.vitovalor-2014.desc", completed: false, reward: "+25 ViCoins", accent: "emerald" },
+  { key: "green-investment", title: "green-investment.title", description: "green-investment.desc", completed: false, reward: "+30 ViCoins", accent: "emerald" },
+    { key: "collector-1972", title: "collector-1972.title", description: "collector-1972.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "pv-vitovolt", title: "pv-vitovolt.title", description: "pv-vitovolt.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "vitocharge-inverter", title: "vitocharge-inverter.title", description: "vitocharge-inverter.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "grid-connect", title: "grid-connect.title", description: "grid-connect.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+  { key: "vitovalor-2014", title: "vitovalor-2014.title", description: "vitovalor-2014.desc", completed: false, reward: "+25 ViCoins", accent: "emerald" },
 
     // Komfort i sterowanie
-    { key: "floor-heat", title: "missions.floor-heat.title", description: "missions.floor-heat.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "thermostats-src", title: "missions.thermostats-src.title", description: "missions.thermostats-src.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-  { key: "inox-radial", title: "missions.inox-radial.title", description: "missions.inox-radial.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "floor-heat", title: "floor-heat.title", description: "floor-heat.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "thermostats-src", title: "thermostats-src.title", description: "thermostats-src.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+  { key: "inox-radial", title: "inox-radial.title", description: "inox-radial.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
 
     // Integracja i cele łączone
-    { key: "future-home", title: "missions.future-home.title", description: "missions.future-home.desc", completed: false, reward: "+40 ViCoins", accent: "emerald" },
-    { key: "zero-smog", title: "missions.zero-smog.title", description: "missions.zero-smog.desc", completed: false, reward: "+50 ViCoins", accent: "emerald" },
+    { key: "future-home", title: "future-home.title", description: "future-home.desc", completed: false, reward: "+40 ViCoins", accent: "emerald" },
+    { key: "zero-smog", title: "zero-smog.title", description: "zero-smog.desc", completed: false, reward: "+50 ViCoins", accent: "emerald" },
   ]);
 
   // Map mission keys to asset paths provided
@@ -1915,13 +1916,14 @@ export default function ViessmannGame() {
         const check = missionChecks[m.key];
         if (check && check()) {
           applyMissionReward(m);
-          pushLog({ type: 'mission', icon: '🏅', title: `Ukończono misję: ${m.title}`, description: m.reward });
+          const missionTitle = t(m.title, { ns: 'missions' });
+          pushLog({ type: 'mission', icon: '🏅', title: `${t('ui:missions.completedPrefix', { defaultValue: 'Ukończono misję:' })} ${missionTitle}`, description: m.reward });
           return { ...m, completed: true };
         }
       }
       return m;
     }));
-  }, [missionChecks, applyMissionReward, pushLog]);
+  }, [missionChecks, applyMissionReward, pushLog, t]);
 
   // Log start of weather events
   useEffect(() => {
@@ -2152,20 +2154,20 @@ export default function ViessmannGame() {
                 }}
                 onBlur={() => { setLegendOpen(false); setLegendContent(null); }}
                 aria-label={
-                  weatherEvent.type === "clouds" ? 'Chmury' :
-                  weatherEvent.type === "sunny" ? 'Słońce' :
-                  weatherEvent.type === "rain" ? 'Deszcz' :
-                  weatherEvent.type === "wind" ? 'Wiatr' :
-                  weatherEvent.type === "storm" ? 'Burza' :
-                  weatherEvent.type === "frost" ? 'Mróz' : 'Brak wydarzenia'
+                  weatherEvent.type === "clouds" ? t('weather.clouds', { ns: 'ui' }) :
+                  weatherEvent.type === "sunny" ? t('weather.sunny', { ns: 'ui' }) :
+                  weatherEvent.type === "rain" ? t('weather.rain', { ns: 'ui' }) :
+                  weatherEvent.type === "wind" ? t('weather.wind', { ns: 'ui' }) :
+                  weatherEvent.type === "storm" ? t('weather.storm', { ns: 'ui' }) :
+                  weatherEvent.type === "frost" ? t('weather.frost', { ns: 'ui' }) : t('weather.noEvent', { ns: 'ui' })
                 }
                 title={
-                  weatherEvent.type === "clouds" ? 'Chmury' :
-                  weatherEvent.type === "sunny" ? 'Słońce' :
-                  weatherEvent.type === "rain" ? 'Deszcz' :
-                  weatherEvent.type === "wind" ? 'Wiatr' :
-                  weatherEvent.type === "storm" ? 'Burza' :
-                  weatherEvent.type === "frost" ? 'Mróz' : 'Brak wydarzenia'
+                  weatherEvent.type === "clouds" ? t('weather.clouds', { ns: 'ui' }) :
+                  weatherEvent.type === "sunny" ? t('weather.sunny', { ns: 'ui' }) :
+                  weatherEvent.type === "rain" ? t('weather.rain', { ns: 'ui' }) :
+                  weatherEvent.type === "wind" ? t('weather.wind', { ns: 'ui' }) :
+                  weatherEvent.type === "storm" ? t('weather.storm', { ns: 'ui' }) :
+                  weatherEvent.type === "frost" ? t('weather.frost', { ns: 'ui' }) : t('weather.noEvent', { ns: 'ui' })
                 }
                 style={{
                   width: 80,
@@ -2225,8 +2227,8 @@ export default function ViessmannGame() {
               <button
                 onClick={() => setIsEventsCenterOpen(true)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setIsEventsCenterOpen(true); } }}
-                aria-label={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : `${eventsSummary.count} nowych wydarzeń`}
-                title={eventsSummary.count === 0 ? 'Brak nowych wydarzeń' : `${eventsSummary.count} nowych wydarzeń`}
+                aria-label={eventsSummary.count === 0 ? t('events.ariaLabel_none', { ns: 'ui' }) : t('events.ariaLabel_some', { ns: 'ui', count: eventsSummary.count })}
+                title={eventsSummary.count === 0 ? t('events.ariaLabel_none', { ns: 'ui' }) : t('events.ariaLabel_some', { ns: 'ui', count: eventsSummary.count })}
                 style={{
                   width: 80,
                   height: 80,
@@ -2242,7 +2244,7 @@ export default function ViessmannGame() {
                   justifyContent: 'center'
                 }}
               >
-                <img src={isDay ? eventsLM : eventsDM} alt="Wydarzenia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
+                <img src={isDay ? eventsLM : eventsDM} alt={t('events.altText', { ns: 'ui' })} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
               </button>
               {badgeCount > 0 && (
                 <span
@@ -2511,19 +2513,19 @@ export default function ViessmannGame() {
                   {/* Language selector */}
                   <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
                   <div style={{ padding: '8px 16px', fontSize: 13, color: isDay ? '#0f172a' : '#e5e7eb' }}>
-                    <div style={{ marginBottom: 6, fontSize: 12, color: isDay ? '#374151' : '#9ca3af' }}>{i18n.t('settings.language')}</div>
+                    <div style={{ marginBottom: 6, fontSize: 12, color: isDay ? '#374151' : '#9ca3af' }}>{t('settings.language')}</div>
                     <div style={{ display: 'flex', gap: 8 }}>
                       <button
                         onClick={() => { i18n.changeLanguage('pl'); localStorage.setItem('vm_lang', 'pl'); setShowSettingsMenu(false); }}
                         style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'pl' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'pl' ? '#e0f2fe' : 'transparent' }}
                       >
-                        {i18n.t('settings.polish')}
+                        {t('settings.polish')}
                       </button>
                       <button
                         onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('vm_lang', 'en'); setShowSettingsMenu(false); }}
                         style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'en' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'en' ? '#e0f2fe' : 'transparent' }}
                       >
-                        {i18n.t('settings.english')}
+                        {t('settings.english')}
                       </button>
                     </div>
                   </div>
@@ -2677,9 +2679,9 @@ export default function ViessmannGame() {
             {isDay ? '☀️ Dzień' : '🌙 Noc'}
           </div>
           <div className="scroll-tooltip__body">
-            <div className="scroll-tooltip__line">Pozostały czas: {dayPhase.remainingSeconds}s</div>
-            <div className="scroll-tooltip__line">Postęp cyklu: {dayPhasePercent}%</div>
-            <div className="scroll-tooltip__line scroll-tooltip__line--muted">Dzień: {dayLengthSeconds}s • Noc: {nightLengthSeconds}s</div>
+            <div className="scroll-tooltip__line">{t('weather.remainingTime', { ns: 'ui', seconds: dayPhase.remainingSeconds })}</div>
+            <div className="scroll-tooltip__line">{t('weather.cycleProgress', { ns: 'ui', percent: dayPhasePercent })}</div>
+            <div className="scroll-tooltip__line scroll-tooltip__line--muted">{t('season.dayNightLabel', { ns: 'ui', day: dayLengthSeconds, night: nightLengthSeconds })}</div>
           </div>
           <div
             style={{
@@ -2715,7 +2717,7 @@ export default function ViessmannGame() {
             {seasonInfoMap[season.type].eff}
           </div>
           <div className="scroll-tooltip__body">
-            <div className="scroll-tooltip__line scroll-tooltip__line--muted">Pozostały czas: {season.remaining}s</div>
+            <div className="scroll-tooltip__line scroll-tooltip__line--muted">{t('weather.remainingTime', { ns: 'ui', seconds: season.remaining })}</div>
           </div>
           {discountSummary && (
             <div className="scroll-tooltip__section">
@@ -2799,18 +2801,18 @@ export default function ViessmannGame() {
         >
           <div style={{ width: 520, maxWidth: '92vw', background: isDay ? '#fff' : '#0f172a', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 12, padding: 20, boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontWeight: 800, fontSize: 18, flex: 1 }}>Misje</div>
+              <div style={{ fontWeight: 800, fontSize: 18, flex: 1 }}>{t('missions.title', { ns: 'ui' })}</div>
               <button onClick={() => setShowMissions(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: isDay ? '#0f172a' : '#e5e7eb' }}>✖</button>
             </div>
             <div style={{ marginBottom: 12, fontSize: 13, color: isDay ? '#475569' : '#94a3b8' }}>
-              Postęp: {missions.filter(m => m.completed).length}/{missions.length}
+              {t('missions.progress', { ns: 'ui', completed: missions.filter(m => m.completed).length, total: missions.length })}
             </div>
             <div style={{ display: 'grid', gap: 10 }}>
               {missions.map(m => (
                 <MissionCard
                   key={m.key}
-                  title={m.title}
-                  description={m.description}
+                  title={t(m.title, { ns: 'missions' })}
+                  description={t(m.description, { ns: 'missions' })}
                   reward={m.reward}
                   imgSrc={missionAssetMap[m.key]}
                   completed={m.completed}
@@ -2844,8 +2846,8 @@ export default function ViessmannGame() {
                 <div style={{ ...baseStyle, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 20 }}>🛠️</span>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>Kolejka budowy</span>
-                    <span style={{ fontSize: 15 }}>Brak aktywnych zleceń</span>
+                    <span style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>{t('build.queue', { ns: 'ui' })}</span>
+                    <span style={{ fontSize: 15 }}>{t('missions.noActiveOrders', { ns: 'ui' })}</span>
                   </div>
                 </div>
               );
@@ -2857,7 +2859,7 @@ export default function ViessmannGame() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <span style={{ fontSize: 20 }}>{current.icon || '🏗️'}</span>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>Kolejka budowy</span>
+                    <span style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>{t('build.queue', { ns: 'ui' })}</span>
                     <span style={{ fontSize: 15 }}>{current.label}</span>
                   </div>
                   <span style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#475569' : '#94a3b8' }}>Czas: {formatShortDuration(current.duration)}</span>
@@ -2866,7 +2868,7 @@ export default function ViessmannGame() {
                   <div style={{ height: '100%', width: `${pct}%`, background: '#f97316', transition: 'width 200ms linear' }} />
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: isDay ? '#475569' : '#94a3b8' }}>
-                  <span>Postęp: {pct}%</span>
+                  <span>{t('missions.progressPercent', { ns: 'ui', pct })}</span>
                   <span>Pozostało: {formatShortDuration(remainingSeconds)}</span>
                 </div>
                 {rest.length > 0 && (
@@ -2907,18 +2909,18 @@ export default function ViessmannGame() {
                 <span style={{ fontSize: 20 }}>{ent ? ent.icon : '🏠'}</span>
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
                   <span className="font-semibold font-sans" style={{ fontSize: 12, letterSpacing: 0.2, textTransform: 'uppercase', opacity: 0.9 }}>
-                    {ent ? 'Na domu:' : 'Brak urządzeń'}
+                    {ent ? t('devices.onHouse', { ns: 'ui' }) : t('devices.noDevices', { ns: 'ui' })}
                   </span>
                   <span className="font-medium font-sans" style={{ fontSize: 15 }}>
-                    {ent ? ent.label : 'Umieść kocioł na domu, aby rozpocząć.'}
+                    {ent ? ent.label : t('build.placeBoilerToStart', { ns: 'ui' })}
                   </span>
                 </div>
               </div>
             );
           })()}
           <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: 'center' }}>
-            <button className={`font-semibold font-sans ${shopTab === "devices" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "devices")} onClick={() => setShopTab("devices")}>Urządzenia</button>
-            <button className={`font-semibold font-sans ${shopTab === "production" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "production")} onClick={() => setShopTab("production")}>Produkcja</button>
+            <button className={`font-semibold font-sans ${shopTab === "devices" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "devices")} onClick={() => setShopTab("devices")}>{t('shop.devices', { ns: 'ui' })}</button>
+            <button className={`font-semibold font-sans ${shopTab === "production" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "production")} onClick={() => setShopTab("production")}>{t('shop.production', { ns: 'ui' })}</button>
           </div>
           {/* Removed start tooltip text as requested */}
           <div style={{ display: "grid", gap: 8 }}>
@@ -2975,7 +2977,7 @@ export default function ViessmannGame() {
                     <span style={{ fontSize: 22 }}>{item.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{i18n.t(`items.${item.key}.name`, { ns: 'items' })}</span>
+                        <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{t(`${item.key}.name`, { ns: 'items' })}</span>
                         {isForest && (
                           <span
                             title={t('ui:shop.forestEdgeTitle')}
@@ -2994,7 +2996,7 @@ export default function ViessmannGame() {
                         )}
                       </div>
                       <div className="text-xs text-neutral-500 font-sans" style={{ fontSize: 11, marginTop: 2, marginBottom: 2 }}>{t('ui:shop.owned')}: {ownedCount}</div>
-                      <div className="font-normal text-xs text-neutral-600 font-sans" style={{ fontSize: 13 }}>{i18n.t(`items.${item.key}.desc`, { ns: 'items' })}</div>
+                      <div className="font-normal text-xs text-neutral-600 font-sans" style={{ fontSize: 13 }}>{t(`${item.key}.desc`, { ns: 'items' })}</div>
                       {isForest && (
                         <div
                           title={t('ui:shop.forestPriceScaleTitle')}
@@ -3197,11 +3199,11 @@ export default function ViessmannGame() {
               />
             </div>
           </div>
-          <h2 className="font-bold font-sans text-lg text-neutral-900" style={{ marginBottom: 8, marginTop: -8, textAlign: 'center', width: '100%' }}>Misje</h2>
+          <h2 className="font-bold font-sans text-lg text-neutral-900" style={{ marginBottom: 8, marginTop: -8, textAlign: 'center', width: '100%' }}>{t('missions.title', { ns: 'ui' })}</h2>
           {missions.length > 0 && (
             <div style={{ marginBottom: 20 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>Postęp misji</span>
+                <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>{t('missions.progressLabel', { ns: 'ui' })}</span>
                 <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>{completedMissionCount} / {missions.length}</span>
               </div>
               <div style={{ width: "100%", height: 8, background: isDay ? "#E5E7EB" : "#334155", borderRadius: 6, overflow: "hidden" }}>
@@ -3221,7 +3223,7 @@ export default function ViessmannGame() {
               onClick={() => setMissionsTab("active")}
               aria-pressed={missionsTab === "active"}
             >
-              Aktywne
+              {t('missions.active', { ns: 'ui' })}
             </button>
             <button
               className={`font-semibold font-sans ${missionsTab === "completed" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`}
@@ -3229,19 +3231,19 @@ export default function ViessmannGame() {
               onClick={() => setMissionsTab("completed")}
               aria-pressed={missionsTab === "completed"}
             >
-              Ukończone
+              {t('missions.completed', { ns: 'ui' })}
             </button>
           </div>
           {missionsTab === "active" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, maxHeight: '56vh', overflowY: 'auto', paddingRight: 6 }}>
               {activeMissionCount === 0 ? (
-                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak aktywnych misji 🎉</div>
+                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>{t('missions.noActive', { ns: 'ui' })}</div>
               ) : (
                 activeMissions.map(m => (
                   <MissionCard
                     key={m.key}
-                    title={m.title}
-                    description={m.description}
+                    title={t(m.title, { ns: 'missions' })}
+                    description={t(m.description, { ns: 'missions' })}
                     reward={m.reward}
                     imgSrc={missionAssetMap[m.key]}
                     completed={m.completed}
@@ -3253,14 +3255,14 @@ export default function ViessmannGame() {
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {completedMissionCount === 0 ? (
-                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>Brak ukończonych misji</div>
+                <div style={{ color: isDay ? "#64748b" : "#94a3b8", fontSize: 14, padding: 8 }}>{t('missions.noCompleted', { ns: 'ui' })}</div>
               ) : (
                 <>
                   {completedMissions.map(m => (
                     <MissionCard
                       key={m.key}
-                      title={m.title}
-                      description={m.description}
+                      title={t(m.title, { ns: 'missions' })}
+                      description={t(m.description, { ns: 'missions' })}
                       reward={m.reward}
                       imgSrc={checkImg}
                       completed={m.completed}
@@ -3342,13 +3344,13 @@ export default function ViessmannGame() {
                       marginBottom: 4,
                       color: isDay ? (achievement.unlocked ? "#0f172a" : "#6b7280") : (achievement.unlocked ? "#e5e7eb" : "#94a3b8")
                     }}>
-                      {t(`achievements.${achievement.id}.name`, { ns: 'achievements' })}
+                      {t(`${achievement.id}.name`, { ns: 'achievements' })}
                     </div>
                     <div style={{ 
                       fontSize: 14, 
                       color: isDay ? (achievement.unlocked ? "#64748b" : "#9ca3af") : (achievement.unlocked ? "#94a3b8" : "#94a3b8")
                     }}>
-                      {t(`achievements.${achievement.id}.desc`, { ns: 'achievements' })}
+                      {t(`${achievement.id}.desc`, { ns: 'achievements' })}
                     </div>
                     {achievement.id === 'solar-farm' && !achievement.unlocked && (
                       <div style={{ fontSize: 12, color: isDay ? '#6b7280' : '#94a3b8', marginTop: 4 }}>
@@ -3814,6 +3816,7 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
 }>(function IsoGrid({
   tiles, homeTileId, onTileClick, pendingItem, lastPlacedKey, isPlaceable, weatherEvent, isDay, onViewChange
 }, ref) {
+  const { t } = useTranslation(['ui', 'items']);
   const [hoverInfo, setHoverInfo] = useState<{ tile: IsoTileType; left: number; top: number; placeable: boolean } | null>(null);
   const tileW = 96, tileH = 48;
   const size = Math.sqrt(tiles.length);
@@ -4093,33 +4096,33 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
           )}
         </div>
       )}
-  {tiles.map((t) => {
-        const left = (t.x - t.y) * (tileW / 2) + baseX;
-        const top = (t.x + t.y) * (tileH / 2) + baseY;
-        const placeable = isPlaceable ? isPlaceable(t) : true;
+  {tiles.map((tile) => {
+        const left = (tile.x - tile.y) * (tileW / 2) + baseX;
+        const top = (tile.x + tile.y) * (tileH / 2) + baseY;
+        const placeable = isPlaceable ? isPlaceable(tile) : true;
   const isForestPending = pendingItem?.key === 'forest';
-  const onPerimeter = t.x === 0 || t.y === 0 || t.x === size - 1 || t.y === size - 1;
+  const onPerimeter = tile.x === 0 || tile.y === 0 || tile.x === size - 1 || tile.y === size - 1;
   // Allowed = only empty perimeter tiles while planting forest
-  const highlightAllowed = !!pendingItem && isForestPending && onPerimeter && !t.entity;
+  const highlightAllowed = !!pendingItem && isForestPending && onPerimeter && !tile.entity;
   // Dim non-perimeter area while forest is pending (visual guidance)
   const dimNonPerimeter = !!pendingItem && isForestPending && !onPerimeter;
         return (
           <IsoTile
-            key={t.id}
-            tile={t}
+            key={tile.id}
+            tile={tile}
             left={left}
             top={top}
             w={tileW}
             h={tileH}
-    onClick={() => onTileClick(t)}
+    onClick={() => onTileClick(tile)}
             onHoverChange={(h) => {
-              if (h) setHoverInfo({ tile: t, left, top, placeable });
-              else if (hoverInfo?.tile.id === t.id) setHoverInfo(null);
+              if (h) setHoverInfo({ tile: tile, left, top, placeable });
+              else if (hoverInfo?.tile.id === tile.id) setHoverInfo(null);
             }}
-            isHome={t.id === homeTileId}
+            isHome={tile.id === homeTileId}
             pendingItem={pendingItem}
             placeable={placeable}
-            isNewlyPlaced={lastPlacedKey === t.id}
+            isNewlyPlaced={lastPlacedKey === tile.id}
             highlightAllowed={highlightAllowed}
             dimDisallowed={dimNonPerimeter}
             isDay={isDay}
@@ -4151,12 +4154,12 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
             const htile = hoverInfo.tile;
             const icon = htile.isHome ? '🏠' : htile.entity ? htile.entity.icon : pendingItem ? pendingItem.icon : '⬜';
               const text = htile.isHome
-              ? (htile.entity ? `${i18n.t('tile.home')}: ${i18n.t(`items.${htile.entity.type}.name`, { ns: 'items' })}` : i18n.t('tile.home'))
+              ? (htile.entity ? `${t('tile.home')}: ${t(`${htile.entity.type}.name`, { ns: 'items' })}` : t('tile.home'))
               : htile.entity
-              ? i18n.t(`items.${htile.entity.type}.name`, { ns: 'items' })
+              ? t(`${htile.entity.type}.name`, { ns: 'items' })
               : pendingItem
-              ? `${hoverInfo.placeable ? i18n.t('tile.placePrefix') : i18n.t('tile.cannotHere')}${i18n.t(`items.${pendingItem.key}.name`, { ns: 'items' })}`
-              : i18n.t('tile.empty');
+              ? `${hoverInfo.placeable ? t('tile.placePrefix') : t('tile.cannotHere')}${t(`${pendingItem.key}.name`, { ns: 'items' })}`
+              : t('tile.empty');
             return (
               <span style={{ display: 'inline-flex', flexDirection: 'column' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -4196,6 +4199,7 @@ function IsoTile({
   dimDisallowed?: boolean;
   isDay?: boolean;
 }) {
+  const { t } = useTranslation(['ui', 'items']);
   const [hovered, setHovered] = useState(false);
   const [pressed, setPressed] = useState(false);
   const [pop, setPop] = useState(false);
@@ -4203,8 +4207,8 @@ function IsoTile({
   useEffect(() => {
     if (isNewlyPlaced || tile.entity) {
       setPop(true);
-      const t = setTimeout(() => setPop(false), 300);
-      return () => clearTimeout(t);
+      const timer = setTimeout(() => setPop(false), 300);
+      return () => clearTimeout(timer);
     }
   }, [isNewlyPlaced, tile.entity]);
 
@@ -4226,7 +4230,7 @@ function IsoTile({
       onMouseLeave={() => { setHovered(false); setPressed(false); onHoverChange?.(false); }}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
-  title={isHome ? (tile.entity ? `${i18n.t('tile.home')}: ${i18n.t(`items.${tile.entity.type}.name`, { ns: 'items' })}` : i18n.t('tile.home')) : tile.entity ? i18n.t(`items.${tile.entity.type}.name`, { ns: 'items' }) : pendingItem ? `${i18n.t('tile.placePrefix')}${i18n.t(`items.${(pendingItem.key ?? pendingItem.name) as string}.name`, { ns: 'items' })}` : i18n.t('tile.empty')}
+  title={isHome ? (tile.entity ? `${t('tile.home')}: ${t(`${tile.entity.type}.name`, { ns: 'items' })}` : t('tile.home')) : tile.entity ? t(`${tile.entity.type}.name`, { ns: 'items' }) : pendingItem ? `${t('tile.placePrefix')}${t(`${(pendingItem.key ?? pendingItem.name) as string}.name`, { ns: 'items' })}` : t('tile.empty')}
       style={{
         position: "absolute", left, top, width: w, height: h,
         WebkitClipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",
