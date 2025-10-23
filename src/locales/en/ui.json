@@ -23,6 +23,15 @@
     "achievementsProgress": "Progress: {{completed}}/{{total}}",
     "achievementsPercent": "{{pct}}% completed"
   },
+  "journal": {
+    "filterAll": "All",
+    "filterPurchase": "Purchases",
+    "filterPlacement": "Placements",
+    "filterMission": "Missions",
+    "filterWeather": "Weather",
+    "filterAchievement": "Achievements",
+    "filterMilestone": "Milestones"
+  },
   "settings": {
     "title": "Settings",
     "save": "Save game",

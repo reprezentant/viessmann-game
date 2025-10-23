@@ -3710,13 +3710,13 @@ export default function ViessmannGame() {
             {/* Filters */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
               {([
-                { k: 'all', label: 'Wszystko' },
-                { k: 'purchase', label: 'Zakupy' },
-                { k: 'placement', label: 'Ustawienia' },
-                { k: 'mission', label: 'Misje' },
-                { k: 'weather', label: 'Pogoda' },
-                { k: 'achievement', label: 'Osiągnięcia' },
-                { k: 'milestone', label: 'Kamienie milowe' },
+                { k: 'all', label: t('journal.filterAll', { ns: 'ui' }) },
+                { k: 'purchase', label: t('journal.filterPurchase', { ns: 'ui' }) },
+                { k: 'placement', label: t('journal.filterPlacement', { ns: 'ui' }) },
+                { k: 'mission', label: t('journal.filterMission', { ns: 'ui' }) },
+                { k: 'weather', label: t('journal.filterWeather', { ns: 'ui' }) },
+                { k: 'achievement', label: t('journal.filterAchievement', { ns: 'ui' }) },
+                { k: 'milestone', label: t('journal.filterMilestone', { ns: 'ui' }) },
               ] as Array<{ k: 'all' | LogType; label: string }>).map(btn => (
                 <button key={btn.k}
                   onClick={() => setLogFilter(btn.k)}

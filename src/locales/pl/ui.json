@@ -23,6 +23,15 @@
     "achievementsProgress": "Postęp: {{completed}}/{{total}}",
     "achievementsPercent": "{{pct}}% ukończono"
   },
+  "journal": {
+    "filterAll": "Wszystko",
+    "filterPurchase": "Zakupy",
+    "filterPlacement": "Ustawienia",
+    "filterMission": "Misje",
+    "filterWeather": "Pogoda",
+    "filterAchievement": "Osiągnięcia",
+    "filterMilestone": "Kamienie milowe"
+  },
   "settings": {
     "title": "Ustawienia",
     "save": "Zapisz grę",
