@@ -1,5 +1,6 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
 import i18n from './i18n';
+import { useTranslation } from 'react-i18next';
 import { canAfford as canAffordHelper, discountedCost as discountedCostHelper, dynamicCost as dynamicCostHelper } from './lib/economy';
 import { clamp as clampHelper, seasonPollutionFor as seasonPollutionForHelper, housePollutionFor as housePollutionForHelper } from './lib/pollution';
 import { getSampleEvents } from './lib/story';
@@ -308,6 +309,7 @@ const achievementDefs: AchievementDef[] = [
 ];
 
 export default function ViessmannGame() {
+  const { t } = useTranslation('ui');
   // --- Wszystkie stany i stałe na początek ---
   // Pogoda
   const [weatherEvent, setWeatherEvent] = useState<WeatherEvent>({ type: "none", duration: 0, remaining: 0 });
@@ -2537,7 +2539,7 @@ export default function ViessmannGame() {
                     onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
                   >
                     <span>⬇️</span>
-                    <span>Zapisz grę</span>
+                    <span>{t('settings.save')}</span>
                   </div>
 
                   <div
@@ -2550,22 +2552,22 @@ export default function ViessmannGame() {
                     onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
                   >
                     <span>⬆️</span>
-                    <span>Wczytaj grę</span>
+                    <span>{t('settings.load')}</span>
                   </div>
 
                   <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
 
                   <div
                     style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
-                    onClick={() => { if (window.confirm('Czy na pewno chcesz rozpocząć nową grę? Wszystkie niezapisane postępy zostaną utracone.')) { resetGame(); setShowSettingsMenu(false); } }}
+                    onClick={() => { if (window.confirm(t('settings.resetConfirm'))) { resetGame(); setShowSettingsMenu(false); } }}
                     role="button"
                     tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (window.confirm('Czy na pewno chcesz rozpocząć nową grę? Wszystkie niezapisane postępy zostaną utracone.')) { resetGame(); setShowSettingsMenu(false); } } }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (window.confirm(t('settings.resetConfirm'))) { resetGame(); setShowSettingsMenu(false); } } }}
                     onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#fee2e2' : '#7f1d1d'}
                     onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
                   >
                     <span>🗑️</span>
-                    <span>Nowa gra</span>
+                    <span>{t('settings.newGame')}</span>
                   </div>
                   {/* Language selector */}
                   <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
@@ -2640,7 +2642,7 @@ export default function ViessmannGame() {
                 onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
               >
                 <span>🏆</span>
-                <span>Osiągnięcia</span>
+                <span>{t('profile.achievements')}</span>
                 <span style={{ marginLeft: "auto", fontSize: 12, color: isDay ? "#666" : "#94a3b8" }}>
                   {achievements.filter(a => a.unlocked).length}/{achievements.length}
                 </span>
@@ -2681,7 +2683,7 @@ export default function ViessmannGame() {
                 onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
               >
                 <span>📝</span>
-                <span>Dziennik</span>
+                <span>{t('profile.journal')}</span>
                 <span style={{ marginLeft: "auto", fontSize: 12, color: isDay ? "#666" : "#94a3b8" }}>
                   {log.length}
                 </span>
@@ -2716,7 +2718,7 @@ export default function ViessmannGame() {
                 onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
               >
                 <span>📚</span>
-                <span>Kompedium wiedzy</span>
+                <span>{t('profile.compendium')}</span>
               </div>
               {/* Save/Load/New moved to Settings menu; keep Profile focused on Achievements/Log/Compendium */}
             </div>
@@ -3362,7 +3364,7 @@ export default function ViessmannGame() {
             border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: isDay ? "#0f172a" : "#e5e7eb" }}>🏆 Osiągnięcia</h2>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: isDay ? "#0f172a" : "#e5e7eb" }}>🏆 {t('profile.achievements')}</h2>
               <button 
                 onClick={() => setShowAchievements(false)}
                 style={{
@@ -3753,7 +3755,7 @@ export default function ViessmannGame() {
             border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: isDay ? "#0f172a" : "#e5e7eb" }}>📝 Dziennik</h2>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: isDay ? "#0f172a" : "#e5e7eb" }}>📝 {t('profile.journal')}</h2>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button
                   onClick={() => setLog([])}

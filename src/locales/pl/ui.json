@@ -9,6 +9,7 @@
     "save": "Zapisz grę",
     "load": "Wczytaj grę",
     "newGame": "Nowa gra",
+  "resetConfirm": "Czy na pewno chcesz rozpocząć nową grę? Wszystkie niezapisane postępy zostaną utracone.",
     "language": "Język",
     "polish": "Polski",
     "english": "English"
