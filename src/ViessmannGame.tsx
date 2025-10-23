@@ -1400,7 +1400,7 @@ export default function ViessmannGame() {
     setGlobalDiscount: (pct, seconds, label) => {
       setStoryDiscountPct(d => Math.max(d, Math.floor(pct)));
       setStoryDiscountTimer(t => Math.max(t, Math.floor(seconds)));
-  if (label) { setStoryDiscountLabel(label); pushToast({ icon: '🏷️', text: `${label}: −${Math.round(pct)}% przez ${seconds}s` }); }
+  if (label) { setStoryDiscountLabel(label); pushToast({ icon: '🏷️', text: t('ui:shop.discountActive', { label, percent: Math.round(pct), seconds }) }); }
     },
   toast: (icon, text) => pushToast({ icon, text: resolveStoryText(text) }),
   log: (title, description, icon) => pushLog({ type: 'other', icon: icon ?? '🗞️', title: resolveStoryText(title), description: resolveStoryText(description) }),
@@ -1408,7 +1408,7 @@ export default function ViessmannGame() {
     setFlag: (key, value) => setStoryFlags(prev => ({ ...prev, [key]: value })),
     adjustFaction: (name, delta) => setFactions(prev => ({ ...prev, [name]: clamp((prev[name] ?? 0) + delta) })),
     setEventCooldown: (eventId, seconds) => { storyCooldownsRef.current[eventId] = Date.now() + seconds * 1000; },
-  }), [clamp, resolveStoryText, pushLog, pushToast]);
+  }), [clamp, resolveStoryText, pushLog, pushToast, t]);
 
   const handleStoryChoice = useCallback((event: StoryEvent, choice: StoryChoice) => {
     try { choice.apply(storyApi); } catch { /* ignore */ }
@@ -1475,7 +1475,7 @@ export default function ViessmannGame() {
   const handleBuy = (item: ShopItem) => {
     const alreadyQueued = buildQueue.some(task => task.itemKey === item.key);
     if (isSinglePurchase(item.key) && ((owned[item.key] ?? 0) > 0 || alreadyQueued)) {
-  if (alreadyQueued) pushToast({ icon: '⏳', text: `${t(`${item.key}.name`, { ns: 'items' })} już w kolejce` });
+  if (alreadyQueued) pushToast({ icon: '⏳', text: t('ui:build.alreadyQueued', { name: t(`${item.key}.name`, { ns: 'items' }) }) });
       return;
     }
     const cost = dynamicCost(item);
@@ -1769,10 +1769,10 @@ export default function ViessmannGame() {
   gap: 6,
   borderRadius: 24,
     background: theme.pillBg,
-    padding: "8px 16px",
+    padding: "4px 16px",
     minHeight: 56,
     flex: '0 0 auto',
-    border: `1px solid ${theme.pillBorder}`,
+    border: `2px solid ${theme.pillBorder}`,
     boxShadow: theme.pillShadow,
     color: theme.bodyText,
     transition: "background 0.2s ease, transform 0.2s ease"
@@ -1783,12 +1783,30 @@ export default function ViessmannGame() {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 16,
-    borderBottom: `1px solid ${theme.headerBorder}`,
-    background: theme.headerBg,
-    padding: "12px 18px 12px 32px",
-    boxShadow: theme.headerShadow,
+    gap: 0,
+    background: 'transparent',
+    padding: "12px 18px",
     zIndex: 200
+  };
+
+  // Individual header section styles
+  const headerSectionStyle: React.CSSProperties = {
+    background: theme.headerBg,
+    borderRadius: 28,
+    padding: "12px 16px",
+    boxShadow: theme.headerShadow,
+    border: !isDay 
+      ? '2px solid transparent'
+      : '2px solid transparent',
+    backgroundImage: !isDay
+      ? `linear-gradient(${theme.headerBg}, ${theme.headerBg}), linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05))`
+      : `linear-gradient(${theme.headerBg}, ${theme.headerBg}), linear-gradient(135deg, rgba(139,117,91,0.2), rgba(160,130,95,0.15))`,
+    backgroundOrigin: 'border-box',
+    backgroundClip: 'padding-box, border-box',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 88
   };
   const gridWrap: React.CSSProperties = { display: "grid", gridTemplateColumns: "300px 1fr 340px", gap: 16, padding: 16, width: "100vw", boxSizing: "border-box" };
 
@@ -1995,7 +2013,7 @@ export default function ViessmannGame() {
       role="group"
       aria-label={label}
     >
-      <img src={iconSrc} alt={label} style={{ width: 36, height: 36, flex: '0 0 36px' }} />
+      <img src={iconSrc} alt={label} style={{ width: 32, height: 32, flex: '0 0 32px' }} />
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {/* Visible label moved into tooltip per request — keep aria-label for accessibility */}
         <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 700 }}>{value}</div>
@@ -2044,19 +2062,8 @@ export default function ViessmannGame() {
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
-      opacity: isDay ? 0.5 : 0.3,
       zIndex: -2,
       transition: "opacity 0.8s ease-in-out"
-    }} />
-    {/* Gradient overlay for better readability */}
-    <div style={{
-      position: "fixed",
-      inset: 0,
-      background: isDay 
-        ? "linear-gradient(to bottom, rgba(250,247,242,0.3) 0%, rgba(245,240,230,0.5) 100%)"
-        : "linear-gradient(to bottom, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.85) 100%)",
-      zIndex: -1,
-      transition: "background 0.8s ease-in-out"
     }} />
     <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFileChange} />
       {/* Toast stack */}
@@ -2084,49 +2091,51 @@ export default function ViessmannGame() {
       />
       {/* top bar */}
       <header style={headerStyle}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {/* LEFT SECTION - Logo */}
+        <div style={{ ...headerSectionStyle, flexShrink: 0 }}>
           <img src={logo} alt="Viessmann logo" style={{ height: 40, width: 'auto', display: 'block' }} />
         </div>
 
-  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2, justifyContent: 'center' }}>
-          <ResourcePill
-            iconSrc={isDay ? sunLM : sunDM}
-            label={t('resources.sun', { ns: 'ui' })}
-            value={fmt(resources.sun)}
-            rate={rateText('sun')}
-            onHover={(e) => showResourceLegend(e, 'sun', t('resources.sun', { ns: 'ui' }))}
-            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
-          />
+        {/* CENTER SECTION - Resources + Weather/Events/Eco */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '0 auto' }}>
+          {/* Resources pill */}
+          <div style={{ ...headerSectionStyle, gap: 8 }}>
+            <ResourcePill
+              iconSrc={isDay ? sunLM : sunDM}
+              label={t('resources.sun', { ns: 'ui' })}
+              value={fmt(resources.sun)}
+              rate={rateText('sun')}
+              onHover={(e) => showResourceLegend(e, 'sun', t('resources.sun', { ns: 'ui' }))}
+              onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+            />
 
-          <ResourcePill
-            iconSrc={isDay ? waterLM : waterDM}
-            label={t('resources.water', { ns: 'ui' })}
-            value={fmt(resources.water)}
-            rate={rateText('water')}
-            onHover={(e) => showResourceLegend(e, 'water', t('resources.water', { ns: 'ui' }))}
-            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
-          />
+            <ResourcePill
+              iconSrc={isDay ? waterLM : waterDM}
+              label={t('resources.water', { ns: 'ui' })}
+              value={fmt(resources.water)}
+              rate={rateText('water')}
+              onHover={(e) => showResourceLegend(e, 'water', t('resources.water', { ns: 'ui' }))}
+              onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+            />
 
-          <ResourcePill
-            iconSrc={isDay ? windLM : windDM}
-            label={t('resources.wind', { ns: 'ui' })}
-            value={fmt(resources.wind)}
-            rate={rateText('wind')}
-            onHover={(e) => showResourceLegend(e, 'wind', t('resources.wind', { ns: 'ui' }))}
-            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
-          />
+            <ResourcePill
+              iconSrc={isDay ? windLM : windDM}
+              label={t('resources.wind', { ns: 'ui' })}
+              value={fmt(resources.wind)}
+              rate={rateText('wind')}
+              onHover={(e) => showResourceLegend(e, 'wind', t('resources.wind', { ns: 'ui' }))}
+              onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+            />
 
-          <ResourcePill
-            iconSrc={isDay ? viCoinLM : viCoinDM}
-            label={t('resources.coins', { ns: 'ui' })}
-            value={fmt(resources.coins)}
-            rate={rateText('coins')}
-            onHover={(e) => showResourceLegend(e, 'coins', t('resources.coins', { ns: 'ui' }))}
-            onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
-          />
+            <ResourcePill
+              iconSrc={isDay ? viCoinLM : viCoinDM}
+              label={t('resources.coins', { ns: 'ui' })}
+              value={fmt(resources.coins)}
+              rate={rateText('coins')}
+              onHover={(e) => showResourceLegend(e, 'coins', t('resources.coins', { ns: 'ui' }))}
+              onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
+            />
 
-
-          <div style={{ display: "flex", alignItems: "center", gap: 20, flex: "0 0 auto" }}>
             {/* Smog pill */}
             <div
               style={{
@@ -2167,9 +2176,12 @@ export default function ViessmannGame() {
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Weather pill (separate wrapper) */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: 2 }}>
+          {/* Weather/Events/Eco pill */}
+          <div style={{ ...headerSectionStyle, gap: 20 }}>
+            {/* Weather pill */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <button
                 onMouseEnter={(e) => {
                   const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -2202,8 +2214,8 @@ export default function ViessmannGame() {
                   weatherEvent.type === "frost" ? t('weather.frost', { ns: 'ui' }) : t('weather.noEvent', { ns: 'ui' })
                 }
                 style={{
-                  width: 80,
-                  height: 80,
+                  width: 64,
+                  height: 64,
                   borderRadius: 999,
                   overflow: 'hidden',
                   border: `3px solid ${theme.pillBorder}`,
@@ -2216,7 +2228,7 @@ export default function ViessmannGame() {
                   justifyContent: 'center'
                 }}
               >
-                <span style={{ fontSize: 44, lineHeight: 1 }}>
+                <span style={{ fontSize: 36, lineHeight: 1 }}>
                   {weatherEvent.type === "clouds" && "☁️"}
                   {weatherEvent.type === "sunny" && "🌞"}
                   {weatherEvent.type === "rain" && "🌧️"}
@@ -2262,8 +2274,8 @@ export default function ViessmannGame() {
                 aria-label={eventsSummary.count === 0 ? t('events.ariaLabel_none', { ns: 'ui' }) : t('events.ariaLabel_some', { ns: 'ui', count: eventsSummary.count })}
                 title={eventsSummary.count === 0 ? t('events.ariaLabel_none', { ns: 'ui' }) : t('events.ariaLabel_some', { ns: 'ui', count: eventsSummary.count })}
                 style={{
-                  width: 80,
-                  height: 80,
+                  width: 64,
+                  height: 64,
                   borderRadius: 999,
                   overflow: 'hidden',
                   border: `3px solid ${theme.pillBorder}`,
@@ -2326,8 +2338,8 @@ export default function ViessmannGame() {
                 title={t('ui.ecoReputation', { ns: 'ui' })}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowAchievements(true); } }}
                 style={{
-                  width: 80,
-                  height: 80,
+                  width: 64,
+                  height: 64,
                   borderRadius: 999,
                   overflow: 'hidden',
                   border: `3px solid ${theme.pillBorder}`,
@@ -2369,77 +2381,75 @@ export default function ViessmannGame() {
               )}
             </div>
           </div>
-
-          
         </div>
 
-  {/* Profile Menu */}
-  <div
-    style={{ position: "relative", display: 'flex', alignItems: 'center', gap: 12 }}
-    onMouseEnter={() => { clearProfileAreaTimer(); }}
-    onMouseLeave={() => { scheduleCloseProfileArea(150); }}
-  >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              cursor: 'pointer',
-              padding: 0,
-              background: 'transparent',
-              border: 'none'
-            }}
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-          >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              
-              {/* Day / Season mini-pills (left of profile) */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start', marginRight: 10 }}>
-                <div
-                  role="group"
-                  tabIndex={0}
-                  title={isDay ? t('ui.dayTime', { ns: 'ui' }) : t('ui.nightTime', { ns: 'ui' })}
-                  onMouseEnter={(e) => {
-                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                    setDayInfoOpen(true);
-                  }}
-                  onMouseLeave={() => setDayInfoOpen(false)}
-                  onFocus={(e) => {
-                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                    setDayInfoOpen(true);
-                  }}
-                  onBlur={() => setDayInfoOpen(false)}
-                  style={{ ...miniPillBase, paddingRight: 10 }}
-                >
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
-                  <span>{isDay ? t('ui.dayTime', { ns: 'ui' }) : t('ui.nightTime', { ns: 'ui' })}</span>
-                </div>
-                <div
-                  role="group"
-                  tabIndex={0}
-                  title={seasonInfoMap[season.type].name}
-                  onMouseEnter={(e) => {
-                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                    setSeasonInfoOpen(true);
-                  }}
-                  onMouseLeave={() => setSeasonInfoOpen(false)}
-                  onFocus={(e) => {
-                    const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
-                    setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
-                    setSeasonInfoOpen(true);
-                  }}
-                  onBlur={() => setSeasonInfoOpen(false)}
-                  style={{ ...miniPillBase, maxWidth: 220 }}
-                >
-                  <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
-                  <span>{seasonInfoMap[season.type].name}</span>
-                </div>
-              </div>
+        {/* RIGHT SECTION - Day/Season + Profile + Settings */}
+        <div 
+          style={{ ...headerSectionStyle, flexShrink: 0 }}
+          onMouseEnter={() => { clearProfileAreaTimer(); }}
+          onMouseLeave={() => { scheduleCloseProfileArea(150); }}
+        >
+          {/* Day / Season mini-pills */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-start' }}>
+            <div
+              role="group"
+              tabIndex={0}
+              title={isDay ? t('ui.dayTime', { ns: 'ui' }) : t('ui.nightTime', { ns: 'ui' })}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setDayInfoOpen(true);
+              }}
+              onMouseLeave={() => setDayInfoOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setDayInfoOpen(true);
+              }}
+              onBlur={() => setDayInfoOpen(false)}
+              style={{ ...miniPillBase, paddingRight: 10 }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
+              <span>{isDay ? t('ui.dayTime', { ns: 'ui' }) : t('ui.nightTime', { ns: 'ui' })}</span>
+            </div>
+            <div
+              role="group"
+              tabIndex={0}
+              title={seasonInfoMap[season.type].name}
+              onMouseEnter={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setSeasonInfoOpen(true);
+              }}
+              onMouseLeave={() => setSeasonInfoOpen(false)}
+              onFocus={(e) => {
+                const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                setSeasonInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
+                setSeasonInfoOpen(true);
+              }}
+              onBlur={() => setSeasonInfoOpen(false)}
+              style={{ ...miniPillBase, maxWidth: 220 }}
+            >
+              <span style={{ fontSize: 16, lineHeight: 1 }}>{seasonInfoMap[season.type].icon}</span>
+              <span>{seasonInfoMap[season.type].name}</span>
+            </div>
+          </div>
 
-              <div style={{ width: 80, height: 80, borderRadius: 999, border: `3px solid ${showProfileMenu ? theme.tone.info : theme.pillBorder}`, boxShadow: showProfileMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none', position: 'relative', overflow: 'visible', background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))' }}>
+          {/* Profile */}
+          <div style={{ position: 'relative' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                cursor: 'pointer',
+                padding: 0,
+                background: 'transparent',
+                border: 'none'
+              }}
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+            >
+              <div style={{ width: 64, height: 64, borderRadius: 999, border: `3px solid ${showProfileMenu ? theme.tone.info : theme.pillBorder}`, boxShadow: showProfileMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none', position: 'relative', overflow: 'visible', background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))' }}>
                 <div style={{ width: '100%', height: '100%', borderRadius: 999, overflow: 'hidden' }}>
                   <img src={isDay ? profileLM : profileDM} alt="Profil" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
                 </div>
@@ -2461,241 +2471,238 @@ export default function ViessmannGame() {
                   />
                 )}
               </div>
-              <span style={{ fontWeight: 600, fontSize: 14, display: 'none' }}>Mój profil</span>
             </div>
-          </div>
-          
 
-          {/* Settings icon (placeholder for future menu) */}
-            <div style={{ display: 'inline-flex', verticalAlign: 'middle', position: 'relative' }}>
-              <button
-                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                aria-label={t('ui.settings', { ns: 'ui' })}
-                title={t('ui.settings', { ns: 'ui' })}
-                style={{
-                  width: 80,
-                  height: 80,
-                  borderRadius: 999,
-                  overflow: 'hidden',
-                  border: `3px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
-                  boxShadow: showSettingsMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none',
-                  background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
-              </button>
-
-              {showSettingsMenu && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 'calc(100% + 8px)',
-                    right: 0,
-                    background: isDay ? '#ffffff' : '#0f172a',
-                    color: isDay ? '#0f172a' : '#e5e7eb',
-                    borderRadius: 8,
-                    boxShadow: isDay ? '0 4px 12px rgba(0,0,0,0.15)' : '0 8px 20px rgba(0,0,0,0.35)',
-                    border: isDay ? '1px solid rgba(0,0,0,0.1)' : '1px solid #334155',
-                    minWidth: 180,
-                    zIndex: 1100
-                  }}
-                >
-                  <div
-                    style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
-                    onClick={() => { exportSave(); setShowSettingsMenu(false); }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); exportSave(); setShowSettingsMenu(false); } }}
-                    onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                    onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-                  >
-                    <span>⬇️</span>
-                    <span>{t('settings.save')}</span>
-                  </div>
-
-                  <div
-                    style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
-                    onClick={() => { importInputRef.current?.click(); setShowSettingsMenu(false); }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); importInputRef.current?.click(); setShowSettingsMenu(false); } }}
-                    onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                    onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-                  >
-                    <span>⬆️</span>
-                    <span>{t('settings.load')}</span>
-                  </div>
-
-                  <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
-
-                  <div
-                    style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
-                    onClick={() => { if (window.confirm(t('settings.resetConfirm'))) { resetGame(); setShowSettingsMenu(false); } }}
-                    role="button"
-                    tabIndex={0}
-                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (window.confirm(t('settings.resetConfirm'))) { resetGame(); setShowSettingsMenu(false); } } }}
-                    onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#fee2e2' : '#7f1d1d'}
-                    onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-                  >
-                    <span>🗑️</span>
-                    <span>{t('settings.newGame')}</span>
-                  </div>
-                  {/* Language selector */}
-                  <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
-                  <div style={{ padding: '8px 16px', fontSize: 13, color: isDay ? '#0f172a' : '#e5e7eb' }}>
-                    <div style={{ marginBottom: 6, fontSize: 12, color: isDay ? '#374151' : '#9ca3af' }}>{t('settings.language')}</div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button
-                        onClick={() => { i18n.changeLanguage('pl'); localStorage.setItem('vm_lang', 'pl'); setShowSettingsMenu(false); }}
-                        style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'pl' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'pl' ? '#e0f2fe' : 'transparent' }}
-                      >
-                        {t('settings.polish')}
-                      </button>
-                      <button
-                        onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('vm_lang', 'en'); setShowSettingsMenu(false); }}
-                        style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'en' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'en' ? '#e0f2fe' : 'transparent' }}
-                      >
-                        {t('settings.english')}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          
-
-          {showProfileMenu && (
-            <div
-              style={{
-                position: "absolute",
-                top: "calc(100% + 8px)",
-                right: 0,
-                background: isDay ? "#ffffff" : "#0f172a",
-                color: isDay ? "#0f172a" : "#e5e7eb",
-                borderRadius: 8,
-                boxShadow: isDay ? "0 4px 12px rgba(0,0,0,0.15)" : "0 8px 20px rgba(0,0,0,0.35)",
-                border: isDay ? "1px solid rgba(0,0,0,0.1)" : "1px solid #334155",
-                minWidth: 180,
-                zIndex: 100
-              }}
-            >
+            {showProfileMenu && (
               <div
                 style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  borderRadius: "8px 8px 0 0",
-                  fontSize: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  color: isDay ? '#0f172a' : '#e5e7eb'
+                  position: "absolute",
+                  top: "calc(100% + 8px)",
+                  right: 0,
+                  background: isDay ? "#ffffff" : "#0f172a",
+                  color: isDay ? "#0f172a" : "#e5e7eb",
+                  borderRadius: 8,
+                  boxShadow: isDay ? "0 4px 12px rgba(0,0,0,0.15)" : "0 8px 20px rgba(0,0,0,0.35)",
+                  border: isDay ? "1px solid rgba(0,0,0,0.1)" : "1px solid #334155",
+                  minWidth: 180,
+                  zIndex: 100
                 }}
-                onClick={() => {
-                  setShowAchievements(true);
-                  setShowProfileMenu(false);
-                  const now = Date.now();
-                  setLastSeenAchievements(now);
-                  try { localStorage.setItem('vm_seen_ach', String(now)); } catch { /* ignore */ }
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+              >
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    cursor: "pointer",
+                    borderRadius: "8px 8px 0 0",
+                    fontSize: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: isDay ? '#0f172a' : '#e5e7eb'
+                  }}
+                  onClick={() => {
                     setShowAchievements(true);
                     setShowProfileMenu(false);
                     const now = Date.now();
                     setLastSeenAchievements(now);
                     try { localStorage.setItem('vm_seen_ach', String(now)); } catch { /* ignore */ }
-                  }
-                }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-              >
-                <span>🏆</span>
-                <span>{t('profile.achievements')}</span>
-                <span style={{ marginLeft: "auto", fontSize: 12, color: isDay ? "#666" : "#94a3b8" }}>
-                  {achievements.filter(a => a.unlocked).length}/{achievements.length}
-                </span>
-                {hasNewAchievements && (
-                  <span aria-label={t('ui.new', { ns: 'ui' })} title={t('ui.new', { ns: 'ui' })} style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
-                )}
-              </div>
-              <div
-                style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  fontSize: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  color: isDay ? '#0f172a' : '#e5e7eb'
-                }}
-                onClick={() => {
-                  setShowLog(true);
-                  setShowProfileMenu(false);
-                  const now = Date.now();
-                  setLastSeenLog(now);
-                  try { localStorage.setItem('vm_seen_log', String(now)); } catch { /* ignore */ }
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setShowAchievements(true);
+                      setShowProfileMenu(false);
+                      const now = Date.now();
+                      setLastSeenAchievements(now);
+                      try { localStorage.setItem('vm_seen_ach', String(now)); } catch { /* ignore */ }
+                    }
+                  }}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  <span>🏆</span>
+                  <span>{t('profile.achievements')}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 12, color: isDay ? "#666" : "#94a3b8" }}>
+                    {achievements.filter(a => a.unlocked).length}/{achievements.length}
+                  </span>
+                  {hasNewAchievements && (
+                    <span aria-label={t('ui.new', { ns: 'ui' })} title={t('ui.new', { ns: 'ui' })} style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
+                  )}
+                </div>
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: isDay ? '#0f172a' : '#e5e7eb'
+                  }}
+                  onClick={() => {
                     setShowLog(true);
                     setShowProfileMenu(false);
                     const now = Date.now();
                     setLastSeenLog(now);
                     try { localStorage.setItem('vm_seen_log', String(now)); } catch { /* ignore */ }
-                  }
-                }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-              >
-                <span>📝</span>
-                <span>{t('profile.journal')}</span>
-                <span style={{ marginLeft: "auto", fontSize: 12, color: isDay ? "#666" : "#94a3b8" }}>
-                  {log.length}
-                </span>
-                {hasNewLog && (
-                  <span aria-label={t('ui.new', { ns: 'ui' })} title={t('ui.new', { ns: 'ui' })} style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
-                )}
-              </div>
-              <div
-                style={{
-                  padding: "12px 16px",
-                  cursor: "pointer",
-                  fontSize: 14,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  color: isDay ? '#0f172a' : '#e5e7eb'
-                }}
-                onClick={() => {
-                  setShowCompendium(true);
-                  setShowProfileMenu(false);
-                }}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setShowLog(true);
+                      setShowProfileMenu(false);
+                      const now = Date.now();
+                      setLastSeenLog(now);
+                      try { localStorage.setItem('vm_seen_log', String(now)); } catch { /* ignore */ }
+                    }
+                  }}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  <span>📝</span>
+                  <span>{t('profile.journal')}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 12, color: isDay ? "#666" : "#94a3b8" }}>
+                    {log.length}
+                  </span>
+                  {hasNewLog && (
+                    <span aria-label={t('ui.new', { ns: 'ui' })} title={t('ui.new', { ns: 'ui' })} style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
+                  )}
+                </div>
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    cursor: "pointer",
+                    fontSize: 14,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: isDay ? '#0f172a' : '#e5e7eb'
+                  }}
+                  onClick={() => {
                     setShowCompendium(true);
                     setShowProfileMenu(false);
-                  }
-                }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-              >
-                <span>📚</span>
-                <span>{t('profile.compendium')}</span>
+                  }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setShowCompendium(true);
+                      setShowProfileMenu(false);
+                    }
+                  }}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  <span>📚</span>
+                  <span>{t('profile.compendium')}</span>
+                </div>
+                {/* Save/Load/New moved to Settings menu; keep Profile focused on Achievements/Log/Compendium */}
               </div>
-              {/* Save/Load/New moved to Settings menu; keep Profile focused on Achievements/Log/Compendium */}
-            </div>
-          )}
+            )}
+          </div>
+
+          {/* Settings */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+              aria-label={t('ui.settings', { ns: 'ui' })}
+              title={t('ui.settings', { ns: 'ui' })}
+              style={{
+                width: 64,
+                height: 64,
+                borderRadius: 999,
+                overflow: 'hidden',
+                border: `3px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
+                boxShadow: showSettingsMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none',
+                background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
+                cursor: 'pointer',
+                padding: 0,
+              }}
+            >
+              <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
+            </button>
+
+            {showSettingsMenu && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  background: isDay ? '#ffffff' : '#0f172a',
+                  color: isDay ? '#0f172a' : '#e5e7eb',
+                  borderRadius: 8,
+                  boxShadow: isDay ? '0 4px 12px rgba(0,0,0,0.15)' : '0 8px 20px rgba(0,0,0,0.35)',
+                  border: isDay ? '1px solid rgba(0,0,0,0.1)' : '1px solid #334155',
+                  minWidth: 180,
+                  zIndex: 1100
+                }}
+              >
+                <div
+                  style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
+                  onClick={() => { exportSave(); setShowSettingsMenu(false); }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); exportSave(); setShowSettingsMenu(false); } }}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  <span>⬇️</span>
+                  <span>{t('settings.save')}</span>
+                </div>
+
+                <div
+                  style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
+                  onClick={() => { importInputRef.current?.click(); setShowSettingsMenu(false); }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); importInputRef.current?.click(); setShowSettingsMenu(false); } }}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  <span>⬆️</span>
+                  <span>{t('settings.load')}</span>
+                </div>
+
+                <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
+
+                <div
+                  style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
+                  onClick={() => { if (window.confirm(t('settings.resetConfirm'))) { resetGame(); setShowSettingsMenu(false); } }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (window.confirm(t('settings.resetConfirm'))) { resetGame(); setShowSettingsMenu(false); } } }}
+                  onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#fee2e2' : '#7f1d1d'}
+                  onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                >
+                  <span>🗑️</span>
+                  <span>{t('settings.newGame')}</span>
+                </div>
+                {/* Language selector */}
+                <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
+                <div style={{ padding: '8px 16px', fontSize: 13, color: isDay ? '#0f172a' : '#e5e7eb' }}>
+                  <div style={{ marginBottom: 6, fontSize: 12, color: isDay ? '#374151' : '#9ca3af' }}>{t('settings.language')}</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      onClick={() => { i18n.changeLanguage('pl'); localStorage.setItem('vm_lang', 'pl'); setShowSettingsMenu(false); }}
+                      style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'pl' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'pl' ? '#e0f2fe' : 'transparent' }}
+                    >
+                      {t('settings.polish')}
+                    </button>
+                    <button
+                      onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('vm_lang', 'en'); setShowSettingsMenu(false); }}
+                      style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'en' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'en' ? '#e0f2fe' : 'transparent' }}
+                    >
+                      {t('settings.english')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
   {/* Season tooltip removed – unified into headline ticker */}
@@ -3096,7 +3103,7 @@ export default function ViessmannGame() {
   <section style={{ ...card, position: 'relative' }}>
           {/* Animacje pogodowe przeniesione do IsoGrid */}
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <h2 className="font-bold font-sans text-lg text-neutral-900">Dom i otoczenie</h2>
+            <h2 className="font-bold font-sans text-lg text-neutral-900">{t('map.title', { ns: 'ui' })}</h2>
           </div>
           <IsoGrid
             ref={isoRef}
@@ -3194,8 +3201,8 @@ export default function ViessmannGame() {
           ...card,
           minHeight: 400,
           maxHeight: '80vh',
-          background: isDay ? "rgba(255,255,255,0.85)" : "rgba(30,41,59,0.98)",
-          color: isDay ? undefined : "#F1F5F9",
+          background: isDay ? "rgba(250, 247, 242, 0.85)" : "rgba(15, 23, 42, 0.85)",
+          color: isDay ? undefined : "#e5e7eb",
           display: "flex",
           flexDirection: "column",
           gap: 16,

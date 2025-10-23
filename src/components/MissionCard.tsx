@@ -24,20 +24,20 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
     display: 'flex',
     gap: 12,
     alignItems: 'center',
-    background: 'linear-gradient(152deg, #fff5df 0%, #fde6c2 48%, #f7d2a1 100%)',
+    background: 'rgba(250, 247, 242, 0.85)',
     color: '#4d2b14',
-  border: '2px solid rgba(149,92,32,0.18)',
-    boxShadow: '0 10px 22px rgba(78,48,20,0.12)'
+    border: '2px solid rgba(139,117,91,0.2)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
   } : {
     borderRadius: 18,
     padding: 14,
     display: 'flex',
     gap: 12,
     alignItems: 'center',
-    background: 'linear-gradient(150deg, #2f2a3d 0%, #262135 50%, #1d192a 100%)',
-    color: '#e8e6ff',
-  border: '2px solid rgba(122,110,191,0.18)',
-    boxShadow: '0 12px 28px rgba(4,6,14,0.45)'
+    background: 'rgba(15, 23, 42, 0.85)',
+    color: '#e5e7eb',
+    border: '2px solid rgba(148,163,184,0.2)',
+    boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
   };
   // if completed, modify border color to green
   if (completed) {

@@ -46,6 +46,9 @@
   },
   "header": {
     "myProfile": "Mój profil"
+  },
+  "map": {
+    "title": "Dom i otoczenie"
   }
   ,
   "tile": {
@@ -77,7 +80,9 @@
     "eChargerPriceScaleTitle": "Każdy kolejny E‑Charger drożeje geometrycznie (+18% od bazowej ceny za każdą posiadaną sztukę).",
     "eChargerPriceScale": "Cena rośnie: ~+18% względem bazowej za każdy posiadany E‑Charger.",
     "devices": "Urządzenia",
-    "production": "Produkcja"
+    "production": "Produkcja",
+    "newEvent": "Nowe wydarzenie:",
+    "discountActive": "{{label}}: −{{percent}}% przez {{seconds}}s"
   },
   "missions": {
     "completedAlt": "ukończone",
@@ -99,7 +104,8 @@
     "finished": "Budowa ukończona: {{name}}",
     "finishedPrefix": "Ukończono:",
     "queue": "Kolejka budowy",
-    "placeBoilerToStart": "Umieść kocioł na domu, aby rozpocząć."
+    "placeBoilerToStart": "Umieść kocioł na domu, aby rozpocząć.",
+    "alreadyQueued": "{{name}} już w kolejce"
   },
   "smog": {
     "low": "Smog niski – pełna produkcja.",
