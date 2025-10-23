@@ -1,105 +1,253 @@
-## Viessmann Game (React + TypeScript + Vite)
+# Viessmann Game
 
-Lekka gra przeglądarkowa o modernizacji domu i OZE. Zbieraj zasoby, kupuj urządzenia, stawiaj obiekty na izometrycznej mapie, rozwijaj profil i relacje. Aplikacja ma tryb dzień/noc, dynamiczną pogodę i wydarzenia fabularne z wyborami oraz konsekwencjami.
+A lightweight browser-based game about home modernization and renewable energy. Collect resources, buy devices, place objects on an isometric map, develop your profile and relationships. Features day/night cycle, dynamic weather, and story events with choices and consequences.
 
-### Zasady gry (Rules)
+Built with **React** + **TypeScript** + **Vite**.
 
-- Zasoby: ☀️ Słońce, 💧 Woda, 🌬️ Wiatr, ![ViCoin](src/assets/ui/ViCoin_LM.png) ViCoins.
-  - Produkcja zależy od pory dnia (dzień/noc) i pogody.
-  - Startowe stawki rosną wraz z rozbudową; ViCoins rosną stale, wzrost może być zwiększany przez efekty.
-- Pogoda (losowo, co pewien czas):
-  - Chmury ☁️: 0× ☀️
-  - Słońce 🌞: 2× ☀️
-  - Deszcz 🌧️: 2× 💧
-  - Wiatr 🌬️: 2× 🌬️, −50% ☀️, −30% 💧
-  - Mróz ❄️: pauza wszystkich produkcji na czas wydarzenia
-- Sklep i progresja:
-  - Urządzenia (pojedyncze zakupy): węgiel → pellet → gaz → pompa ciepła → inverter/magazyn → grid.
-  - Produkcja (wiele sztuk): las, fotowoltaika, e-charger.
-  - Skalowanie kosztów:
-    - Las: każdy kolejny +8 ☀️ i +8 💧 do bazowej ceny.
-    - PV (Vitovolt): koszt rośnie geometrycznie o ~15% względem bazowej ceny za każdy posiadany panel.
-    - E‑Charger: koszt rośnie geometrycznie o ~18% względem bazowej ceny za każdą posiadaną sztukę.
-  - Zasady stawiania: kocioł węglowy/pellet/gaz tylko na kafelku domu; pozostałe na wolnych kafelkach (dom musi pozostać wolny, jeśli na nim nic nie ma).
-  - E-Charger: +5 ViCoins/min (pasywny bonus).
-  - Las: silna redukcja zanieczyszczenia (opis w karcie sklepu), działa stale po postawieniu.
-- Zanieczyszczenie 🏭:
-  - Węgiel podnosi, pellet i las redukują; gaz obniża w stosunku do pelletu.
-  - Celem jest ekologiczna modernizacja i ograniczanie emisji.
-- Eko‑reputacja ⭐:
-  - Definicja: 0–100, liczona w locie jako 100 − smog + min(20, 5×lasy).
-  - Efekty: daje premię do ViCoins przy niskim smogu, wpływa na wydarzenia i relacje; podpowiedź dostępna po najechaniu na pigułkę w nagłówku.
-- Wydarzenia fabularne i wybory:
-  - Silnik historii dobiera zdarzenia ważone, z cooldownami i warunkami (pora roku, smog, eko‑reputacja, posiadane flagi).
-  - Występują frakcje (Relacje): Mieszkańcy (community) i Dostawcy (suppliers) – wybory zmieniają ich opinię i mogą odblokowywać/ blokować kolejne zdarzenia lub premie.
-  - Przykłady konsekwencji: follow‑up po podpisaniu porozumienia z dostawcą (dopłać teraz albo gorsze warunki), protest mieszkańców przy niskiej opinii (koszt konsultacji vs wzrost smogu), krytyka prasowa przy niskiej eko‑reputacji (chwilowy wzrost cen vs wydatek i redukcja smogu).
-- Kompendium → Relacje:
-  - Osobna zakładka z paskami opinii frakcji i dymkami informacyjnymi, z progami korzyści opisanymi kontekstowo.
-- Misje:
-  - Panel „Misje” pokazuje postęp (paski) oraz nagrody.
-  - W tej wersji: ikona ViCoin została zaktualizowana na trwały asset (plikiem: `src/assets/ui/ViCoin_LM.png`) zamiast emoji. Panel Misji używa kart misji (medalion po lewej, tytuł/opis po prawej, nagroda poniżej). Ukończone misje pokazują obrazek check (`src/assets/ui/Check.png`) zamiast znaku ✓ oraz mają pogrubioną, zieloną ramkę (#7BB894).
-  - Przykłady: Pierwsze kroki (postaw kocioł węglowy) → +10 ViCoins; Ekologiczny wybór (zamień węgiel na pellet) → −20 zanieczyszczenia; Zielona inwestycja (posadź las) → −30 zanieczyszczenia.
-  - Ukończenie misji nie jest zapisywane między sesjami (każda sesja to nowa runda pod kątem misji).
-  - Zakładki „Aktywne”/„Ukończone” filtrują listę misji, a ozdobny badge (w wariantach dzień/noc) pojawia się nad nagłówkiem.
-- Osiągnięcia (odblokowują się automatycznie):
-  - First Steps: postaw pierwsze urządzenie.
-  - Heat Source: posiadaj źródło ciepła.
-  - Going Green: zainstaluj OZE.
-  - Power Up: zbuduj infrastrukturę (inverter + grid).
-- Dziennik (📝) i filtry:
-  - Typy wpisów: zakupy, ustawienia (placement), misje, pogoda, osiągnięcia, kamienie milowe.
-  - Filtry działają po typie; starsze wpisy są migrowane po tytule.
-- Powiadomienia (dzwonek):
-  - Toasty pojawiają się tylko przy nowych osiągnięciach.
-  - Wpisy dotyczące misji i pogody trafiają do Dziennika bez toastów.
-  - Przyciski w prawym górnym rogu: „Mój profil” ma czerwoną kropkę, gdy są nowe osiągnięcia lub wpisy w Dzienniku.
-- Tryb nocny:
-  - Menu profilu, popupy Osiągnięć i Dziennika oraz karty mają ciemne tło i jasne teksty.
+---
 
-### Sterowanie
+## 🎮 Game Features
 
-- Kupno w sklepie wymaga zasobów; po zakupie elementy umieszczaj klikając kafelek na mapie.
-- Profil → „Osiągnięcia”/„Dziennik” otwiera odpowiednie popupy; klik na tło zamyka okna. Panel „Misje” jest dostępny z prawej strony ekranu.
-- Podczas ustawiania elementów na mapie można anulować klawiszem Esc.
+### Core Gameplay
+- **Resources**: ☀️ Sun, 💧 Water, 🌬️ Wind, ![ViCoin](src/assets/ui/ViCoin_LM.png) ViCoins
+  - Production depends on time of day (day/night) and weather conditions
+  - Base rates increase with development; ViCoins grow steadily and can be boosted by effects
+  
+- **Dynamic Weather** (random events):
+  - ☁️ Clouds: 0× ☀️ production
+  - 🌞 Sunny: 2× ☀️ production
+  - 🌧️ Rain: 2× 💧 production
+  - 🌬️ Wind: 2× 🌬️, −50% ☀️, −30% 💧
+  - ❄️ Frost: pauses all production during event
 
-### Persistencja i zapisy gry
+- **Shop & Progression**:
+  - **Devices** (single purchases): Coal → Pellet → Gas → Heat Pump → Inverter/Storage → Grid
+  - **Production** (multiple units): Forest, Solar Panels (PV), E-Chargers
+  - **Dynamic pricing**:
+    - Forest: +8 ☀️ and +8 💧 per owned unit
+    - Solar (Vitovolt): ~15% geometric scaling per panel
+    - E-Charger: ~18% geometric scaling per unit
+  - E-Charger provides +5 ViCoins/min passive bonus
+  - Forest: strong pollution reduction
 
-Stan gry i profil są zapisywane w localStorage:
+### Environmental System
+- **Pollution** 🏭: Coal increases, pellet and forest reduce; gas lowers compared to pellet
+- **Eco-Reputation** ⭐: 
+  - Score 0–100, calculated as: `100 − smog + min(20, 5×forests)`
+  - Affects ViCoins bonus, story events, and faction relationships
+  - Tooltip available in header
 
-- vm_achUnlocked – mapa odblokowanych osiągnięć (timestampy)
-- vm_seen_ach, vm_seen_log – znaczniki „ostatnio widziane” (czerwone kropki)
-- vm_log – wpisy dziennika (z typami)
-- vm_save_v2 – automatyczny zapis rdzenia (kafelki, zasoby, zanieczyszczenie) + metadane v2
-- vm_eco_hist – historia eko‑reputacji (wykres w Kompendium)
-- vm_story_decisions – skrócony dziennik decyzji fabularnych
-- vm_story_flags – flagi fabularne (odblokowania, stany)
-- vm_factions – opinie frakcji (Relacje)
+### Story & Relationships
+- **Story Events**: Weighted event selection with cooldowns and conditions (season, smog, eco-reputation, flags)
+- **Factions (Relations)**:
+  - Community (Mieszkańcy)
+  - Suppliers (Dostawcy)
+  - Choices affect faction opinions and unlock/block events or bonuses
+- **Consequences Examples**:
+  - Supplier agreements (pay now or get worse terms)
+  - Community protests at low opinion (consultation cost vs smog increase)
+  - Press criticism at low eco-reputation (price increase vs expense and smog reduction)
 
-Zapisy gry:
+### Missions System
+- Right panel shows mission progress bars and rewards
+- Mission cards with asset image (left), title/description (right), and reward display
+- Completed missions show green border (#7BB894) and check icon
+- Examples:
+  - First Steps: Place coal boiler → +10 ViCoins
+  - Eco Choice: Switch coal to pellet → −20 pollution
+  - Green Investment: Plant forest → −30 pollution
+- Mission completion doesn't persist between sessions
 
-- „Zapisz grę” – eksportuje zapis do pliku JSON.
-- „Wczytaj grę” – importuje zapis z pliku JSON.
-- „Nowa gra” – resetuje stan (czyści vm_save_v1, resetuje mapę/zasoby/zanieczyszczenie oraz znaczniki „widziane”).
-- Misje: stan ukończenia nie jest utrwalany między sesjami (brak persistencji ukończeń).
+### Achievements
+Auto-unlock achievements:
+- **First Steps**: Place first device
+- **Heat Source**: Own heating source
+- **Going Green**: Install renewable energy
+- **Power Up**: Build infrastructure (inverter + grid)
 
-### Development
+### Journal & Notifications
+- **Journal** 📝: Tracks purchases, placements, missions, weather, achievements, milestones
+- **Filters**: By entry type
+- **Notifications**: Bell icon shows new achievements with red badge
+- **Profile**: Red dot indicator for new achievements or journal entries
 
-- Stack: React + TypeScript + Vite.
-- Kod główny: `src/ViessmannGame.tsx` (logika gry, UI, profil, dziennik, toasty, misje, pogoda).
- - Zdarzenia i relacje: `src/lib/story.ts` (kontekst, API historii, definicje zdarzeń i progi relacji).
+### UI Features
+- **Day/Night Mode**: All panels, popups, and cards adapt with dark/light themes
+- **Video Intro**: Loading screen with animated progress bar and background gradient
+- **Responsive Cards**: Missions, devices, and production items use warm beige gradient (day) / dark gradient (night)
+- **Language Support**: Polish and English with i18n (react-i18next)
+- **Unified Styling**: All cards and UI elements use consistent gradient fills and borders
 
-Uruchamianie lokalne (dev, localhost):
+---
+
+## 🎯 Controls
+
+- **Shopping**: Click items in shop (requires resources), then click map tile to place
+- **Profile**: Click profile icon → "Achievements"/"Journal" opens respective popups
+- **Missions**: Accessible from right panel
+- **Cancel Placement**: Press `Esc` key while placing items
+- **Settings**: Gear icon for language selection, save/load, new game
+
+---
+
+## 💾 Persistence & Save System
+
+Game state and profile are saved in localStorage:
+
+- `vm_achUnlocked` – Achievement unlock timestamps
+- `vm_seen_ach`, `vm_seen_log` – "Last seen" markers (red dots)
+- `vm_log` – Journal entries with types
+- `vm_save_v2` – Auto-save of core state (tiles, resources, pollution) + v2 metadata
+- `vm_eco_hist` – Eco-reputation history (graph in Compendium)
+- `vm_story_decisions` – Story decision journal
+- `vm_story_flags` – Story flags (unlocks, states)
+- `vm_factions` – Faction opinions (Relations)
+- `vm_lang` – Language preference ('pl' or 'en')
+
+**Save/Load Features**:
+- **Save Game**: Export save to JSON file
+- **Load Game**: Import save from JSON file
+- **New Game**: Reset state (clears saves, resets map/resources/pollution and "seen" markers)
+
+Note: Mission completion state doesn't persist between sessions.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js** (v16+ recommended)
+- **npm** or **yarn**
+
+### Installation
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/reprezentant/viessmann-game.git
+   cd viessmann-game
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Run development server**:
+   ```bash
+   npm run dev
+   ```
+   
+   The app will be available at: **http://localhost:5173/**
+
+4. **Build for production**:
+   ```bash
+   npm run build
+   ```
+   
+   Production files will be in the `dist/` folder.
+
+---
+
+## 📁 Project Structure
 
 ```
-npm install
-npm run dev
+viessmann-game/
+├── src/
+│   ├── assets/
+│   │   ├── ui/              # UI icons (day/night variants, ViCoin, badges, etc.)
+│   │   ├── missions/        # Mission badge assets
+│   │   ├── Intro.mp4        # Video intro
+│   │   ├── day_bg.jpg       # Day background
+│   │   └── night_bg.jpg     # Night background
+│   ├── components/
+│   │   ├── MissionCard.tsx  # Individual mission card component
+│   │   ├── VideoIntro.tsx   # Video splash screen with loader
+│   │   ├── LoadingOverlay.tsx
+│   │   ├── StoryModal.tsx   # Story event popup
+│   │   └── EventsCenterModal.tsx
+│   ├── lib/
+│   │   ├── story.ts         # Story engine, events, relations
+│   │   ├── economy.ts       # Cost calculations
+│   │   └── pollution.ts     # Pollution mechanics
+│   ├── locales/
+│   │   ├── pl/              # Polish translations
+│   │   └── en/              # English translations
+│   ├── i18n/
+│   │   └── index.ts         # i18next configuration
+│   ├── ViessmannGame.tsx    # Main game component
+│   ├── App.tsx              # App entry with VideoIntro
+│   └── main.tsx             # React entry point
+├── index.html
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── README.md
 ```
 
-Dev serwuje pod http://localhost:5174/ (konfiguracja wymusza host localhost i HMR na localhost).
+---
 
-Build (prod):
+## 🛠️ Tech Stack
 
-```
-npm run build
-```
+- **Framework**: React 18
+- **Language**: TypeScript
+- **Build Tool**: Vite 7.1.3
+- **Styling**: Inline CSS-in-JS with theme system
+- **Internationalization**: react-i18next
+- **Assets**: PNG icons, JPG backgrounds, MP4 video intro
 
+---
+
+## 🎨 Design System
+
+- **Gradients**: 
+  - Day: Warm beige `linear-gradient(160deg,#fff3da,#fde2b9,#f7d2a1)`
+  - Night: Dark `linear-gradient(160deg,#2f2a3d,#262135,#1d192a)`
+- **Borders**: 2px solid with theme-aware colors
+- **Typography**: Manrope font family, progressive font-weights (600→700→800→900)
+- **Icons**: Dual-theme assets (LM = Light Mode, DM = Dark Mode)
+- **Loader**: Unified orange gradient (`#f59e0b → #fb923c → #fbbf24`)
+
+---
+
+## 📝 Development Notes
+
+- **Main Logic**: `src/ViessmannGame.tsx` handles game state, UI, profile, journal, missions, weather
+- **Story System**: `src/lib/story.ts` defines events, choices, faction relations, and progression thresholds
+- **HMR**: Hot module replacement enabled for fast development
+- **Dev Server**: Runs on `localhost:5173` by default
+
+---
+
+## 🌍 Language Support
+
+The game supports:
+- 🇵🇱 **Polish** (default)
+- 🇬🇧 **English**
+
+Language is auto-detected from browser or can be changed in Settings. Preference is saved in localStorage.
+
+---
+
+## 📄 License
+
+This project is for educational/demonstration purposes.
+
+---
+
+## 🤝 Contributing
+
+This is a personal project, but suggestions and feedback are welcome!
+
+---
+
+## 🎯 Roadmap Ideas
+
+- [ ] More story events and branching narratives
+- [ ] Additional achievements
+- [ ] Extended device tech tree
+- [ ] Seasonal graphics variations
+- [ ] Multiplayer/leaderboard features
+
+---
+
+**Enjoy building your eco-friendly home!** 🌱🏡

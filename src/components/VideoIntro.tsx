@@ -118,7 +118,7 @@ export default function VideoIntro({
           style={{
             color: '#fff',
             fontSize: 18,
-            fontWeight: 600,
+            fontWeight: 700,
             letterSpacing: 2,
             textTransform: 'uppercase',
             textAlign: 'center',

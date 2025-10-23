@@ -1995,7 +1995,7 @@ export default function ViessmannGame() {
     border: `1px solid ${theme.pillBorder}`,
     fontFamily: 'Manrope, system-ui, sans-serif',
     fontSize: 13,
-    fontWeight: 600,
+    fontWeight: 700,
     color: theme.bodyText,
     cursor: 'default',
     whiteSpace: 'nowrap',
@@ -2018,7 +2018,7 @@ export default function ViessmannGame() {
       <img src={iconSrc} alt={label} style={{ width: 32, height: 32, flex: '0 0 32px' }} />
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {/* Visible label moved into tooltip per request — keep aria-label for accessibility */}
-        <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 700 }}>{value}</div>
+        <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 800 }}>{value}</div>
   <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 1, color: theme.mutedText, lineHeight: 1 }}>{rate}</div>
       </div>
     </div>
@@ -2172,7 +2172,7 @@ export default function ViessmannGame() {
             >
               <img src={isDay ? smogLM : smogDM} alt={t('ui.smogLabel', { ns: 'ui' })} style={{ width: 36, height: 36, flex: '0 0 36px' }} />
               <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 700 }}>{Math.round(pollution)}</div>
+                <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 800 }}>{Math.round(pollution)}</div>
                 <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 1, color: theme.mutedText, lineHeight: 1 }}>
                   <span style={{ color: pollutionRate >= 0 ? theme.tone.warning : theme.tone.positive }}>{pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s</span>
                 </div>
@@ -2258,7 +2258,7 @@ export default function ViessmannGame() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 12,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     lineHeight: 1,
                     border: `3px solid ${theme.headerBg}`
                   }}
@@ -2319,7 +2319,7 @@ export default function ViessmannGame() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 12,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     lineHeight: 1,
                     border: `3px solid ${theme.headerBg}`
                   }}
@@ -2393,7 +2393,7 @@ export default function ViessmannGame() {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: 12,
-                    fontWeight: 700,
+                    fontWeight: 800,
                     lineHeight: 1,
                     border: `3px solid ${theme.headerBg}`
                   }}
@@ -2706,17 +2706,69 @@ export default function ViessmannGame() {
                 {/* Language selector */}
                 <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
                 <div style={{ padding: '8px 16px', fontSize: 13, color: isDay ? '#0f172a' : '#e5e7eb' }}>
-                  <div style={{ marginBottom: 6, fontSize: 12, color: isDay ? '#374151' : '#9ca3af' }}>{t('settings.language')}</div>
+                  <div style={{ marginBottom: 10, fontSize: 13, fontWeight: 700, color: isDay ? '#374151' : '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('settings.language')}</div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => { i18n.changeLanguage('pl'); localStorage.setItem('vm_lang', 'pl'); setShowSettingsMenu(false); }}
-                      style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'pl' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'pl' ? '#e0f2fe' : 'transparent' }}
+                      style={{ 
+                        flex: 1,
+                        padding: '10px 16px', 
+                        borderRadius: 8, 
+                        cursor: 'pointer', 
+                        border: i18n.language === 'pl' 
+                          ? (isDay ? '2px solid rgba(139,117,91,0.4)' : '2px solid rgba(148,163,184,0.4)') 
+                          : (isDay ? '2px solid rgba(139,117,91,0.15)' : '2px solid rgba(148,163,184,0.15)'),
+                        background: i18n.language === 'pl' 
+                          ? (isDay ? 'linear-gradient(160deg,#fff3da,#fde2b9,#f7d2a1)' : 'linear-gradient(160deg,#2f2a3d,#262135,#1d192a)') 
+                          : (isDay ? '#f9fafb' : '#1f2937'),
+                        color: isDay ? '#0f172a' : '#e5e7eb',
+                        fontWeight: i18n.language === 'pl' ? 800 : 600,
+                        fontSize: 14,
+                        transition: 'all 120ms ease',
+                        boxShadow: i18n.language === 'pl' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (i18n.language !== 'pl') {
+                          (e.currentTarget as HTMLButtonElement).style.background = isDay ? '#f3f4f6' : '#374151';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (i18n.language !== 'pl') {
+                          (e.currentTarget as HTMLButtonElement).style.background = isDay ? '#f9fafb' : '#1f2937';
+                        }
+                      }}
                     >
                       {t('settings.polish')}
                     </button>
                     <button
                       onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('vm_lang', 'en'); setShowSettingsMenu(false); }}
-                      style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'en' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'en' ? '#e0f2fe' : 'transparent' }}
+                      style={{ 
+                        flex: 1,
+                        padding: '10px 16px', 
+                        borderRadius: 8, 
+                        cursor: 'pointer', 
+                        border: i18n.language === 'en' 
+                          ? (isDay ? '2px solid rgba(139,117,91,0.4)' : '2px solid rgba(148,163,184,0.4)') 
+                          : (isDay ? '2px solid rgba(139,117,91,0.15)' : '2px solid rgba(148,163,184,0.15)'),
+                        background: i18n.language === 'en' 
+                          ? (isDay ? 'linear-gradient(160deg,#fff3da,#fde2b9,#f7d2a1)' : 'linear-gradient(160deg,#2f2a3d,#262135,#1d192a)') 
+                          : (isDay ? '#f9fafb' : '#1f2937'),
+                        color: isDay ? '#0f172a' : '#e5e7eb',
+                        fontWeight: i18n.language === 'en' ? 800 : 600,
+                        fontSize: 14,
+                        transition: 'all 120ms ease',
+                        boxShadow: i18n.language === 'en' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (i18n.language !== 'en') {
+                          (e.currentTarget as HTMLButtonElement).style.background = isDay ? '#f3f4f6' : '#374151';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (i18n.language !== 'en') {
+                          (e.currentTarget as HTMLButtonElement).style.background = isDay ? '#f9fafb' : '#1f2937';
+                        }
+                      }}
                     >
                       {t('settings.english')}
                     </button>
@@ -2862,7 +2914,7 @@ export default function ViessmannGame() {
         >
           <div style={{ width: 520, maxWidth: '92vw', background: isDay ? '#fff' : '#0f172a', color: isDay ? '#0f172a' : '#e5e7eb', borderRadius: 12, padding: 20, boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
             <div style={{ display: 'flex', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontWeight: 800, fontSize: 18, flex: 1 }}>{t('missions.title', { ns: 'ui' })}</div>
+              <div style={{ fontWeight: 900, fontSize: 18, flex: 1 }}>{t('missions.title', { ns: 'ui' })}</div>
               <button onClick={() => setShowMissions(false)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: isDay ? '#0f172a' : '#e5e7eb' }}>✖</button>
             </div>
             <div style={{ marginBottom: 12, fontSize: 13, color: isDay ? '#475569' : '#94a3b8' }}>
@@ -3074,13 +3126,13 @@ export default function ViessmannGame() {
                     <span style={{ fontSize: 22 }}>{item.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{t(`${item.key}.name`, { ns: 'items' })}</span>
+                        <span className="font-bold font-sans text-base" style={{ fontWeight: 800 }}>{t(`${item.key}.name`, { ns: 'items' })}</span>
                         {isForest && (
                           <span
                             title={t('ui:shop.forestEdgeTitle')}
                             style={{
                               fontSize: 10,
-                              fontWeight: 800,
+                              fontWeight: 900,
                               letterSpacing: 0.3,
                               textTransform: 'uppercase',
                               padding: '2px 6px',
@@ -3406,7 +3458,7 @@ export default function ViessmannGame() {
             border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700, color: isDay ? "#0f172a" : "#e5e7eb" }}>🏆 {t('profile.achievements')}</h2>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800, color: isDay ? "#0f172a" : "#e5e7eb" }}>🏆 {t('profile.achievements')}</h2>
               <button 
                 onClick={() => setShowAchievements(false)}
                 style={{
@@ -3440,7 +3492,7 @@ export default function ViessmannGame() {
                   <span style={{ fontSize: 24 }}>{achievement.icon}</span>
                   <div style={{ flex: 1 }}>
                     <div style={{ 
-                      fontWeight: 600, 
+                      fontWeight: 700, 
                       marginBottom: 4,
                       color: isDay ? (achievement.unlocked ? "#0f172a" : "#6b7280") : (achievement.unlocked ? "#e5e7eb" : "#94a3b8")
                     }}>
@@ -3483,7 +3535,7 @@ export default function ViessmannGame() {
               border: isDay ? "1px solid #e5e7eb" : "1px solid #334155",
               color: isDay ? "#0f172a" : "#e5e7eb"
             }}>
-              <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
+              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 4 }}>
                 {t('profile.achievementsProgress', { completed: achievements.filter(a => a.unlocked).length, total: achievements.length })}
               </div>
               <div style={{ fontSize: 14, color: isDay ? "#64748b" : "#94a3b8" }}>
@@ -3525,7 +3577,7 @@ export default function ViessmannGame() {
             border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{t('compendium.title', { ns: 'ui' })}</h2>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 900 }}>{t('compendium.title', { ns: 'ui' })}</h2>
               <button 
                 onClick={() => setShowCompendium(false)}
                 style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: 4, color: isDay ? '#666' : '#94a3b8' }}
@@ -3557,13 +3609,13 @@ export default function ViessmannGame() {
             {/* Content */}
             {(() => {
               const sectionTitle = (text: string) => (
-                <h3 style={{ margin: '12px 0 8px', fontSize: 18, fontWeight: 700, color: isDay ? '#0f172a' : '#e5e7eb' }}>{text}</h3>
+                <h3 style={{ margin: '12px 0 8px', fontSize: 18, fontWeight: 800, color: isDay ? '#0f172a' : '#e5e7eb' }}>{text}</h3>
               );
               const Card = ({ icon, title, desc }: { icon?: string; title: string; desc: string }) => (
                 <div style={{ display: 'flex', gap: 12, padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                   <div style={{ fontSize: 22 }}>{icon ?? '•'}</div>
                   <div>
-                    <div style={{ fontWeight: 700 }}>{title}</div>
+                    <div style={{ fontWeight: 800 }}>{title}</div>
                     <div style={{ fontSize: 14, color: isDay ? '#475569' : '#94a3b8' }}>{desc}</div>
                   </div>
                 </div>
@@ -3637,7 +3689,7 @@ export default function ViessmannGame() {
                       <div style={{ display: 'grid', gap: 10 }}>
                         <div style={{ padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ fontWeight: 700 }}>{t('compendium.relations.community', { ns: 'ui' })}</div>
+                            <div style={{ fontWeight: 800 }}>{t('compendium.relations.community', { ns: 'ui' })}</div>
                             <span
                               onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setRelTip({ left: r.left + r.width / 2, top: r.bottom + 8, text: relTipText('community') }); }}
                               onMouseLeave={() => setRelTip(null)}
@@ -3647,7 +3699,7 @@ export default function ViessmannGame() {
                               aria-label={t('compendium.relations.communityInfo', { ns: 'ui' })}
                               style={{ marginLeft: 2, cursor: 'help' }}
                             >
-                              <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
+                              <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 800, verticalAlign: 'middle' }}>ℹ️</span>
                             </span>
                             <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{rel('community')}</div>
                           </div>
@@ -3658,7 +3710,7 @@ export default function ViessmannGame() {
                         </div>
                         <div style={{ padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ fontWeight: 700 }}>{t('compendium.relations.suppliers', { ns: 'ui' })}</div>
+                            <div style={{ fontWeight: 800 }}>{t('compendium.relations.suppliers', { ns: 'ui' })}</div>
                             <span
                               onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setRelTip({ left: r.left + r.width / 2, top: r.bottom + 8, text: relTipText('suppliers') }); }}
                               onMouseLeave={() => setRelTip(null)}
@@ -3668,7 +3720,7 @@ export default function ViessmannGame() {
                               aria-label={t('compendium.relations.suppliersInfo', { ns: 'ui' })}
                               style={{ marginLeft: 2, cursor: 'help' }}
                             >
-                              <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
+                              <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 800, verticalAlign: 'middle' }}>ℹ️</span>
                             </span>
                             <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{rel('suppliers')}</div>
                           </div>
@@ -3694,7 +3746,7 @@ export default function ViessmannGame() {
                         {ecoRepHistory.length >= 2 && (
                           <div style={{ padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                              <div style={{ fontWeight: 700 }}>{t('compendium.timeline.ecoTrend', { ns: 'ui' })}</div>
+                              <div style={{ fontWeight: 800 }}>{t('compendium.timeline.ecoTrend', { ns: 'ui' })}</div>
                               <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>
                                 {t('compendium.timeline.now', { ns: 'ui' })} {ecoRep}/100 {ecoRepTrend !== 0 && (
                                   <span style={{ marginLeft: 6, color: ecoRepTrend > 0 ? (isDay ? '#166534' : '#86efac') : (isDay ? '#991b1b' : '#fecaca') }}>
@@ -3740,10 +3792,10 @@ export default function ViessmannGame() {
                             {storyDecisions.slice(0, 12).map(d => (
                               <div key={d.id} style={{ padding: 10, borderRadius: 10, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                                 <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                                  <div style={{ fontWeight: 700 }}>{t(d.eventTitle, { ns: 'story', defaultValue: d.eventTitle })}</div>
+                                  <div style={{ fontWeight: 800 }}>{t(d.eventTitle, { ns: 'story', defaultValue: d.eventTitle })}</div>
                                   <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{new Date(d.ts).toLocaleTimeString()}</div>
                                 </div>
-                                <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1' }}>{t('compendium.decisions.chosenLabel', { ns: 'ui' })} <span style={{ fontWeight: 700 }}>{t(d.choiceLabel, { ns: 'story', defaultValue: d.choiceLabel })}</span></div>
+                                <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1' }}>{t('compendium.decisions.chosenLabel', { ns: 'ui' })} <span style={{ fontWeight: 800 }}>{t(d.choiceLabel, { ns: 'story', defaultValue: d.choiceLabel })}</span></div>
                               </div>
                             ))}
                           </div>
@@ -3789,7 +3841,7 @@ export default function ViessmannGame() {
             border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 700, color: isDay ? "#0f172a" : "#e5e7eb" }}>📝 {t('profile.journal')}</h2>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: isDay ? "#0f172a" : "#e5e7eb" }}>📝 {t('profile.journal')}</h2>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                 <button
                   onClick={() => setLog([])}
@@ -3841,7 +3893,7 @@ export default function ViessmannGame() {
                   }}>
                     <div style={{ fontSize: 18, lineHeight: '18px' }}>{entry.icon ?? '•'}</div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600, color: isDay ? '#0f172a' : '#e5e7eb', marginBottom: 2 }}>{entry.title}</div>
+                      <div style={{ fontWeight: 700, color: isDay ? '#0f172a' : '#e5e7eb', marginBottom: 2 }}>{entry.title}</div>
                       {entry.description && <div style={{ fontSize: 13, color: isDay ? '#475569' : '#94a3b8' }}>{entry.description}</div>}
                     </div>
                     <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8', whiteSpace: 'nowrap', marginLeft: 8 }}>

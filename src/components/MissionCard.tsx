@@ -49,7 +49,7 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
   }
 
   const titleStyle: React.CSSProperties = {
-    fontWeight: 700,
+    fontWeight: 800,
     fontSize: 14,
     marginBottom: 4,
     overflow: 'hidden',
@@ -135,7 +135,7 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
   <div style={descStyle}>{renderDescription()}</div>
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
           <img src={viCoin} alt="ViCoin" style={{ width: 16, height: 16 }} />
-          <div style={{ fontWeight: 700, fontSize: 11 }}>{reward}</div>
+          <div style={{ fontWeight: 800, fontSize: 11 }}>{reward}</div>
         </div>
       </div>
     </div>

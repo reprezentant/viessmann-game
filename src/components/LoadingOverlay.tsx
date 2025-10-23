@@ -70,7 +70,7 @@ export default function LoadingOverlay({
       <div style={{ width: 'min(92vw, 640px)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
           <span style={{ fontSize: 22 }}>🚀</span>
-          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 800 }}>Ładowanie aplikacji</h1>
+          <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>Ładowanie aplikacji</h1>
         </div>
 
         <div aria-label="postęp" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}

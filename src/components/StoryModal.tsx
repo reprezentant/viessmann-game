@@ -22,7 +22,7 @@ export function StoryModal({ event, onChoose, onClose, isDay = true }: Props) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }} onClick={onClose}>
       <div onClick={(e) => e.stopPropagation()} style={{ width: 460, maxWidth: '92vw', background: bg, color: fg, border: `1px solid ${border}`, borderRadius: 16, padding: 18, boxShadow: isDay ? '0 20px 40px rgba(0,0,0,0.12)' : '0 20px 40px rgba(0,0,0,0.5)' }}>
-        <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>{event.title}</div>
+        <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>{event.title}</div>
         <div style={{ fontSize: 14, opacity: 0.95, lineHeight: 1.5, marginBottom: 12 }}>{event.text}</div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           {event.choices.map((c) => (
