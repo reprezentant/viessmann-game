@@ -1748,10 +1748,10 @@ export default function ViessmannGame() {
 
   // Local season info mapping for small pill under Day/Night
   const seasonInfoMap: Record<SeasonType, { icon: string; name: string; eff: string }> = {
-    spring: { icon: '🌸', name: 'Wiosna', eff: '💧 x1.3, smog −0.01/s' },
-    summer: { icon: '☀️', name: 'Lato', eff: '☀️ x1.3, smog −0.02/s' },
-    autumn: { icon: '🍂', name: 'Jesień', eff: '🌧️/🌬️ x1.2, smog ±0' },
-    winter: { icon: '❄️', name: 'Zima', eff: '☀️ x0.7, smog +0.05/s' },
+    spring: { icon: '🌸', name: t('season.spring', { ns: 'ui' }), eff: t('season.springEffect', { ns: 'ui' }) },
+    summer: { icon: '☀️', name: t('season.summer', { ns: 'ui' }), eff: t('season.summerEffect', { ns: 'ui' }) },
+    autumn: { icon: '🍂', name: t('season.autumn', { ns: 'ui' }), eff: t('season.autumnEffect', { ns: 'ui' }) },
+    winter: { icon: '❄️', name: t('season.winter', { ns: 'ui' }), eff: t('season.winterEffect', { ns: 'ui' }) },
   };
 
   useEffect(() => {
@@ -1926,16 +1926,21 @@ export default function ViessmannGame() {
     if (weatherEvent.remaining !== weatherEvent.duration) return; // only when event starts
     const map: Record<WeatherEventType, { icon: string; name: string }> = {
       none: { icon: "", name: "" },
-  clouds: { icon: "☁️", name: "Chmury" },
-      sunny: { icon: "🌞", name: "Słońce" },
-      rain: { icon: "🌧️", name: "Deszcz" },
-      wind: { icon: "🌬️", name: "Wiatr" },
-  storm: { icon: "⛈️", name: "Burza" },
-      frost: { icon: "❄️", name: "Mróz" },
+      clouds: { icon: "☁️", name: t('weather.clouds', { ns: 'ui' }) },
+      sunny: { icon: "🌞", name: t('weather.sunny', { ns: 'ui' }) },
+      rain: { icon: "🌧️", name: t('weather.rain', { ns: 'ui' }) },
+      wind: { icon: "🌬️", name: t('weather.wind', { ns: 'ui' }) },
+      storm: { icon: "⛈️", name: t('weather.storm', { ns: 'ui' }) },
+      frost: { icon: "❄️", name: t('weather.frost', { ns: 'ui' }) },
     };
-  const meta = map[weatherEvent.type];
-  pushLog({ type: 'weather', icon: meta.icon, title: `Zdarzenie pogodowe: ${meta.name}`, description: `Czas trwania: ${weatherEvent.duration}s` });
-  }, [weatherEvent, pushLog]);
+    const meta = map[weatherEvent.type];
+    pushLog({ 
+      type: 'weather', 
+      icon: meta.icon, 
+      title: t('weather.eventStarted', { ns: 'ui', name: meta.name }), 
+      description: t('weather.eventDuration', { ns: 'ui', duration: weatherEvent.duration })
+    });
+  }, [weatherEvent, pushLog, t]);
   const card: React.CSSProperties = {
     borderRadius: 16,
     background: theme.cardBg,
@@ -2054,37 +2059,37 @@ export default function ViessmannGame() {
   <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0, overflowX: 'auto', overflowY: 'visible', paddingBottom: 2, justifyContent: 'center' }}>
           <ResourcePill
             iconSrc={isDay ? sunLM : sunDM}
-            label="Słońce"
+            label={t('resources.sun', { ns: 'ui' })}
             value={fmt(resources.sun)}
             rate={rateText('sun')}
-            onHover={(e) => showResourceLegend(e, 'sun', 'Słońce')}
+            onHover={(e) => showResourceLegend(e, 'sun', t('resources.sun', { ns: 'ui' }))}
             onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
           />
 
           <ResourcePill
             iconSrc={isDay ? waterLM : waterDM}
-            label="Woda"
+            label={t('resources.water', { ns: 'ui' })}
             value={fmt(resources.water)}
             rate={rateText('water')}
-            onHover={(e) => showResourceLegend(e, 'water', 'Woda')}
+            onHover={(e) => showResourceLegend(e, 'water', t('resources.water', { ns: 'ui' }))}
             onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
           />
 
           <ResourcePill
             iconSrc={isDay ? windLM : windDM}
-            label="Wiatr"
+            label={t('resources.wind', { ns: 'ui' })}
             value={fmt(resources.wind)}
             rate={rateText('wind')}
-            onHover={(e) => showResourceLegend(e, 'wind', 'Wiatr')}
+            onHover={(e) => showResourceLegend(e, 'wind', t('resources.wind', { ns: 'ui' }))}
             onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
           />
 
           <ResourcePill
             iconSrc={isDay ? viCoinLM : viCoinDM}
-            label="ViCoins"
+            label={t('resources.coins', { ns: 'ui' })}
             value={fmt(resources.coins)}
             rate={rateText('coins')}
-            onHover={(e) => showResourceLegend(e, 'coins', 'ViCoins')}
+            onHover={(e) => showResourceLegend(e, 'coins', t('resources.coins', { ns: 'ui' }))}
             onLeave={() => { setLegendOpen(false); setLegendContent(null); }}
           />
 
@@ -2669,9 +2674,9 @@ export default function ViessmannGame() {
           style={{ left: dayInfoPos.left, top: dayInfoPos.top }}
           aria-hidden={true}
         >
-          <div className="scroll-tooltip__title">Pora dnia</div>
+          <div className="scroll-tooltip__title">{t('ui.timeOfDay', { ns: 'ui' })}</div>
           <div className={`scroll-tooltip__subtitle${isDay ? ' scroll-tooltip__subtitle--positive' : ' scroll-tooltip__subtitle--muted'}`}>
-            {isDay ? '☀️ Dzień' : '🌙 Noc'}
+            {isDay ? `☀️ ${t('ui.dayTime', { ns: 'ui' })}` : `🌙 ${t('ui.nightTime', { ns: 'ui' })}`}
           </div>
           <div className="scroll-tooltip__body">
             <div className="scroll-tooltip__line">{t('weather.remainingTime', { ns: 'ui', seconds: dayPhase.remainingSeconds })}</div>

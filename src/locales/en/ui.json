@@ -4,7 +4,11 @@
     "water": "Water",
     "wind": "Wind",
     "coins": "ViCoins",
-    "pollution": "Smog"
+    "pollution": "Smog",
+    "sunTooltip": "Solar energy – primary resource for construction and upgrades.",
+    "waterTooltip": "Water – key resource for heating systems.",
+    "windTooltip": "Wind energy – renewable resource.",
+    "coinsTooltip": "ViCoins – currency for special equipment."
   },
   "profile": {
     "achievements": "Achievements",
@@ -122,6 +126,7 @@
     "storm": "Storm",
     "frost": "Frost",
     "eventStarted": "Weather event: {{name}}",
+    "eventDuration": "Duration: {{duration}}s",
     "noEvent": "No event",
     "standardProduction": "Standard production",
     "noSolarProduction": "No ☀️ production",
@@ -167,7 +172,8 @@
     "ecoReputation": "Eco-reputation",
     "smogLabel": "Smog",
     "dayTime": "Day time",
-    "nightTime": "Night time"
+    "nightTime": "Night time",
+    "timeOfDay": "Time of day"
   },
   "devices": {
     "onHouse": "On house:",

@@ -4,7 +4,11 @@
     "water": "Woda",
     "wind": "Wiatr",
     "coins": "ViCoins",
-    "pollution": "Smog"
+    "pollution": "Smog",
+    "sunTooltip": "Energia słoneczna – podstawowy zasób do budowy i modernizacji.",
+    "waterTooltip": "Woda – kluczowy zasób dla systemów grzewczych.",
+    "windTooltip": "Energia wiatrowa – zasób odnawialny.",
+    "coinsTooltip": "ViCoins – waluta do zakupu specjalnych urządzeń."
   },
   "profile": {
     "achievements": "Osiągnięcia",
@@ -121,6 +125,7 @@
     "storm": "Burza",
     "frost": "Mróz",
     "eventStarted": "Zdarzenie pogodowe: {{name}}",
+    "eventDuration": "Czas trwania: {{duration}}s",
     "noEvent": "Brak wydarzenia",
     "standardProduction": "Produkcja standardowa",
     "noSolarProduction": "Brak produkcji ☀️",
@@ -165,8 +170,9 @@
     "settings": "Ustawienia",
     "ecoReputation": "Eko-reputacja",
     "smogLabel": "Smog",
-    "dayTime": "Trwa dzień",
-    "nightTime": "Trwa noc"
+    "dayTime": "Dzień",
+    "nightTime": "Noc",
+    "timeOfDay": "Pora dnia"
   },
   "devices": {
     "onHouse": "Na domu:",
