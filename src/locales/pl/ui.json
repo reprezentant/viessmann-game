@@ -159,6 +159,15 @@
     "ariaLabel_some": "{{count}} nowych wydarzeń",
     "altText": "Wydarzenia"
   },
+  "ui": {
+    "close": "Zamknij",
+    "new": "Nowe",
+    "settings": "Ustawienia",
+    "ecoReputation": "Eko-reputacja",
+    "smogLabel": "Smog",
+    "dayTime": "Trwa dzień",
+    "nightTime": "Trwa noc"
+  },
   "devices": {
     "onHouse": "Na domu:",
     "noDevices": "Brak urządzeń"

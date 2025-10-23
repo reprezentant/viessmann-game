@@ -2025,11 +2025,11 @@ export default function ViessmannGame() {
       {/* Toast stack */}
       {toasts.length > 0 && (
         <div style={{ position: 'fixed', right: 12, top: 12, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1200, maxWidth: 'min(92vw,640px)' }}>
-          {toasts.map(t => (
-            <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 12, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: 'min(92vw,560px)', overflow: 'hidden' }}>
-              <span>{t.icon ?? '🔔'}</span>
-              <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.text}</span>
-              <button onClick={() => removeToast(t.id)} title="Zamknij" aria-label="Zamknij"
+          {toasts.map(toast => (
+            <div key={toast.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0f172a', color: '#e5e7eb', border: '1px solid #334155', borderRadius: 12, padding: '8px 12px', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: 'min(92vw,560px)', overflow: 'hidden' }}>
+              <span>{toast.icon ?? '🔔'}</span>
+              <span style={{ fontSize: 13, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{toast.text}</span>
+              <button onClick={() => removeToast(toast.id)} title={t('ui.close', { ns: 'ui' })} aria-label={t('ui.close', { ns: 'ui' })}
                 style={{ marginLeft: 6, marginRight: -4, background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 14, lineHeight: 1 }}>
                 ✕
               </button>
@@ -2120,9 +2120,9 @@ export default function ViessmannGame() {
               onBlur={() => { setLegendOpen(false); setLegendContent(null); }}
               tabIndex={0}
               role="group"
-              aria-label="Smog"
+              aria-label={t('ui.smogLabel', { ns: 'ui' })}
             >
-              <img src={isDay ? smogLM : smogDM} alt="Smog" style={{ width: 36, height: 36, flex: '0 0 36px' }} />
+              <img src={isDay ? smogLM : smogDM} alt={t('ui.smogLabel', { ns: 'ui' })} style={{ width: 36, height: 36, flex: '0 0 36px' }} />
               <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                 <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 700 }}>{Math.round(pollution)}</div>
                 <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 1, color: theme.mutedText, lineHeight: 1 }}>
@@ -2285,8 +2285,8 @@ export default function ViessmannGame() {
                   setLegendOpen(true);
                 }}
                 onBlur={() => { setLegendOpen(false); setLegendContent(null); }}
-                aria-label="Eko-reputacja"
-                title="Eko-reputacja"
+                aria-label={t('ui.ecoReputation', { ns: 'ui' })}
+                title={t('ui.ecoReputation', { ns: 'ui' })}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShowAchievements(true); } }}
                 style={{
                   width: 80,
@@ -2361,7 +2361,7 @@ export default function ViessmannGame() {
                 <div
                   role="group"
                   tabIndex={0}
-                  title={isDay ? 'Trwa dzień' : 'Trwa noc'}
+                  title={isDay ? t('ui.dayTime', { ns: 'ui' }) : t('ui.nightTime', { ns: 'ui' })}
                   onMouseEnter={(e) => {
                     const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
                     setDayInfoPos({ left: r.left + r.width / 2, top: r.bottom + 8 });
@@ -2408,8 +2408,8 @@ export default function ViessmannGame() {
                 </div>
                 {(hasNewAchievements || hasNewLog) && (
                   <span
-                    aria-label="nowe"
-                    title="Nowe"
+                    aria-label={t('ui.new', { ns: 'ui' })}
+                    title={t('ui.new', { ns: 'ui' })}
                     style={{
                       position: 'absolute',
                       top: -4,
@@ -2433,8 +2433,8 @@ export default function ViessmannGame() {
             <div style={{ display: 'inline-flex', verticalAlign: 'middle', position: 'relative' }}>
               <button
                 onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-                aria-label="Ustawienia"
-                title="Ustawienia"
+                aria-label={t('ui.settings', { ns: 'ui' })}
+                title={t('ui.settings', { ns: 'ui' })}
                 style={{
                   width: 80,
                   height: 80,
@@ -2583,7 +2583,7 @@ export default function ViessmannGame() {
                   {achievements.filter(a => a.unlocked).length}/{achievements.length}
                 </span>
                 {hasNewAchievements && (
-                  <span aria-label="nowe" title="Nowe" style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
+                  <span aria-label={t('ui.new', { ns: 'ui' })} title={t('ui.new', { ns: 'ui' })} style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
                 )}
               </div>
               <div
@@ -2624,7 +2624,7 @@ export default function ViessmannGame() {
                   {log.length}
                 </span>
                 {hasNewLog && (
-                  <span aria-label="nowe" title="Nowe" style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
+                  <span aria-label={t('ui.new', { ns: 'ui' })} title={t('ui.new', { ns: 'ui' })} style={{ marginLeft: 8, width: 8, height: 8, background: '#ef4444', borderRadius: 999, display: 'inline-block' }} />
                 )}
               </div>
               <div

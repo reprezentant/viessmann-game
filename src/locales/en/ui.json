@@ -160,6 +160,15 @@
     "ariaLabel_some": "{{count}} new events",
     "altText": "Events"
   },
+  "ui": {
+    "close": "Close",
+    "new": "New",
+    "settings": "Settings",
+    "ecoReputation": "Eco-reputation",
+    "smogLabel": "Smog",
+    "dayTime": "Day time",
+    "nightTime": "Night time"
+  },
   "devices": {
     "onHouse": "On house:",
     "noDevices": "No devices"
