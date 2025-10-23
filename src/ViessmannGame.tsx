@@ -1130,10 +1130,10 @@ export default function ViessmannGame() {
   useEffect(() => {
     const thresholds = [100, 500, 1000];
     const keys: { k: ResKey; icon: string; label: string }[] = [
-      { k: 'sun', icon: '☀️', label: 'Słońce' },
-      { k: 'water', icon: '💧', label: 'Woda' },
-      { k: 'wind', icon: '🌬️', label: 'Wiatr' },
-      { k: 'coins', icon: '💰', label: 'ViCoins' },
+      { k: 'sun', icon: '☀️', label: t('resources.sun', { ns: 'ui' }) },
+      { k: 'water', icon: '💧', label: t('resources.water', { ns: 'ui' }) },
+      { k: 'wind', icon: '🌬️', label: t('resources.wind', { ns: 'ui' }) },
+      { k: 'coins', icon: '💰', label: t('resources.coins', { ns: 'ui' }) },
     ];
     const updates: Record<string, boolean> = {};
   const toLog: Array<{ type: LogType; icon: string; title: string; description: string }> = [];
@@ -1150,7 +1150,7 @@ export default function ViessmannGame() {
       setLoggedMilestones(prev => ({ ...prev, ...updates }));
   toLog.forEach(e => pushLog(e));
     }
-  }, [resources, loggedMilestones, pushLog]);
+  }, [resources, loggedMilestones, pushLog, t]);
 
   // Achievements state: unlocked map with timestamps
   const [achUnlocked, setAchUnlocked] = useState<Record<string, number>>({});
@@ -1663,40 +1663,35 @@ export default function ViessmannGame() {
     const house = housePollutionFor(houseType);
     const forest = -0.5 * forests;
     const total = pollutionRate;
-    const nameMap: Partial<Record<EntityType, string>> = {
-      coal: 'Kocioł żeliwny', pellet: 'Kocioł stalowy', gas: 'Kocioł gazowy Triola',
-      parola1965: 'Parola 1965', stainless1972: 'Stal nierdzewna 1972', heatpump1978: 'Pompa ciepła 1978',
-      vitola1978: 'Vitola 1978', vitodens1989: 'Vitodens 1989', heatpump: 'Vitocal'
-    };
     const hk = (houseType ?? undefined) as EntityType | undefined;
-    const houseName = (hk ? nameMap[hk] : undefined) || '—';
+    const houseName = hk ? t(`boilerNames.${hk}`, { ns: 'ui' }) : t('boilerNames.none', { ns: 'ui' });
     const fmtSign = (n: number) => `${n >= 0 ? '+' : ''}${fmt(n)}/s`;
     const houseTone: TooltipTone = house > 0 ? 'warning' : (house < 0 ? 'positive' : 'muted');
     const forestTone: TooltipTone = forest < 0 ? 'positive' : (forest > 0 ? 'warning' : 'muted');
     const subtitleTone: TooltipTone = total > 0 ? 'warning' : (total < 0 ? 'positive' : 'muted');
     const lines: TooltipLine[] = [
-      { text: `Dom (${houseName}): ${fmtSign(house)}`, tone: houseTone },
-      { text: `Lasy (${forests}): ${fmtSign(forest)}`, tone: forestTone }
+      { text: t('smog.house', { ns: 'ui', name: houseName, rate: fmtSign(house) }), tone: houseTone },
+      { text: t('smog.forests', { ns: 'ui', count: forests, rate: fmtSign(forest) }), tone: forestTone }
     ];
     if (smogMultiplier < 1) {
       lines.push({ text: t('weather.productionPenalty', { ns: 'ui', percent: Math.round((1 - smogMultiplier) * 100) }), tone: 'warning' });
     }
     return {
-      title: 'Smog',
-      subtitle: `Tempo łączne: ${fmtSign(total)}`,
+      title: t('smog.title', { ns: 'ui' }),
+      subtitle: t('smog.rateTotal', { ns: 'ui', rate: fmtSign(total) }),
       subtitleTone,
       lines,
-      footer: 'Dodatnie tempo zwiększa smog, ujemne go redukuje.'
+      footer: t('smog.footer', { ns: 'ui' })
     };
   }, [tiles, pollutionRate, housePollutionFor, smogMultiplier, t]);
   const weatherTooltip = useMemo<TooltipContent>(() => {
     const entries: Array<{ key: WeatherEventType; icon: string; title: string; effect: string }> = [
       { key: 'none', icon: '🌤️', title: t('weather.noEvent', { ns: 'ui' }), effect: t('weather.standardProduction', { ns: 'ui' }) },
       { key: 'clouds', icon: '☁️', title: t('weather.clouds', { ns: 'ui' }), effect: t('weather.noSolarProduction', { ns: 'ui' }) },
-      { key: 'sunny', icon: '🌞', title: t('weather.sunny', { ns: 'ui' }), effect: 'x2 ☀️' },
-      { key: 'rain', icon: '🌧️', title: t('weather.rain', { ns: 'ui' }), effect: 'x2 💧' },
-      { key: 'wind', icon: '🌬️', title: t('weather.wind', { ns: 'ui' }), effect: 'x2 🌬️, -50% ☀️, -30% 💧' },
-      { key: 'storm', icon: '⛈️', title: t('weather.storm', { ns: 'ui' }), effect: 'x3 🌬️, x1.5 💧, ☀️ = 0 (20s)' },
+      { key: 'sunny', icon: '🌞', title: t('weather.sunny', { ns: 'ui' }), effect: t('weather.sunnyEffect', { ns: 'ui' }) },
+      { key: 'rain', icon: '🌧️', title: t('weather.rain', { ns: 'ui' }), effect: t('weather.rainEffect', { ns: 'ui' }) },
+      { key: 'wind', icon: '🌬️', title: t('weather.wind', { ns: 'ui' }), effect: t('weather.windEffect', { ns: 'ui' }) },
+      { key: 'storm', icon: '⛈️', title: t('weather.storm', { ns: 'ui' }), effect: t('weather.stormEffect', { ns: 'ui' }) },
   { key: 'frost', icon: '❄️', title: t('weather.frost', { ns: 'ui' }), effect: t('weather.productionHalted', { ns: 'ui' }) },
     ];
     const toneForWeather = (type: WeatherEventType): TooltipTone => {
@@ -1706,7 +1701,7 @@ export default function ViessmannGame() {
     };
     const active = entries.find(e => e.key === weatherEvent.type) ?? entries[0];
     return {
-      title: 'Pogoda',
+      title: t('weather.title', { ns: 'ui' }),
       subtitle: `${active.icon} ${active.title}`.trim(),
       subtitleTone: toneForWeather(weatherEvent.type),
       lines: entries.map(entry => ({

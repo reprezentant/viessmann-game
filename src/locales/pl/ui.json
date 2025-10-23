@@ -1,4 +1,11 @@
 {
+  "resources": {
+    "sun": "Słońce",
+    "water": "Woda",
+    "wind": "Wiatr",
+    "coins": "ViCoins",
+    "pollution": "Smog"
+  },
   "profile": {
     "achievements": "Osiągnięcia",
     "journal": "Dziennik",
@@ -80,7 +87,12 @@
     "warning": "Uwaga: wzrost smogu – niewielka kara produkcji.",
     "high": "Wysoki smog – silna kara produkcji.",
     "critical": "Krytyczny smog – produkcja mocno ograniczona.",
-    "levelChanged": "Poziom smogu zmieniony"
+    "levelChanged": "Poziom smogu zmieniony",
+    "title": "Smog",
+    "rateTotal": "Tempo łączne: {{rate}}",
+    "house": "Dom ({{name}}): {{rate}}",
+    "forests": "Lasy ({{count}}): {{rate}}",
+    "footer": "Dodatnie tempo zwiększa smog, ujemne go redukuje."
   },
   "eco": {
     "title": "Eko‑reputacja",
@@ -100,6 +112,7 @@
     "description": "Osiągnięto poziom {{value}} dla {{label}}."
   },
   "weather": {
+    "title": "Pogoda",
     "none": "",
     "clouds": "Chmury",
     "sunny": "Słońce",
@@ -115,7 +128,11 @@
     "cycleProgress": "Postęp cyklu: {{percent}}%",
     "remainingTime": "Pozostały czas: {{seconds}}s",
     "productionHalted": "Produkcja wstrzymana (30s)",
-    "productionPenalty": "Produkcja -{{percent}}%"
+    "productionPenalty": "Produkcja -{{percent}}%",
+    "sunnyEffect": "x2 ☀️",
+    "rainEffect": "x2 💧",
+    "windEffect": "x2 🌬️, -50% ☀️, -30% 💧",
+    "stormEffect": "x3 🌬️, x1.5 💧, ☀️ = 0 (20s)"
   },
   "season": {
     "spring": "Wiosna",
@@ -145,6 +162,18 @@
   "devices": {
     "onHouse": "Na domu:",
     "noDevices": "Brak urządzeń"
+  },
+  "boilerNames": {
+    "coal": "Kocioł żeliwny",
+    "pellet": "Kocioł stalowy",
+    "gas": "Kocioł gazowy Triola",
+    "parola1965": "Parola 1965",
+    "stainless1972": "Stal nierdzewna 1972",
+    "heatpump1978": "Pompa ciepła 1978",
+    "vitola1978": "Vitola 1978",
+    "vitodens1989": "Vitodens 1989",
+    "heatpump": "Vitocal",
+    "none": "—"
   },
   "compendium": {
     "title": "📚 Kompendium wiedzy",

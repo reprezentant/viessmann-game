@@ -1,4 +1,11 @@
 {
+  "resources": {
+    "sun": "Sun",
+    "water": "Water",
+    "wind": "Wind",
+    "coins": "ViCoins",
+    "pollution": "Smog"
+  },
   "profile": {
     "achievements": "Achievements",
     "journal": "Journal",
@@ -81,7 +88,12 @@
     "warning": "Warning: smog rising – slight production penalty.",
     "high": "High smog – severe production penalty.",
     "critical": "Critical smog – production heavily limited.",
-    "levelChanged": "Smog level changed"
+    "levelChanged": "Smog level changed",
+    "title": "Smog",
+    "rateTotal": "Total rate: {{rate}}",
+    "house": "House ({{name}}): {{rate}}",
+    "forests": "Forests ({{count}}): {{rate}}",
+    "footer": "Positive rate increases smog, negative reduces it."
   },
   "eco": {
     "title": "Eco-reputation",
@@ -101,6 +113,7 @@
     "description": "Reached level {{value}} for {{label}}."
   },
   "weather": {
+    "title": "Weather",
     "none": "",
     "clouds": "Clouds",
     "sunny": "Sunny",
@@ -116,7 +129,11 @@
     "cycleProgress": "Cycle progress: {{percent}}%",
     "remainingTime": "Remaining time: {{seconds}}s",
     "productionHalted": "Production halted (30s)",
-    "productionPenalty": "Production -{{percent}}%"
+    "productionPenalty": "Production -{{percent}}%",
+    "sunnyEffect": "x2 ☀️",
+    "rainEffect": "x2 💧",
+    "windEffect": "x2 🌬️, -50% ☀️, -30% 💧",
+    "stormEffect": "x3 🌬️, x1.5 💧, ☀️ = 0 (20s)"
   },
   "season": {
     "spring": "Spring",
@@ -146,6 +163,18 @@
   "devices": {
     "onHouse": "On house:",
     "noDevices": "No devices"
+  },
+  "boilerNames": {
+    "coal": "Cast iron boiler",
+    "pellet": "Steel boiler",
+    "gas": "Triola gas boiler",
+    "parola1965": "Parola 1965",
+    "stainless1972": "Stainless steel 1972",
+    "heatpump1978": "Heat pump 1978",
+    "vitola1978": "Vitola 1978",
+    "vitodens1989": "Vitodens 1989",
+    "heatpump": "Vitocal",
+    "none": "—"
   },
   "compendium": {
     "title": "📚 Knowledge Compendium",
