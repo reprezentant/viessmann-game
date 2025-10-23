@@ -30,7 +30,8 @@
     "filterMission": "Misje",
     "filterWeather": "Pogoda",
     "filterAchievement": "Osiągnięcia",
-    "filterMilestone": "Kamienie milowe"
+    "filterMilestone": "Kamienie milowe",
+    "noEntries": "Brak wpisów"
   },
   "settings": {
     "title": "Ustawienia",

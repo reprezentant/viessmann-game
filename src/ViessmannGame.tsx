@@ -3731,7 +3731,7 @@ export default function ViessmannGame() {
             </div>
 
             {log.length === 0 ? (
-              <div style={{ color: isDay ? '#6b7280' : '#94a3b8', fontSize: 14 }}>Brak wpisów</div>
+              <div style={{ color: isDay ? '#6b7280' : '#94a3b8', fontSize: 14 }}>{t('journal.noEntries', { ns: 'ui' })}</div>
             ) : (
               <div style={{ display: 'grid', gap: 8 }}>
                 {(logFilter === 'all' ? log : log.filter(e => (e.type ?? 'other') === logFilter)).map((entry) => (

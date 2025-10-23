@@ -30,7 +30,8 @@
     "filterMission": "Missions",
     "filterWeather": "Weather",
     "filterAchievement": "Achievements",
-    "filterMilestone": "Milestones"
+    "filterMilestone": "Milestones",
+    "noEntries": "No entries"
   },
   "settings": {
     "title": "Settings",
