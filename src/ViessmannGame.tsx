@@ -1809,8 +1809,8 @@ export default function ViessmannGame() {
   const pill: React.CSSProperties = {
     display: "flex",
     alignItems: "center",
-    gap: 10,
-    borderRadius: 16,
+  gap: 6,
+  borderRadius: 24,
     background: theme.pillBg,
     padding: "8px 16px",
     minHeight: 56,
@@ -2035,8 +2035,8 @@ export default function ViessmannGame() {
       <img src={iconSrc} alt={label} style={{ width: 36, height: 36, flex: '0 0 36px' }} />
       <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
         {/* Visible label moved into tooltip per request — keep aria-label for accessibility */}
-        <div className="font-semibold font-sans tabular-nums" style={{ color: theme.bodyText }}>{value}</div>
-        <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: theme.mutedText }}>{rate}</div>
+        <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 700 }}>{value}</div>
+  <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 1, color: theme.mutedText, lineHeight: 1 }}>{rate}</div>
       </div>
     </div>
   );
@@ -2144,7 +2144,7 @@ export default function ViessmannGame() {
                 minHeight: 56,
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                gap: 4,
                 position: 'relative'
               }}
               onMouseEnter={(e) => {
@@ -2167,15 +2167,15 @@ export default function ViessmannGame() {
             >
               <img src={isDay ? smogLM : smogDM} alt="Smog" style={{ width: 36, height: 36, flex: '0 0 36px' }} />
               <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                <div className="font-semibold font-sans tabular-nums" style={{ color: theme.bodyText }}>{Math.round(pollution)}</div>
-                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 2, color: theme.mutedText }}>
+                <div className="font-sans tabular-nums" style={{ color: theme.bodyText, fontWeight: 700 }}>{Math.round(pollution)}</div>
+                <div className="font-sans tabular-nums" style={{ fontSize: 11, marginTop: 1, color: theme.mutedText, lineHeight: 1 }}>
                   <span style={{ color: pollutionRate >= 0 ? theme.tone.warning : theme.tone.positive }}>{pollutionRate >= 0 ? '+' : ''}{fmt(pollutionRate)}/s</span>
                 </div>
               </div>
             </div>
 
             {/* Weather pill (separate wrapper) */}
-            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: 8 }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center', marginRight: 2 }}>
               <button
                 onMouseEnter={(e) => {
                   const r = (e.currentTarget as HTMLElement).getBoundingClientRect();
@@ -2212,9 +2212,9 @@ export default function ViessmannGame() {
                   height: 80,
                   borderRadius: 999,
                   overflow: 'hidden',
-                  border: `2px solid ${theme.pillBorder}`,
+                  border: `3px solid ${theme.pillBorder}`,
                   boxShadow: 'none',
-                  background: 'transparent',
+                  background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
                   padding: 0,
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -2252,7 +2252,7 @@ export default function ViessmannGame() {
                     fontSize: 12,
                     fontWeight: 700,
                     lineHeight: 1,
-                    border: `2px solid ${theme.headerBg}`
+                    border: `3px solid ${theme.headerBg}`
                   }}
                 >
                   !
@@ -2272,7 +2272,7 @@ export default function ViessmannGame() {
                   height: 80,
                   borderRadius: 999,
                   overflow: 'hidden',
-                  border: `2px solid ${theme.pillBorder}`,
+                  border: `3px solid ${theme.pillBorder}`,
                   boxShadow: 'none',
                   background: 'transparent',
                   padding: 0,
@@ -2282,7 +2282,7 @@ export default function ViessmannGame() {
                   justifyContent: 'center'
                 }}
               >
-                <img src={isDay ? eventsLM : eventsDM} alt="Wydarzenia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={isDay ? eventsLM : eventsDM} alt="Wydarzenia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
               </button>
               {badgeCount > 0 && (
                 <span
@@ -2303,7 +2303,7 @@ export default function ViessmannGame() {
                     fontSize: 12,
                     fontWeight: 700,
                     lineHeight: 1,
-                    border: `2px solid ${theme.headerBg}`
+                    border: `3px solid ${theme.headerBg}`
                   }}
                 >
                   {badgeCount > 9 ? '9+' : badgeCount}
@@ -2336,9 +2336,9 @@ export default function ViessmannGame() {
                   height: 80,
                   borderRadius: 999,
                   overflow: 'hidden',
-                  border: `2px solid ${theme.pillBorder}`,
+                  border: `3px solid ${theme.pillBorder}`,
                   boxShadow: 'none',
-                  background: 'transparent',
+                  background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
                   padding: 0,
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -2346,7 +2346,7 @@ export default function ViessmannGame() {
                   justifyContent: 'center'
                 }}
               >
-                <img src={isDay ? ecoLM : ecoDM} alt="Eko-reputacja" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src={isDay ? ecoLM : ecoDM} alt="Eko-reputacja" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
               </button>
               {ecoRep < 40 && (
                 <span
@@ -2367,7 +2367,7 @@ export default function ViessmannGame() {
                     fontSize: 12,
                     fontWeight: 700,
                     lineHeight: 1,
-                    border: `2px solid ${theme.headerBg}`
+                    border: `3px solid ${theme.headerBg}`
                   }}
                 >
                   !
@@ -2441,9 +2441,9 @@ export default function ViessmannGame() {
                 </div>
               </div>
 
-              <div style={{ width: 80, height: 80, borderRadius: 999, border: `2px solid ${showProfileMenu ? theme.tone.info : theme.pillBorder}`, boxShadow: showProfileMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none', position: 'relative', overflow: 'visible' }}>
+              <div style={{ width: 80, height: 80, borderRadius: 999, border: `3px solid ${showProfileMenu ? theme.tone.info : theme.pillBorder}`, boxShadow: showProfileMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none', position: 'relative', overflow: 'visible', background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))' }}>
                 <div style={{ width: '100%', height: '100%', borderRadius: 999, overflow: 'hidden' }}>
-                  <img src={isDay ? profileLM : profileDM} alt="Profil" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={isDay ? profileLM : profileDM} alt="Profil" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
                 </div>
                 {(hasNewAchievements || hasNewLog) && (
                   <span
@@ -2457,7 +2457,7 @@ export default function ViessmannGame() {
                       height: 10,
                       background: '#ef4444',
                       borderRadius: 999,
-                      border: `2px solid ${theme.headerBg}`,
+                      border: `3px solid ${theme.headerBg}`,
                       pointerEvents: 'none'
                     }}
                   />
@@ -2469,7 +2469,7 @@ export default function ViessmannGame() {
           
 
           {/* Settings icon (placeholder for future menu) */}
-          <div style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
+            <div style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
             <button
               onClick={() => setShowSettingsMenu(!showSettingsMenu)}
               aria-label="Ustawienia"
@@ -2479,14 +2479,14 @@ export default function ViessmannGame() {
                 height: 80,
                 borderRadius: 999,
                 overflow: 'hidden',
-                border: `2px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
+                border: `3px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
                 boxShadow: showSettingsMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none',
-                background: 'transparent',
+                background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
                 cursor: 'pointer',
                 padding: 0,
               }}
             >
-              <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
             </button>
           </div>
           
@@ -2903,7 +2903,7 @@ export default function ViessmannGame() {
               </div>
             );
           })()}
-          <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20, justifyContent: 'center' }}>
             <button className={`font-semibold font-sans ${shopTab === "devices" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "devices")} onClick={() => setShopTab("devices")}>Urządzenia</button>
             <button className={`font-semibold font-sans ${shopTab === "production" ? "bg-neutral-900 text-white" : "bg-neutral-200 text-neutral-900"} rounded-full text-sm px-3 py-1`} style={btn(shopTab === "production")} onClick={() => setShopTab("production")}>Produkcja</button>
           </div>
