@@ -29,6 +29,8 @@ import smogDM from './assets/ui/Smog_DM.png';
 import ecoLM from './assets/ui/Eco_LM.png';
 import ecoDM from './assets/ui/Eco_DM.png';
 import logo from './assets/ui/Logo.svg';
+import dayBg from './assets/ui/day_bg.jpg';
+import nightBg from './assets/ui/night_bg.jpg';
 // --- Typy bazowe ---
 type ResKey = "sun" | "water" | "wind" | "coins";
 // Urządzenia – klucze (z rozszerzoną sekwencją upgrade'ów na domu)
@@ -1783,7 +1785,11 @@ export default function ViessmannGame() {
     justifyContent: "space-between",
     gap: 16,
     borderBottom: `1px solid ${theme.headerBorder}`,
-    background: theme.headerBg,
+    background: isDay 
+      ? 'rgba(241, 245, 249, 0.85)' 
+      : 'rgba(15, 23, 42, 0.85)',
+    backdropFilter: 'blur(12px)',
+    WebkitBackdropFilter: 'blur(12px)',
     padding: "12px 18px 12px 32px",
     boxShadow: theme.headerShadow,
     zIndex: 200
@@ -1943,7 +1949,11 @@ export default function ViessmannGame() {
   }, [weatherEvent, pushLog, t]);
   const card: React.CSSProperties = {
     borderRadius: 16,
-    background: theme.cardBg,
+    background: isDay 
+      ? 'rgba(255, 255, 255, 0.92)' 
+      : 'rgba(15, 23, 42, 0.92)',
+    backdropFilter: 'blur(16px)',
+    WebkitBackdropFilter: 'blur(16px)',
     padding: 14,
     border: `1px solid ${theme.cardBorder}`,
     boxShadow: theme.cardShadow,
@@ -1965,7 +1975,11 @@ export default function ViessmannGame() {
     alignItems: 'center',
     gap: 8,
     borderRadius: 12,
-    background: theme.pillBg,
+    background: isDay 
+      ? 'rgba(255, 255, 255, 0.9)' 
+      : 'rgba(30, 41, 59, 0.9)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
     padding: '4px 10px',
     paddingLeft: 8,
     minWidth: 72,
@@ -2025,7 +2039,37 @@ export default function ViessmannGame() {
 
   // Render
   return (
-  <div className="font-sans" style={{ minHeight: "100vh", width: "100vw", maxWidth: "100vw", boxSizing: "border-box", overflowX: "hidden", background: theme.bodyBg, color: theme.bodyText }}>
+  <div className="font-sans" style={{ 
+    minHeight: "100vh", 
+    width: "100vw", 
+    maxWidth: "100vw", 
+    boxSizing: "border-box", 
+    overflowX: "hidden", 
+    position: "relative",
+    color: theme.bodyText 
+  }}>
+    {/* Background image layer */}
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      backgroundImage: `url(${isDay ? dayBg : nightBg})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      opacity: 0.5,
+      zIndex: -2,
+      transition: "opacity 0.8s ease-in-out"
+    }} />
+    {/* Gradient overlay for better readability */}
+    <div style={{
+      position: "fixed",
+      inset: 0,
+      background: isDay 
+        ? "linear-gradient(to bottom, rgba(241,245,249,0.3) 0%, rgba(241,245,249,0.6) 100%)"
+        : "linear-gradient(to bottom, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.7) 100%)",
+      zIndex: -1,
+      transition: "background 0.8s ease-in-out"
+    }} />
     <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFileChange} />
       {/* Toast stack */}
       {toasts.length > 0 && (
