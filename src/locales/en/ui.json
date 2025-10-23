@@ -1,0 +1,19 @@
+{
+  "profile": {
+    "achievements": "Achievements",
+    "journal": "Journal",
+    "compendium": "Compendium"
+  },
+  "settings": {
+    "title": "Settings",
+    "save": "Save game",
+    "load": "Load game",
+    "newGame": "New game",
+    "language": "Language",
+    "polish": "Polish",
+    "english": "English"
+  },
+  "header": {
+    "myProfile": "My profile"
+  }
+}

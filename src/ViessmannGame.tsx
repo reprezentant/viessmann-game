@@ -1,4 +1,5 @@
 ﻿import React, { useCallback, useEffect, useMemo, useRef, useState, useImperativeHandle } from "react";
+import i18n from './i18n';
 import { canAfford as canAffordHelper, discountedCost as discountedCostHelper, dynamicCost as dynamicCostHelper } from './lib/economy';
 import { clamp as clampHelper, seasonPollutionFor as seasonPollutionForHelper, housePollutionFor as housePollutionForHelper } from './lib/pollution';
 import { getSampleEvents } from './lib/story';
@@ -2565,6 +2566,25 @@ export default function ViessmannGame() {
                   >
                     <span>🗑️</span>
                     <span>Nowa gra</span>
+                  </div>
+                  {/* Language selector */}
+                  <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
+                  <div style={{ padding: '8px 16px', fontSize: 13, color: isDay ? '#0f172a' : '#e5e7eb' }}>
+                    <div style={{ marginBottom: 6, fontSize: 12, color: isDay ? '#374151' : '#9ca3af' }}>{i18n.t('settings.language')}</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button
+                        onClick={() => { i18n.changeLanguage('pl'); localStorage.setItem('vm_lang', 'pl'); setShowSettingsMenu(false); }}
+                        style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'pl' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'pl' ? '#e0f2fe' : 'transparent' }}
+                      >
+                        {i18n.t('settings.polish')}
+                      </button>
+                      <button
+                        onClick={() => { i18n.changeLanguage('en'); localStorage.setItem('vm_lang', 'en'); setShowSettingsMenu(false); }}
+                        style={{ padding: '6px 10px', borderRadius: 6, cursor: 'pointer', border: i18n.language === 'en' ? '2px solid #2563eb' : '1px solid rgba(0,0,0,0.08)', background: i18n.language === 'en' ? '#e0f2fe' : 'transparent' }}
+                      >
+                        {i18n.t('settings.english')}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

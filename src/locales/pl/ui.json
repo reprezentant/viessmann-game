@@ -1,0 +1,19 @@
+{
+  "profile": {
+    "achievements": "Osiągnięcia",
+    "journal": "Dziennik",
+    "compendium": "Kompedium wiedzy"
+  },
+  "settings": {
+    "title": "Ustawienia",
+    "save": "Zapisz grę",
+    "load": "Wczytaj grę",
+    "newGame": "Nowa gra",
+    "language": "Język",
+    "polish": "Polski",
+    "english": "English"
+  },
+  "header": {
+    "myProfile": "Mój profil"
+  }
+}
