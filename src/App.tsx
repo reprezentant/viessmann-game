@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import ViessmannGame from "./ViessmannGame";
-import LoadingOverlay from "./components/LoadingOverlay";
+import VideoIntro from "./components/VideoIntro";
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
-  const steps: Array<{ key: string; label: string; ms?: number }> = [
-    { key: 'boot', label: 'Inicjalizacja modułów', ms: 250 },
-    { key: 'assets', label: 'Przygotowanie interfejsu i ikon', ms: 250 },
-    { key: 'save', label: 'Wczytywanie zapisu gry', ms: 250 },
-    { key: 'world', label: 'Generowanie planszy i widoku', ms: 250 },
+  const [showVideo, setShowVideo] = useState(true);
+  const steps: Array<{ key: string; ms?: number }> = [
+    { key: 'boot', ms: 500 },
+    { key: 'assets', ms: 500 },
+    { key: 'save', ms: 500 },
+    { key: 'world', ms: 500 },
   ];
 
   // Optionally simulate a tiny pre-warm stage before the app mounts fully
@@ -20,11 +20,13 @@ export default function App() {
 
   return (
     <>
-      {loading && (
-        <LoadingOverlay steps={steps} onDone={() => setLoading(false)} minTotalMs={1000} />
+      {/* Video Intro with loading progress - plays first */}
+      {showVideo && (
+        <VideoIntro steps={steps} onComplete={() => setShowVideo(false)} minTotalMs={2000} />
       )}
-      {/* Render game behind the overlay so first frame is ready when loader ends */}
-      <div aria-hidden={loading} style={{ filter: loading ? 'blur(0.5px)' : 'none' }}>
+      
+      {/* Render game behind the video so first frame is ready when video ends */}
+      <div aria-hidden={showVideo} style={{ filter: showVideo ? 'blur(0.5px)' : 'none' }}>
         <ViessmannGame />
       </div>
     </>

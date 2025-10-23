@@ -47,6 +47,15 @@
   "header": {
     "myProfile": "My profile"
   },
+  "loader": {
+    "loading": "Loading...",
+    "step": "Step {{current}} of {{total}}",
+    "clickToSkip": "Click to skip",
+    "boot": "Initializing modules",
+    "assets": "Preparing interface and icons",
+    "save": "Loading game save",
+    "world": "Generating board and view"
+  },
   "map": {
     "title": "House & Surroundings"
   }

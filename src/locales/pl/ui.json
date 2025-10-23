@@ -47,6 +47,15 @@
   "header": {
     "myProfile": "Mój profil"
   },
+  "loader": {
+    "loading": "Ładowanie...",
+    "step": "Krok {{current}} z {{total}}",
+    "clickToSkip": "Kliknij, aby pominąć",
+    "boot": "Inicjalizacja modułów",
+    "assets": "Przygotowanie interfejsu i ikon",
+    "save": "Wczytywanie zapisu gry",
+    "world": "Generowanie planszy i widoku"
+  },
   "map": {
     "title": "Dom i otoczenie"
   }

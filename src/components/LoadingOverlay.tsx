@@ -85,8 +85,11 @@ export default function LoadingOverlay({
         >
           <div style={{
             width: `${progress}%`, height: '100%',
-            background: 'linear-gradient(90deg,#22c55e,#06b6d4)',
-            transition: 'width 120ms ease-out'
+            background: 'linear-gradient(90deg, #f59e0b, #fb923c, #fbbf24)',
+            transition: 'width 120ms ease-out',
+            boxShadow: '0 0 8px rgba(245, 158, 11, 0.5)',
+            border: '1px solid rgba(251, 191, 36, 0.3)',
+            borderRadius: 999,
           }} />
         </div>
 

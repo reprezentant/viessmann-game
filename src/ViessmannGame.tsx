@@ -200,8 +200,8 @@ export default function ViessmannGame() {
   // helper to resolve story translation keys if present
   const resolveStoryText = useCallback((keyOrText: string) => {
     try {
-      if (i18n.exists(`story.${keyOrText}`, { ns: 'story' })) {
-        return t(`story.${keyOrText}`, { ns: 'story' });
+      if (i18n.exists(keyOrText, { ns: 'story' })) {
+        return t(keyOrText, { ns: 'story' });
       }
     } catch { /* ignore */ }
     return keyOrText;
@@ -3245,12 +3245,15 @@ export default function ViessmannGame() {
                 <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>{t('missions.progressLabel', { ns: 'ui' })}</span>
                 <span className="text-xs font-sans text-neutral-500" style={{ fontSize: 12 }}>{completedMissionCount} / {missions.length}</span>
               </div>
-              <div style={{ width: "100%", height: 8, background: isDay ? "#E5E7EB" : "#334155", borderRadius: 6, overflow: "hidden" }}>
+              <div style={{ width: "100%", height: 8, background: isDay ? "#E5E7EB" : "#334155", borderRadius: 6, overflow: "hidden", border: isDay ? '1px solid #d1d5db' : '1px solid #475569' }}>
                 <div style={{
                   width: `${missionProgressPct}%`,
                   height: "100%",
-                  background: "linear-gradient(90deg,#10B981,#22D3EE)",
+                  background: "linear-gradient(90deg, #f59e0b, #fb923c, #fbbf24)",
                   transition: "width 0.4s cubic-bezier(.4,2,.6,1)",
+                  boxShadow: '0 0 8px rgba(245, 158, 11, 0.4)',
+                  border: '1px solid rgba(251, 191, 36, 0.3)',
+                  borderRadius: 6,
                 }} />
               </div>
             </div>
