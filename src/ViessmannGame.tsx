@@ -2065,6 +2065,7 @@ export default function ViessmannGame() {
   // Render
   return (
   <div className="font-sans" style={{ minHeight: "100vh", width: "100vw", maxWidth: "100vw", boxSizing: "border-box", overflowX: "hidden", background: theme.bodyBg, color: theme.bodyText }}>
+    <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFileChange} />
       {/* Toast stack */}
       {toasts.length > 0 && (
         <div style={{ position: 'fixed', right: 12, top: 12, display: 'flex', flexDirection: 'column', gap: 8, zIndex: 1200, maxWidth: 'min(92vw,640px)' }}>
@@ -2469,26 +2470,84 @@ export default function ViessmannGame() {
           
 
           {/* Settings icon (placeholder for future menu) */}
-            <div style={{ display: 'inline-flex', verticalAlign: 'middle' }}>
-            <button
-              onClick={() => setShowSettingsMenu(!showSettingsMenu)}
-              aria-label="Ustawienia"
-              title="Ustawienia"
-              style={{
-                width: 80,
-                height: 80,
-                borderRadius: 999,
-                overflow: 'hidden',
-                border: `3px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
-                boxShadow: showSettingsMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none',
-                background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
-                cursor: 'pointer',
-                padding: 0,
-              }}
-            >
-              <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
-            </button>
-          </div>
+            <div style={{ display: 'inline-flex', verticalAlign: 'middle', position: 'relative' }}>
+              <button
+                onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                aria-label="Ustawienia"
+                title="Ustawienia"
+                style={{
+                  width: 80,
+                  height: 80,
+                  borderRadius: 999,
+                  overflow: 'hidden',
+                  border: `3px solid ${showSettingsMenu ? theme.tone.info : theme.pillBorder}`,
+                  boxShadow: showSettingsMenu ? `0 6px 18px ${theme.tone.infoSoft}` : 'none',
+                  background: isDay ? 'linear-gradient(135deg, rgba(255,255,255,0.06), rgba(0,0,0,0.03))' : 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12))',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                <img src={isDay ? settingsLM : settingsDM} alt="Ustawienia" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
+              </button>
+
+              {showSettingsMenu && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    background: isDay ? '#ffffff' : '#0f172a',
+                    color: isDay ? '#0f172a' : '#e5e7eb',
+                    borderRadius: 8,
+                    boxShadow: isDay ? '0 4px 12px rgba(0,0,0,0.15)' : '0 8px 20px rgba(0,0,0,0.35)',
+                    border: isDay ? '1px solid rgba(0,0,0,0.1)' : '1px solid #334155',
+                    minWidth: 180,
+                    zIndex: 1100
+                  }}
+                >
+                  <div
+                    style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
+                    onClick={() => { exportSave(); setShowSettingsMenu(false); }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); exportSave(); setShowSettingsMenu(false); } }}
+                    onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                    onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                  >
+                    <span>⬇️</span>
+                    <span>Zapisz grę</span>
+                  </div>
+
+                  <div
+                    style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
+                    onClick={() => { importInputRef.current?.click(); setShowSettingsMenu(false); }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); importInputRef.current?.click(); setShowSettingsMenu(false); } }}
+                    onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
+                    onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                  >
+                    <span>⬆️</span>
+                    <span>Wczytaj grę</span>
+                  </div>
+
+                  <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
+
+                  <div
+                    style={{ padding: '12px 16px', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
+                    onClick={() => { if (window.confirm('Czy na pewno chcesz rozpocząć nową grę? Wszystkie niezapisane postępy zostaną utracone.')) { resetGame(); setShowSettingsMenu(false); } }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (window.confirm('Czy na pewno chcesz rozpocząć nową grę? Wszystkie niezapisane postępy zostaną utracone.')) { resetGame(); setShowSettingsMenu(false); } } }}
+                    onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#fee2e2' : '#7f1d1d'}
+                    onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
+                  >
+                    <span>🗑️</span>
+                    <span>Nowa gra</span>
+                  </div>
+                </div>
+              )}
+            </div>
           
 
           {showProfileMenu && (
@@ -2618,35 +2677,7 @@ export default function ViessmannGame() {
                 <span>📚</span>
                 <span>Kompedium wiedzy</span>
               </div>
-              <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '6px 0' }} />
-              <div
-                style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
-                onClick={() => { exportSave(); setShowProfileMenu(false); }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-              >
-                <span>⬇️</span>
-                <span>Zapisz grę</span>
-              </div>
-              <div
-                style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: isDay ? '#0f172a' : '#e5e7eb' }}
-                onClick={() => { importInputRef.current?.click(); setShowProfileMenu(false); }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#f3f4f6' : '#1f2937'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-              >
-                <span>⬆️</span>
-                <span>Wczytaj grę</span>
-              </div>
-              <input ref={importInputRef} type="file" accept="application/json" style={{ display: 'none' }} onChange={onImportFileChange} />
-              <div
-                style={{ padding: '10px 16px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 8, color: '#ef4444' }}
-                onClick={() => { resetGame(); }}
-                onMouseEnter={(e) => (e.target as HTMLElement).style.background = isDay ? '#fee2e2' : '#7f1d1d'}
-                onMouseLeave={(e) => (e.target as HTMLElement).style.background = 'transparent'}
-              >
-                <span>🗑️</span>
-                <span>Nowa gra</span>
-              </div>
+              {/* Save/Load/New moved to Settings menu; keep Profile focused on Achievements/Log/Compendium */}
             </div>
           )}
         </div>
