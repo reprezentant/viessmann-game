@@ -1011,6 +1011,23 @@ export default function ViessmannGame() {
   const [seasonInfoPos, setSeasonInfoPos] = useState<{ left: number; top: number }>({ left: 0, top: 0 });
   // Relations tooltip (for Compendium → Relacje)
   const [relTip, setRelTip] = useState<{ left: number; top: number; text: string } | null>(null);
+
+  // Hover/leave helpers for profile/settings area to auto-close menus
+  const profileAreaCloseTimer = useRef<number | null>(null);
+  const clearProfileAreaTimer = () => {
+    if (profileAreaCloseTimer.current !== null) {
+      clearTimeout(profileAreaCloseTimer.current);
+      profileAreaCloseTimer.current = null;
+    }
+  };
+  const scheduleCloseProfileArea = (delay = 150) => {
+    clearProfileAreaTimer();
+    profileAreaCloseTimer.current = window.setTimeout(() => {
+      setShowProfileMenu(false);
+      setShowSettingsMenu(false);
+      profileAreaCloseTimer.current = null;
+    }, delay);
+  };
   // (Ekonomia panel state removed)
 
   // EcoReputation (0-100), derived from current pollution and number of forests
@@ -2381,7 +2398,11 @@ export default function ViessmannGame() {
         </div>
 
   {/* Profile Menu */}
-  <div style={{ position: "relative", display: 'flex', alignItems: 'center', gap: 12 }}>
+  <div
+    style={{ position: "relative", display: 'flex', alignItems: 'center', gap: 12 }}
+    onMouseEnter={() => { clearProfileAreaTimer(); }}
+    onMouseLeave={() => { scheduleCloseProfileArea(150); }}
+  >
           <div
             style={{
               display: 'flex',
