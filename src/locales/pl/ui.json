@@ -8,7 +8,11 @@
     "sunTooltip": "Energia słoneczna – podstawowy zasób do budowy i modernizacji.",
     "waterTooltip": "Woda – kluczowy zasób dla systemów grzewczych.",
     "windTooltip": "Energia wiatrowa – zasób odnawialny.",
-    "coinsTooltip": "ViCoins – waluta do zakupu specjalnych urządzeń."
+    "coinsTooltip": "ViCoins – waluta do zakupu specjalnych urządzeń.",
+    "currently": "Aktualnie",
+    "rate": "Tempo",
+    "resourceUsage": "Zasób używany do budowy i operacji.",
+    "currencyUsage": "Waluta używana do zakupów i ulepszeń."
   },
   "profile": {
     "achievements": "Osiągnięcia",

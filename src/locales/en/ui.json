@@ -8,7 +8,11 @@
     "sunTooltip": "Solar energy – primary resource for construction and upgrades.",
     "waterTooltip": "Water – key resource for heating systems.",
     "windTooltip": "Wind energy – renewable resource.",
-    "coinsTooltip": "ViCoins – currency for special equipment."
+    "coinsTooltip": "ViCoins – currency for purchasing special equipment.",
+    "currently": "Currently",
+    "rate": "Rate",
+    "resourceUsage": "Resource used for construction and operations.",
+    "currencyUsage": "Currency used for purchases and upgrades."
   },
   "profile": {
     "achievements": "Achievements",

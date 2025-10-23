@@ -2012,9 +2012,9 @@ export default function ViessmannGame() {
       subtitle: `${fmt(resources[key])} — ${rateText(key)}`,
       subtitleTone: 'muted',
       lines: [
-        { text: `Aktualnie: ${fmt(resources[key])}` },
-        { text: `Tempo: ${rateText(key)}` },
-        { text: key === 'coins' ? 'Waluta używana do zakupów i ulepszeń.' : 'Zasób używany do budowy i operacji.' }
+        { text: `${t('resources.currently', { ns: 'ui' })}: ${fmt(resources[key])}` },
+        { text: `${t('resources.rate', { ns: 'ui' })}: ${rateText(key)}` },
+        { text: key === 'coins' ? t('resources.currencyUsage', { ns: 'ui' }) : t('resources.resourceUsage', { ns: 'ui' }) }
       ]
     };
     setLegendContent(content);
