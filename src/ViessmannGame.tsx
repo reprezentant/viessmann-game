@@ -28,6 +28,8 @@ import smogLM from './assets/ui/Smog_LM.png';
 import smogDM from './assets/ui/Smog_DM.png';
 import ecoLM from './assets/ui/Eco_LM.png';
 import ecoDM from './assets/ui/Eco_DM.png';
+import homeLM from './assets/ui/Home_LM.png';
+import homeDM from './assets/ui/Home_DM.png';
 import logo from './assets/ui/Logo.svg';
 import dayBg from './assets/ui/day_bg.jpg';
 import nightBg from './assets/ui/night_bg.jpg';
@@ -2288,7 +2290,17 @@ export default function ViessmannGame() {
                   justifyContent: 'center'
                 }}
               >
-                <img src={isDay ? eventsLM : eventsDM} alt={t('events.altText', { ns: 'ui' })} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
+                <img 
+                  src={isDay ? eventsLM : eventsDM} 
+                  alt={t('events.altText', { ns: 'ui' })} 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover', 
+                    opacity: 0.94,
+                    filter: 'brightness(1.1) saturate(1.3) hue-rotate(-10deg) contrast(1.05)'
+                  }} 
+                />
               </button>
               {badgeCount > 0 && (
                 <span
@@ -2352,7 +2364,17 @@ export default function ViessmannGame() {
                   justifyContent: 'center'
                 }}
               >
-                <img src={isDay ? ecoLM : ecoDM} alt="Eko-reputacja" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.94 }} />
+                <img 
+                  src={isDay ? ecoLM : ecoDM} 
+                  alt="Eko-reputacja" 
+                  style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'cover', 
+                    opacity: 0.94,
+                    filter: 'brightness(1.1) saturate(1.3) hue-rotate(-10deg) contrast(1.05)'
+                  }} 
+                />
               </button>
               {ecoRep < 40 && (
                 <span
@@ -2866,7 +2888,43 @@ export default function ViessmannGame() {
       {/* body */}
       <main style={gridWrap}>
         {/* shop */}
-        <section style={{ ...card, position: 'relative' }}>
+        <section style={{ 
+          ...card, 
+          position: 'relative',
+          overflow: 'visible',
+          marginLeft: 8,
+          marginTop: 32,
+          paddingTop: 56
+        }}>
+          {/* Home icon */}
+          <div style={{ display: "flex", justifyContent: "center", marginTop: -92, marginBottom: 10 }}>
+            <div
+              style={{
+                position: "relative",
+                width: 96,
+                height: 96,
+                borderRadius: "50%",
+                background: isDay
+                  ? "linear-gradient(160deg, #fff8ec 0%, #feddac 60%, #f5c07a 100%)"
+                  : "linear-gradient(160deg, #3a2f4f 0%, #2a2342 55%, #1c172d 100%)",
+                border: isDay ? "3px solid #f3d9ad" : "3px solid #3a3053",
+                boxShadow: isDay
+                  ? "0 3px 12px rgba(139,117,91,0.25), inset 0 1px 4px rgba(255,255,255,0.6)"
+                  : "0 3px 12px rgba(0,0,0,0.4), inset 0 1px 4px rgba(255,255,255,0.08)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "visible",
+                zIndex: 2
+              }}
+            >
+              <img
+                src={isDay ? homeLM : homeDM}
+                alt="Ikona domu"
+                style={{ width: 82, height: 82, objectFit: "contain" }}
+              />
+            </div>
+          </div>
           {(() => {
             const baseStyle = {
               borderRadius: 12,
@@ -2989,21 +3047,21 @@ export default function ViessmannGame() {
                     display: "flex",
                     flexDirection: "column",
                     minHeight: 120,
-                    background: isDay ? (card.background ?? "rgba(255,255,255,0.7)") : "#0f172a",
+                    background: isDay ? 'linear-gradient(160deg,#fff3da,#fde2b9,#f7d2a1)' : 'linear-gradient(160deg,#2f2a3d,#262135,#1d192a)',
                     transition: "transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease",
-                    border: isDay ? "1px solid rgba(0,0,0,0.06)" : "1px solid #1f2937",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    border: isDay ? '2px solid rgba(139,117,91,0.2)' : '2px solid rgba(148,163,184,0.2)',
+                    boxShadow: isDay ? '0 4px 12px rgba(0,0,0,0.08)' : '0 4px 12px rgba(0,0,0,0.3)',
                     cursor: done ? "default" : "pointer",
                   }}
                   onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = isDay ? "0 4px 12px rgba(0,0,0,0.08)" : "0 4px 12px rgba(0,0,0,0.28)";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = isDay ? "0 6px 16px rgba(0,0,0,0.12)" : "0 6px 16px rgba(0,0,0,0.4)";
                     (e.currentTarget as HTMLDivElement).style.transform = "translateY(-0.5px)";
-                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "#e5e7eb" : "#2b3647";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "rgba(139,117,91,0.3)" : "rgba(148,163,184,0.3)";
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)";
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = isDay ? "0 4px 12px rgba(0,0,0,0.08)" : "0 4px 12px rgba(0,0,0,0.3)";
                     (e.currentTarget as HTMLDivElement).style.transform = "none";
-                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "rgba(0,0,0,0.06)" : "#1f2937";
+                    (e.currentTarget as HTMLDivElement).style.borderColor = isDay ? "rgba(139,117,91,0.2)" : "rgba(148,163,184,0.2)";
                   }}
                   onMouseDown={(e) => {
                     (e.currentTarget as HTMLDivElement).style.transform = "translateY(0) scale(0.998)";
