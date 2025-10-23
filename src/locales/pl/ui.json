@@ -166,7 +166,9 @@
     "checkNewEvents": "Sprawdź nowe wydarzenia",
     "ariaLabel_none": "Brak nowych wydarzeń",
     "ariaLabel_some": "{{count}} nowych wydarzeń",
-    "altText": "Wydarzenia"
+    "altText": "Wydarzenia",
+    "centerTitle": "Centrum wydarzeń",
+    "noPending": "Brak oczekujących eventów. Wszystko pod kontrolą."
   },
   "ui": {
     "close": "Zamknij",

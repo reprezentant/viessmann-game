@@ -167,7 +167,9 @@
     "checkNewEvents": "Check new events",
     "ariaLabel_none": "No new events",
     "ariaLabel_some": "{{count}} new events",
-    "altText": "Events"
+    "altText": "Events",
+    "centerTitle": "Events Center",
+    "noPending": "No pending events. Everything under control."
   },
   "ui": {
     "close": "Close",

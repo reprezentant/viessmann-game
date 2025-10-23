@@ -37,7 +37,7 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
         onClick={(e) => e.stopPropagation()}
       >
         <div className="events-modal__header">
-          <div className="events-modal__title">{t('eventsCenterTitle', { defaultValue: 'Centrum wydarzeń' })}</div>
+          <div className="events-modal__title">{t('events.centerTitle', { ns: 'ui' })}</div>
           <button type="button" className="events-modal__close" onClick={onClose} aria-label={t('ui.close', { ns: 'ui' })}>
             ✕
           </button>
@@ -52,7 +52,7 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
           </section>
         )}
         {events.length === 0 ? (
-          <div className="events-modal__empty">{t('noPendingEvents', { defaultValue: 'Brak oczekujących eventów. Wszystko pod kontrolą.' })}</div>
+          <div className="events-modal__empty">{t('events.noPending', { ns: 'ui' })}</div>
         ) : (
           events.map((event) => (
             <article key={event.id} className="events-modal__event">
