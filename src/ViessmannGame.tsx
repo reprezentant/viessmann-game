@@ -3640,10 +3640,10 @@ export default function ViessmannGame() {
                             {storyDecisions.slice(0, 12).map(d => (
                               <div key={d.id} style={{ padding: 10, borderRadius: 10, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                                 <div style={{ display: 'flex', gap: 8, alignItems: 'baseline' }}>
-                                  <div style={{ fontWeight: 700 }}>{d.eventTitle}</div>
+                                  <div style={{ fontWeight: 700 }}>{t(d.eventTitle, { ns: 'story', defaultValue: d.eventTitle })}</div>
                                   <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{new Date(d.ts).toLocaleTimeString()}</div>
                                 </div>
-                                <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1' }}>{t('compendium.decisions.chosenLabel', { ns: 'ui' })} <span style={{ fontWeight: 700 }}>{d.choiceLabel}</span></div>
+                                <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1' }}>{t('compendium.decisions.chosenLabel', { ns: 'ui' })} <span style={{ fontWeight: 700 }}>{t(d.choiceLabel, { ns: 'story', defaultValue: d.choiceLabel })}</span></div>
                               </div>
                             ))}
                           </div>
