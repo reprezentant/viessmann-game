@@ -145,5 +145,136 @@
   "devices": {
     "onHouse": "Na domu:",
     "noDevices": "Brak urządzeń"
+  },
+  "compendium": {
+    "title": "📚 Kompendium wiedzy",
+    "close": "Zamknij",
+    "filters": {
+      "all": "Wszystko",
+      "heat": "Urządzenia grzewcze",
+      "support": "Urządzenia wspierające",
+      "history": "Historia",
+      "relations": "Relacje"
+    },
+    "sections": {
+      "heatDevices": "Urządzenia grzewcze dla Twojego domu",
+      "supportDevices": "Urządzenia wspierające",
+      "relations": "Relacje i opinie frakcji",
+      "history": "Historia i kamienie milowe",
+      "decisions": "Twoje decyzje fabularne"
+    },
+    "heat": {
+      "traditionalBoiler": {
+        "title": "Kocioł tradycyjny żeliwny",
+        "desc": "Duże zanieczyszczenie środowiska, wysoka wydajność."
+      },
+      "steelBoiler": {
+        "title": "Stalowy kocioł grzewczy (1917–1928)",
+        "desc": "Kotły ze spawanych rur stalowych – trwalsze, szybciej się nagrzewają i zużywają mniej paliwa niż tradycyjne."
+      },
+      "triola": {
+        "title": "Kocioł Triola (1957)",
+        "desc": "Stalowy piec z wbudowanym podgrzewaczem wody; łatwa konwersja z koksu na olej opałowy."
+      },
+      "parola": {
+        "title": "Kocioł na olej Parola (1965)",
+        "desc": "Niskie emisje zanieczyszczeń i wysoka sprawność."
+      },
+      "stainlessSteel": {
+        "title": "Pierwszy kocioł ze stali nierdzewnej (1972)",
+        "desc": "Lżejszy i wydajniejszy. Lepsza wymiana ciepła, mniej osadów, łatwiejsze czyszczenie. Prekursor kotłów kondensacyjnych."
+      },
+      "heatPump1978": {
+        "title": "Pierwsza pompa ciepła (1978)",
+        "desc": "Wykorzystuje energię z otoczenia (powietrza, gruntu) do celów grzewczych."
+      },
+      "vitola": {
+        "title": "Kocioł niskotemperaturowy Vitola (1978)",
+        "desc": "Biferral z podwójną stalowo‑żeliwną powierzchnią. Praca przy ~40°C zamiast ~70°C – dopasowanie do zapotrzebowania."
+      },
+      "vitodens": {
+        "title": "Kocioł gazowy Vitodens (1989)",
+        "desc": "Kondensacja pary wodnej ze spalin – wyższa sprawność i niższe emisje niż w tradycyjnych urządzeniach."
+      },
+      "vitocal": {
+        "title": "Pompa ciepła (Vitocal)",
+        "desc": "Wysoka efektywność i OZE. W grze odblokowuje zielone instalacje."
+      }
+    },
+    "support": {
+      "forest": {
+        "title": "Las",
+        "desc": "Silnie redukuje zanieczyszczenie (−0.5/s). Każdy kolejny jest droższy."
+      },
+      "solarCollector": {
+        "title": "Pierwszy kolektor słoneczny (1972)",
+        "desc": "Wykorzystanie energii odnawialnej ze słońca, redukując zużycie oleju czy gazu."
+      },
+      "condensing": {
+        "title": "Technologia kondensacyjna (Inox‑Radial)",
+        "desc": "Odblokowuje generację gazowych kotłów kondensacyjnych i zmniejsza emisje."
+      },
+      "underfloorHeating": {
+        "title": "Ogrzewanie podłogowe",
+        "desc": "Wyższy komfort przy niższej temperaturze zasilania – lepsza efektywność. Skraca działanie mrozu."
+      },
+      "thermostatsSRC": {
+        "title": "Termostaty SRC",
+        "desc": "Inteligentne sterowanie – dokładniejsza regulacja i oszczędności. Zwiększa generowanie zasobów."
+      },
+      "inverter": {
+        "title": "Inverter / magazyn (Vitocharge)",
+        "desc": "Magazynowanie i zarządzanie energią. Lepsze wykorzystanie produkcji. Zwiększa generowanie ViCoinów."
+      },
+      "grid": {
+        "title": "Grid",
+        "desc": "Przyłącze do sieci elektroenergetycznej – umożliwia wymianę energii. Zwiększa generowanie ViCoinów."
+      },
+      "vitovalor": {
+        "title": "Domowe ogniwo paliwowe Vitovalor (2014)",
+        "desc": "Z gazu ziemnego wytwarza prąd i ciepło bez tradycyjnego spalania (\"zimna\" reakcja utleniania wodoru)."
+      },
+      "rdLab": {
+        "title": "Laboratorium R&D",
+        "desc": "Jednorazowa inwestycja. Bardzo drogie, ale trwale zwiększa produkcję zasobów (+0.02 ☀️/💧/🌬️, +0.01 💰). Dostępne od początku gry."
+      }
+    },
+    "relations": {
+      "community": "Społeczność lokalna",
+      "suppliers": "Dostawcy",
+      "influences": "Wpływają:",
+      "communityDesc": "ogrody społeczne, czyste powietrze, decyzje pro‑ekologiczne.",
+      "suppliersDesc": "porozumienia handlowe, wspólne kampanie, niezależność.",
+      "communityInfo": "Informacja o relacji: Społeczność lokalna",
+      "suppliersInfo": "Informacja o relacji: Dostawcy",
+      "communityTooltip": "Co podnosi: sadzenie lasów, niska emisja smogu, decyzje pro‑eko (np. ogród społeczny, edukacja).\nCo obniża: odmowa wsparcia inicjatyw, wysoki smog.\nProgi korzyści: ≥25 – większa szansa na przychylne wydarzenia; ≥50 – mogą pojawiać się inicjatywy społeczne; ≤−25 – większe ryzyko krytyki i mniej korzystnych opcji.",
+      "suppliersTooltip": "Co podnosi: porozumienia (MoU), wspólne kampanie, dobre wyniki modernizacji.\nCo obniża: odrzucanie ofert, nastawienie na pełną niezależność.\nProgi korzyści: ≥10 – lepsze oferty; ≥25 – częstsze rabaty i follow‑upy; ≤−20 – część ofert może być zablokowana.",
+      "otherFactions": "Inne frakcje:"
+    },
+    "timeline": {
+      "ecoTrend": "Trendy eko‑reputacji",
+      "now": "Teraz:",
+      "lastMinutes": "Ostatnie ~5 minut gry.",
+      "steel1917": "1917–1928: Stalowe kotły",
+      "steel1917Desc": "Trwalsze, szybciej się nagrzewają, mniejsze zużycie paliwa.",
+      "triola1957": "1957: Triola",
+      "triola1957Desc": "Stalowy piec z podgrzewaczem – przełom wygody i bezpieczeństwa.",
+      "parola1965": "1965: Parola",
+      "parola1965Desc": "Niższe emisje i wysoka sprawność – krok ku czystości.",
+      "stainless1972": "1972: Stal nierdzewna",
+      "stainless1972Desc": "Lepsza wymiana ciepła, łatwiejsze czyszczenie – podstawa kondensacji.",
+      "heatPump1978": "1978: Pierwsza pompa ciepła",
+      "heatPump1978Desc": "Energia z otoczenia zmienia reguły gry.",
+      "vitola1978": "1978: Vitola niskotemperaturowa",
+      "vitola1978Desc": "Efektywność dzięki pracy w niższych temperaturach.",
+      "vitodens1989": "1989: Vitodens",
+      "vitodens1989Desc": "Kondensacja pary – wyższa sprawność, niższe emisje.",
+      "vitocal21st": "XXI w.: Vitocal i OZE",
+      "vitocal21stDesc": "Nowoczesne pompy ciepła i integracja OZE w domu."
+    },
+    "decisions": {
+      "noDecisions": "Brak zapisanych decyzji.",
+      "chosenLabel": "Wybrano:"
+    }
   }
 }

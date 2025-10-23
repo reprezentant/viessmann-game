@@ -146,5 +146,136 @@
   "devices": {
     "onHouse": "On house:",
     "noDevices": "No devices"
+  },
+  "compendium": {
+    "title": "📚 Knowledge Compendium",
+    "close": "Close",
+    "filters": {
+      "all": "All",
+      "heat": "Heating devices",
+      "support": "Supporting devices",
+      "history": "History",
+      "relations": "Relations"
+    },
+    "sections": {
+      "heatDevices": "Heating devices for your home",
+      "supportDevices": "Supporting devices",
+      "relations": "Faction relations and opinions",
+      "history": "History and milestones",
+      "decisions": "Your story decisions"
+    },
+    "heat": {
+      "traditionalBoiler": {
+        "title": "Traditional cast iron boiler",
+        "desc": "High environmental pollution, high efficiency."
+      },
+      "steelBoiler": {
+        "title": "Steel heating boiler (1917–1928)",
+        "desc": "Boilers made of welded steel pipes – more durable, heat up faster and use less fuel than traditional ones."
+      },
+      "triola": {
+        "title": "Triola boiler (1957)",
+        "desc": "Steel furnace with built-in water heater; easy conversion from coke to heating oil."
+      },
+      "parola": {
+        "title": "Parola oil boiler (1965)",
+        "desc": "Low emissions and high efficiency."
+      },
+      "stainlessSteel": {
+        "title": "First stainless steel boiler (1972)",
+        "desc": "Lighter and more efficient. Better heat exchange, less deposits, easier cleaning. Precursor to condensing boilers."
+      },
+      "heatPump1978": {
+        "title": "First heat pump (1978)",
+        "desc": "Uses energy from the environment (air, ground) for heating purposes."
+      },
+      "vitola": {
+        "title": "Low-temperature Vitola boiler (1978)",
+        "desc": "Biferral with dual steel-cast iron surface. Works at ~40°C instead of ~70°C – adapts to demand."
+      },
+      "vitodens": {
+        "title": "Vitodens gas boiler (1989)",
+        "desc": "Water vapor condensation from flue gases – higher efficiency and lower emissions than traditional devices."
+      },
+      "vitocal": {
+        "title": "Heat pump (Vitocal)",
+        "desc": "High efficiency and renewable energy. Unlocks green installations in-game."
+      }
+    },
+    "support": {
+      "forest": {
+        "title": "Forest",
+        "desc": "Strongly reduces pollution (−0.5/s). Each additional forest is more expensive."
+      },
+      "solarCollector": {
+        "title": "First solar collector (1972)",
+        "desc": "Harnessing renewable solar energy, reducing oil or gas consumption."
+      },
+      "condensing": {
+        "title": "Condensing technology (Inox‑Radial)",
+        "desc": "Unlocks generation of gas condensing boilers and reduces emissions."
+      },
+      "underfloorHeating": {
+        "title": "Underfloor heating",
+        "desc": "Higher comfort at lower supply temperature – better efficiency. Shortens frost duration."
+      },
+      "thermostatsSRC": {
+        "title": "SRC thermostats",
+        "desc": "Smart control – more precise regulation and savings. Increases resource generation."
+      },
+      "inverter": {
+        "title": "Inverter / storage (Vitocharge)",
+        "desc": "Energy storage and management. Better production utilization. Increases ViCoin generation."
+      },
+      "grid": {
+        "title": "Grid",
+        "desc": "Connection to power grid – enables energy exchange. Increases ViCoin generation."
+      },
+      "vitovalor": {
+        "title": "Vitovalor home fuel cell (2014)",
+        "desc": "Produces electricity and heat from natural gas without traditional combustion (\"cold\" hydrogen oxidation reaction)."
+      },
+      "rdLab": {
+        "title": "R&D Laboratory",
+        "desc": "One-time investment. Very expensive, but permanently increases resource production (+0.02 ☀️/💧/🌬️, +0.01 💰). Available from the start."
+      }
+    },
+    "relations": {
+      "community": "Local community",
+      "suppliers": "Suppliers",
+      "influences": "Influences:",
+      "communityDesc": "community gardens, clean air, pro-ecological decisions.",
+      "suppliersDesc": "trade agreements, joint campaigns, independence.",
+      "communityInfo": "Relation info: Local community",
+      "suppliersInfo": "Relation info: Suppliers",
+      "communityTooltip": "What raises: planting forests, low smog emissions, pro-eco decisions (e.g., community garden, education).\nWhat lowers: refusing to support initiatives, high smog.\nBenefit thresholds: ≥25 – higher chance of favorable events; ≥50 – community initiatives may appear; ≤−25 – higher risk of criticism and fewer favorable options.",
+      "suppliersTooltip": "What raises: agreements (MoU), joint campaigns, good modernization results.\nWhat lowers: rejecting offers, focus on full independence.\nBenefit thresholds: ≥10 – better offers; ≥25 – more frequent discounts and follow-ups; ≤−20 – some offers may be blocked.",
+      "otherFactions": "Other factions:"
+    },
+    "timeline": {
+      "ecoTrend": "Eco-reputation trends",
+      "now": "Now:",
+      "lastMinutes": "Last ~5 minutes of gameplay.",
+      "steel1917": "1917–1928: Steel boilers",
+      "steel1917Desc": "More durable, heat up faster, less fuel consumption.",
+      "triola1957": "1957: Triola",
+      "triola1957Desc": "Steel furnace with heater – breakthrough in convenience and safety.",
+      "parola1965": "1965: Parola",
+      "parola1965Desc": "Lower emissions and high efficiency – step towards cleanliness.",
+      "stainless1972": "1972: Stainless steel",
+      "stainless1972Desc": "Better heat exchange, easier cleaning – foundation of condensation.",
+      "heatPump1978": "1978: First heat pump",
+      "heatPump1978Desc": "Ambient energy changes the rules of the game.",
+      "vitola1978": "1978: Low-temp Vitola",
+      "vitola1978Desc": "Efficiency through operation at lower temperatures.",
+      "vitodens1989": "1989: Vitodens",
+      "vitodens1989Desc": "Vapor condensation – higher efficiency, lower emissions.",
+      "vitocal21st": "21st c.: Vitocal and renewable energy",
+      "vitocal21stDesc": "Modern heat pumps and renewable energy integration at home."
+    },
+    "decisions": {
+      "noDecisions": "No saved decisions.",
+      "chosenLabel": "Chosen:"
+    }
   }
 }

@@ -3425,22 +3425,22 @@ export default function ViessmannGame() {
             border: isDay ? "1px solid #e5e7eb" : "1px solid #334155"
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>📚 Kompendium wiedzy</h2>
+              <h2 style={{ margin: 0, fontSize: 24, fontWeight: 800 }}>{t('compendium.title', { ns: 'ui' })}</h2>
               <button 
                 onClick={() => setShowCompendium(false)}
                 style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: 4, color: isDay ? '#666' : '#94a3b8' }}
-                aria-label="Zamknij"
+                aria-label={t('compendium.close', { ns: 'ui' })}
               >✕</button>
             </div>
 
             {/* Filters */}
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
               {([
-                { k: 'all', label: 'Wszystko' },
-                { k: 'heat', label: 'Urządzenia grzewcze' },
-                { k: 'support', label: 'Urządzenia wspierające' },
-                { k: 'history', label: 'Historia' },
-                { k: 'relations', label: 'Relacje' },
+                { k: 'all', label: t('compendium.filters.all', { ns: 'ui' }) },
+                { k: 'heat', label: t('compendium.filters.heat', { ns: 'ui' }) },
+                { k: 'support', label: t('compendium.filters.support', { ns: 'ui' }) },
+                { k: 'history', label: t('compendium.filters.history', { ns: 'ui' }) },
+                { k: 'relations', label: t('compendium.filters.relations', { ns: 'ui' }) },
               ] as Array<{ k: 'all' | 'heat' | 'support' | 'history' | 'relations'; label: string }>).map(btn => (
                 <button key={btn.k}
                   onClick={() => setCompendiumFilter(btn.k)}
@@ -3481,49 +3481,41 @@ export default function ViessmannGame() {
               };
               const relTipText = (name: 'community' | 'suppliers') => {
                 if (name === 'community') {
-                  return [
-                    'Co podnosi: sadzenie lasów, niska emisja smogu, decyzje pro‑eko (np. ogród społeczny, edukacja).',
-                    'Co obniża: odmowa wsparcia inicjatyw, wysoki smog.',
-                    'Progi korzyści: ≥25 – większa szansa na przychylne wydarzenia; ≥50 – mogą pojawiać się inicjatywy społeczne; ≤−25 – większe ryzyko krytyki i mniej korzystnych opcji.'
-                  ].join('\n');
+                  return t('compendium.relations.communityTooltip', { ns: 'ui' });
                 }
                 // suppliers
-                return [
-                  'Co podnosi: porozumienia (MoU), wspólne kampanie, dobre wyniki modernizacji.',
-                  'Co obniża: odrzucanie ofert, nastawienie na pełną niezależność.',
-                  'Progi korzyści: ≥10 – lepsze oferty; ≥25 – częstsze rabaty i follow‑upy; ≤−20 – część ofert może być zablokowana.'
-                ].join('\n');
+                return t('compendium.relations.suppliersTooltip', { ns: 'ui' });
               };
 
               const heatItems = [
-                { icon: '🔥', title: 'Kocioł tradycyjny żeliwny', desc: 'Duże zanieczyszczenie środowiska, wysoka wydajność.' },
-                { icon: '🧰', title: 'Stalowy kocioł grzewczy (1917–1928)', desc: 'Kotły ze spawanych rur stalowych – trwalsze, szybciej się nagrzewają i zużywają mniej paliwa niż tradycyjne.' },
-                { icon: '♨️', title: 'Kocioł Triola (1957)', desc: 'Stalowy piec z wbudowanym podgrzewaczem wody; łatwa konwersja z koksu na olej opałowy.' },
-                { icon: '🛢️', title: 'Kocioł na olej Parola (1965)', desc: 'Niskie emisje zanieczyszczeń i wysoka sprawność.' },
-                { icon: '🧪', title: 'Pierwszy kocioł ze stali nierdzewnej (1972)', desc: 'Lżejszy i wydajniejszy. Lepsza wymiana ciepła, mniej osadów, łatwiejsze czyszczenie. Prekursor kotłów kondensacyjnych.' },
-                { icon: '🌀', title: 'Pierwsza pompa ciepła (1978)', desc: 'Wykorzystuje energię z otoczenia (powietrza, gruntu) do celów grzewczych.' },
-                { icon: '🌡️', title: 'Kocioł niskotemperaturowy Vitola (1978)', desc: 'Biferral z podwójną stalowo‑żeliwną powierzchnią. Praca przy ~40°C zamiast ~70°C – dopasowanie do zapotrzebowania.' },
-                { icon: '🔥💧', title: 'Kocioł gazowy Vitodens (1989)', desc: 'Kondensacja pary wodnej ze spalin – wyższa sprawność i niższe emisje niż w tradycyjnych urządzeniach.' },
-                { icon: '🔋', title: 'Pompa ciepła (Vitocal)', desc: 'Wysoka efektywność i OZE. W grze odblokowuje zielone instalacje.' },
+                { icon: '🔥', title: t('compendium.heat.traditionalBoiler.title', { ns: 'ui' }), desc: t('compendium.heat.traditionalBoiler.desc', { ns: 'ui' }) },
+                { icon: '🧰', title: t('compendium.heat.steelBoiler.title', { ns: 'ui' }), desc: t('compendium.heat.steelBoiler.desc', { ns: 'ui' }) },
+                { icon: '♨️', title: t('compendium.heat.triola.title', { ns: 'ui' }), desc: t('compendium.heat.triola.desc', { ns: 'ui' }) },
+                { icon: '🛢️', title: t('compendium.heat.parola.title', { ns: 'ui' }), desc: t('compendium.heat.parola.desc', { ns: 'ui' }) },
+                { icon: '🧪', title: t('compendium.heat.stainlessSteel.title', { ns: 'ui' }), desc: t('compendium.heat.stainlessSteel.desc', { ns: 'ui' }) },
+                { icon: '🌀', title: t('compendium.heat.heatPump1978.title', { ns: 'ui' }), desc: t('compendium.heat.heatPump1978.desc', { ns: 'ui' }) },
+                { icon: '🌡️', title: t('compendium.heat.vitola.title', { ns: 'ui' }), desc: t('compendium.heat.vitola.desc', { ns: 'ui' }) },
+                { icon: '🔥💧', title: t('compendium.heat.vitodens.title', { ns: 'ui' }), desc: t('compendium.heat.vitodens.desc', { ns: 'ui' }) },
+                { icon: '🔋', title: t('compendium.heat.vitocal.title', { ns: 'ui' }), desc: t('compendium.heat.vitocal.desc', { ns: 'ui' }) },
               ];
 
               const supportItems = [
-                { icon: '🌲', title: 'Las', desc: 'Silnie redukuje zanieczyszczenie (−0.5/s). Każdy kolejny jest droższy.' },
-                { icon: '☀️', title: 'Pierwszy kolektor słoneczny (1972)', desc: 'Wykorzystanie energii odnawialnej ze słońca, redukując zużycie oleju czy gazu.' },
-                { icon: '🧰', title: 'Technologia kondensacyjna (Inox‑Radial)', desc: 'Odblokowuje generację gazowych kotłów kondensacyjnych i zmniejsza emisje.' },
-                { icon: '🧱', title: 'Ogrzewanie podłogowe', desc: 'Wyższy komfort przy niższej temperaturze zasilania – lepsza efektywność. Skraca działanie mrozu.' },
-                { icon: '🌡️', title: 'Termostaty SRC', desc: 'Inteligentne sterowanie – dokładniejsza regulacja i oszczędności. Zwiększa generowanie zasobów.' },
-                { icon: '🔶', title: 'Inverter / magazyn (Vitocharge)', desc: 'Magazynowanie i zarządzanie energią. Lepsze wykorzystanie produkcji. Zwiększa generowanie ViCoinów.' },
-                { icon: '⚡', title: 'Grid', desc: 'Przyłącze do sieci elektroenergetycznej – umożliwia wymianę energii. Zwiększa generowanie ViCoinów.' },
-                { icon: '🧫', title: 'Domowe ogniwo paliwowe Vitovalor (2014)', desc: 'Z gazu ziemnego wytwarza prąd i ciepło bez tradycyjnego spalania ("zimna" reakcja utleniania wodoru).' },
-                { icon: '🧪', title: 'Laboratorium R&D', desc: 'Jednorazowa inwestycja. Bardzo drogie, ale trwale zwiększa produkcję zasobów (+0.02 ☀️/💧/🌬️, +0.01 💰). Dostępne od początku gry.' },
+                { icon: '🌲', title: t('compendium.support.forest.title', { ns: 'ui' }), desc: t('compendium.support.forest.desc', { ns: 'ui' }) },
+                { icon: '☀️', title: t('compendium.support.solarCollector.title', { ns: 'ui' }), desc: t('compendium.support.solarCollector.desc', { ns: 'ui' }) },
+                { icon: '🧰', title: t('compendium.support.condensing.title', { ns: 'ui' }), desc: t('compendium.support.condensing.desc', { ns: 'ui' }) },
+                { icon: '🧱', title: t('compendium.support.underfloorHeating.title', { ns: 'ui' }), desc: t('compendium.support.underfloorHeating.desc', { ns: 'ui' }) },
+                { icon: '🌡️', title: t('compendium.support.thermostatsSRC.title', { ns: 'ui' }), desc: t('compendium.support.thermostatsSRC.desc', { ns: 'ui' }) },
+                { icon: '🔶', title: t('compendium.support.inverter.title', { ns: 'ui' }), desc: t('compendium.support.inverter.desc', { ns: 'ui' }) },
+                { icon: '⚡', title: t('compendium.support.grid.title', { ns: 'ui' }), desc: t('compendium.support.grid.desc', { ns: 'ui' }) },
+                { icon: '🧫', title: t('compendium.support.vitovalor.title', { ns: 'ui' }), desc: t('compendium.support.vitovalor.desc', { ns: 'ui' }) },
+                { icon: '🧪', title: t('compendium.support.rdLab.title', { ns: 'ui' }), desc: t('compendium.support.rdLab.desc', { ns: 'ui' }) },
               ];
 
               return (
                 <div>
                   {(compendiumFilter === 'all' || compendiumFilter === 'heat') && (
                     <div>
-                      {sectionTitle('Urządzenia grzewcze dla Twojego domu')}
+                      {sectionTitle(t('compendium.sections.heatDevices', { ns: 'ui' }))}
                       <div style={{ display: 'grid', gap: 10 }}>
                         {heatItems.map((it, i) => <Card key={i} icon={it.icon} title={it.title} desc={it.desc} />)}
                       </div>
@@ -3532,7 +3524,7 @@ export default function ViessmannGame() {
 
                   {(compendiumFilter === 'all' || compendiumFilter === 'support') && (
                     <div style={{ marginTop: 16 }}>
-                      {sectionTitle('Urządzenia wspierające')}
+                      {sectionTitle(t('compendium.sections.supportDevices', { ns: 'ui' }))}
                       <div style={{ display: 'grid', gap: 10 }}>
                         {supportItems.map((it, i) => <Card key={i} icon={it.icon} title={it.title} desc={it.desc} />)}
                       </div>
@@ -3541,18 +3533,18 @@ export default function ViessmannGame() {
 
                   {(compendiumFilter === 'all' || compendiumFilter === 'relations') && (
                     <div style={{ marginTop: 16 }}>
-                      {sectionTitle('Relacje i opinie frakcji')}
+                      {sectionTitle(t('compendium.sections.relations', { ns: 'ui' }))}
                       <div style={{ display: 'grid', gap: 10 }}>
                         <div style={{ padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ fontWeight: 700 }}>Społeczność lokalna</div>
+                            <div style={{ fontWeight: 700 }}>{t('compendium.relations.community', { ns: 'ui' })}</div>
                             <span
                               onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setRelTip({ left: r.left + r.width / 2, top: r.bottom + 8, text: relTipText('community') }); }}
                               onMouseLeave={() => setRelTip(null)}
                               onFocus={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setRelTip({ left: r.left + r.width / 2, top: r.bottom + 8, text: relTipText('community') }); }}
                               onBlur={() => setRelTip(null)}
                               tabIndex={0}
-                              aria-label="Informacja o relacji: Społeczność lokalna"
+                              aria-label={t('compendium.relations.communityInfo', { ns: 'ui' })}
                               style={{ marginLeft: 2, cursor: 'help' }}
                             >
                               <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
@@ -3561,19 +3553,19 @@ export default function ViessmannGame() {
                           </div>
                           <div style={{ marginTop: 6 }}><Bar v={rel('community')} /></div>
                           <div style={{ fontSize: 13, color: isDay ? '#475569' : '#94a3b8', marginTop: 6 }}>
-                            Wpływają: ogrody społeczne, czyste powietrze, decyzje pro‑ekologiczne.
+                            {t('compendium.relations.influences', { ns: 'ui' })} {t('compendium.relations.communityDesc', { ns: 'ui' })}
                           </div>
                         </div>
                         <div style={{ padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{ fontWeight: 700 }}>Dostawcy</div>
+                            <div style={{ fontWeight: 700 }}>{t('compendium.relations.suppliers', { ns: 'ui' })}</div>
                             <span
                               onMouseEnter={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setRelTip({ left: r.left + r.width / 2, top: r.bottom + 8, text: relTipText('suppliers') }); }}
                               onMouseLeave={() => setRelTip(null)}
                               onFocus={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); setRelTip({ left: r.left + r.width / 2, top: r.bottom + 8, text: relTipText('suppliers') }); }}
                               onBlur={() => setRelTip(null)}
                               tabIndex={0}
-                              aria-label="Informacja o relacji: Dostawcy"
+                              aria-label={t('compendium.relations.suppliersInfo', { ns: 'ui' })}
                               style={{ marginLeft: 2, cursor: 'help' }}
                             >
                               <span style={{ fontSize: 16, color: theme.tone.info, fontWeight: 700, verticalAlign: 'middle' }}>ℹ️</span>
@@ -3582,12 +3574,12 @@ export default function ViessmannGame() {
                           </div>
                           <div style={{ marginTop: 6 }}><Bar v={rel('suppliers')} /></div>
                           <div style={{ fontSize: 13, color: isDay ? '#475569' : '#94a3b8', marginTop: 6 }}>
-                            Wpływają: porozumienia handlowe, wspólne kampanie, niezależność.
+                            {t('compendium.relations.influences', { ns: 'ui' })} {t('compendium.relations.suppliersDesc', { ns: 'ui' })}
                           </div>
                         </div>
                         {Object.keys(factions).filter(k => k !== 'community' && k !== 'suppliers').length > 0 && (
                           <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>
-                            Inne frakcje: {Object.keys(factions).filter(k => k !== 'community' && k !== 'suppliers').map(k => `${k} (${rel(k)})`).join(', ')}
+                            {t('compendium.relations.otherFactions', { ns: 'ui' })} {Object.keys(factions).filter(k => k !== 'community' && k !== 'suppliers').map(k => `${k} (${rel(k)})`).join(', ')}
                           </div>
                         )}
                       </div>
@@ -3596,15 +3588,15 @@ export default function ViessmannGame() {
 
                   {(compendiumFilter === 'all' || compendiumFilter === 'history') && (
                     <div style={{ marginTop: 16 }}>
-                      {sectionTitle('Historia i kamienie milowe')} 
+                      {sectionTitle(t('compendium.sections.history', { ns: 'ui' }))} 
                       <div style={{ display: 'grid', gap: 10 }}>
                         {/* Eco‑reputation trend */}
                         {ecoRepHistory.length >= 2 && (
                           <div style={{ padding: 12, borderRadius: 12, background: isDay ? '#f9fafb' : '#111827', border: isDay ? '1px solid #e5e7eb' : '1px solid #334155' }}>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                              <div style={{ fontWeight: 700 }}>Trendy eko‑reputacji</div>
+                              <div style={{ fontWeight: 700 }}>{t('compendium.timeline.ecoTrend', { ns: 'ui' })}</div>
                               <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>
-                                Teraz: {ecoRep}/100 {ecoRepTrend !== 0 && (
+                                {t('compendium.timeline.now', { ns: 'ui' })} {ecoRep}/100 {ecoRepTrend !== 0 && (
                                   <span style={{ marginLeft: 6, color: ecoRepTrend > 0 ? (isDay ? '#166534' : '#86efac') : (isDay ? '#991b1b' : '#fecaca') }}>
                                     {ecoRepTrend > 0 ? '▲' : '▼'} {Math.abs(ecoRepTrend)}
                                   </span>
@@ -3627,22 +3619,22 @@ export default function ViessmannGame() {
                                 </svg>
                               );
                             })()}
-                            <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>Ostatnie ~5 minut gry.</div>
+                            <div style={{ fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{t('compendium.timeline.lastMinutes', { ns: 'ui' })}</div>
                           </div>
                         )}
-                        <Card icon="🔩" title="1917–1928: Stalowe kotły" desc="Trwalsze, szybciej się nagrzewają, mniejsze zużycie paliwa." />
-                        <Card icon="🔥" title="1957: Triola" desc="Stalowy piec z podgrzewaczem – przełom wygody i bezpieczeństwa." />
-                        <Card icon="🛢️" title="1965: Parola" desc="Niższe emisje i wysoka sprawność – krok ku czystości." />
-                        <Card icon="🧪" title="1972: Stal nierdzewna" desc="Lepsza wymiana ciepła, łatwiejsze czyszczenie – podstawa kondensacji." />
-                        <Card icon="🌀" title="1978: Pierwsza pompa ciepła" desc="Energia z otoczenia zmienia reguły gry." />
-                        <Card icon="♨️" title="1978: Vitola niskotemperaturowa" desc="Efektywność dzięki pracy w niższych temperaturach." />
-                        <Card icon="🔥💧" title="1989: Vitodens" desc="Kondensacja pary – wyższa sprawność, niższe emisje." />
-                        <Card icon="🔋" title="XXI w.: Vitocal i OZE" desc="Nowoczesne pompy ciepła i integracja OZE w domu." />
+                        <Card icon="🔩" title={t('compendium.timeline.steel1917', { ns: 'ui' })} desc={t('compendium.timeline.steel1917Desc', { ns: 'ui' })} />
+                        <Card icon="🔥" title={t('compendium.timeline.triola1957', { ns: 'ui' })} desc={t('compendium.timeline.triola1957Desc', { ns: 'ui' })} />
+                        <Card icon="🛢️" title={t('compendium.timeline.parola1965', { ns: 'ui' })} desc={t('compendium.timeline.parola1965Desc', { ns: 'ui' })} />
+                        <Card icon="🧪" title={t('compendium.timeline.stainless1972', { ns: 'ui' })} desc={t('compendium.timeline.stainless1972Desc', { ns: 'ui' })} />
+                        <Card icon="🌀" title={t('compendium.timeline.heatPump1978', { ns: 'ui' })} desc={t('compendium.timeline.heatPump1978Desc', { ns: 'ui' })} />
+                        <Card icon="♨️" title={t('compendium.timeline.vitola1978', { ns: 'ui' })} desc={t('compendium.timeline.vitola1978Desc', { ns: 'ui' })} />
+                        <Card icon="🔥💧" title={t('compendium.timeline.vitodens1989', { ns: 'ui' })} desc={t('compendium.timeline.vitodens1989Desc', { ns: 'ui' })} />
+                        <Card icon="🔋" title={t('compendium.timeline.vitocal21st', { ns: 'ui' })} desc={t('compendium.timeline.vitocal21stDesc', { ns: 'ui' })} />
                         {/* Story Decisions sub-section */}
                         <div style={{ height: 1, background: isDay ? '#e5e7eb' : '#334155', margin: '10px 0' }} />
-                        {sectionTitle('Twoje decyzje fabularne')}
+                        {sectionTitle(t('compendium.sections.decisions', { ns: 'ui' }))}
                         {storyDecisions.length === 0 ? (
-                          <div style={{ fontSize: 13, color: isDay ? '#64748b' : '#94a3b8' }}>Brak zapisanych decyzji.</div>
+                          <div style={{ fontSize: 13, color: isDay ? '#64748b' : '#94a3b8' }}>{t('compendium.decisions.noDecisions', { ns: 'ui' })}</div>
                         ) : (
                           <div style={{ display: 'grid', gap: 8 }}>
                             {storyDecisions.slice(0, 12).map(d => (
@@ -3651,7 +3643,7 @@ export default function ViessmannGame() {
                                   <div style={{ fontWeight: 700 }}>{d.eventTitle}</div>
                                   <div style={{ marginLeft: 'auto', fontSize: 12, color: isDay ? '#64748b' : '#94a3b8' }}>{new Date(d.ts).toLocaleTimeString()}</div>
                                 </div>
-                                <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1' }}>Wybrano: <span style={{ fontWeight: 700 }}>{d.choiceLabel}</span></div>
+                                <div style={{ fontSize: 13, color: isDay ? '#334155' : '#cbd5e1' }}>{t('compendium.decisions.chosenLabel', { ns: 'ui' })} <span style={{ fontWeight: 700 }}>{d.choiceLabel}</span></div>
                               </div>
                             ))}
                           </div>
