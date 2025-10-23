@@ -2382,7 +2382,7 @@ export default function ViessmannGame() {
                   style={{ ...miniPillBase, paddingRight: 10 }}
                 >
                   <span style={{ fontSize: 16, lineHeight: 1 }}>{isDay ? '☀️' : '🌙'}</span>
-                  <span>{isDay ? 'Dzień' : 'Noc'}</span>
+                  <span>{isDay ? t('ui.dayTime', { ns: 'ui' }) : t('ui.nightTime', { ns: 'ui' })}</span>
                 </div>
                 <div
                   role="group"
