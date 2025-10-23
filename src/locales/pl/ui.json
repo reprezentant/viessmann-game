@@ -24,14 +24,15 @@
     "achievementsPercent": "{{pct}}% ukończono"
   },
   "journal": {
-    "filterAll": "Wszystko",
+    "filterAll": "Wszystkie",
     "filterPurchase": "Zakupy",
-    "filterPlacement": "Ustawienia",
+    "filterPlacement": "Umieszczenia",
     "filterMission": "Misje",
     "filterWeather": "Pogoda",
     "filterAchievement": "Osiągnięcia",
     "filterMilestone": "Kamienie milowe",
-    "noEntries": "Brak wpisów"
+    "noEntries": "Brak wpisów",
+    "clear": "Wyczyść"
   },
   "settings": {
     "title": "Ustawienia",

@@ -3731,7 +3731,7 @@ export default function ViessmannGame() {
                     border: isDay ? '1px solid #e5e7eb' : '1px solid #334155', 
                     borderRadius: 8, padding: '6px 10px', cursor: 'pointer', fontSize: 12 
                   }}
-                >Wyczyść</button>
+                >{t('journal.clear', { ns: 'ui' })}</button>
                 <button 
                   onClick={() => setShowLog(false)}
                   style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', padding: 4, color: isDay ? '#666' : '#94a3b8' }}

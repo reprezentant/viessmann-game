@@ -31,7 +31,8 @@
     "filterWeather": "Weather",
     "filterAchievement": "Achievements",
     "filterMilestone": "Milestones",
-    "noEntries": "No entries"
+    "noEntries": "No entries",
+    "clear": "Clear"
   },
   "settings": {
     "title": "Settings",
