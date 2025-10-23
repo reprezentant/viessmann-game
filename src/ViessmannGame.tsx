@@ -1785,11 +1785,7 @@ export default function ViessmannGame() {
     justifyContent: "space-between",
     gap: 16,
     borderBottom: `1px solid ${theme.headerBorder}`,
-    background: isDay 
-      ? 'rgba(250, 247, 242, 0.88)' 
-      : 'rgba(15, 23, 42, 0.85)',
-    backdropFilter: 'blur(12px)',
-    WebkitBackdropFilter: 'blur(12px)',
+    background: theme.headerBg,
     padding: "12px 18px 12px 32px",
     boxShadow: theme.headerShadow,
     zIndex: 200
@@ -1949,11 +1945,7 @@ export default function ViessmannGame() {
   }, [weatherEvent, pushLog, t]);
   const card: React.CSSProperties = {
     borderRadius: 16,
-    background: isDay 
-      ? 'rgba(253, 251, 247, 0.94)' 
-      : 'rgba(15, 23, 42, 0.92)',
-    backdropFilter: 'blur(16px)',
-    WebkitBackdropFilter: 'blur(16px)',
+    background: theme.cardBg,
     padding: 14,
     border: `1px solid ${theme.cardBorder}`,
     boxShadow: theme.cardShadow,
@@ -1975,11 +1967,7 @@ export default function ViessmannGame() {
     alignItems: 'center',
     gap: 8,
     borderRadius: 12,
-    background: isDay 
-      ? 'rgba(255, 252, 245, 0.92)' 
-      : 'rgba(30, 41, 59, 0.9)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+    background: theme.pillBg,
     padding: '4px 10px',
     paddingLeft: 8,
     minWidth: 72,
@@ -2056,7 +2044,7 @@ export default function ViessmannGame() {
       backgroundSize: "cover",
       backgroundPosition: "center",
       backgroundRepeat: "no-repeat",
-      opacity: 0.5,
+      opacity: 0.25,
       zIndex: -2,
       transition: "opacity 0.8s ease-in-out"
     }} />
@@ -2065,8 +2053,8 @@ export default function ViessmannGame() {
       position: "fixed",
       inset: 0,
       background: isDay 
-        ? "linear-gradient(to bottom, rgba(250,247,242,0.25) 0%, rgba(245,240,230,0.55) 100%)"
-        : "linear-gradient(to bottom, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.7) 100%)",
+        ? "linear-gradient(to bottom, rgba(250,247,242,0.6) 0%, rgba(245,240,230,0.8) 100%)"
+        : "linear-gradient(to bottom, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.85) 100%)",
       zIndex: -1,
       transition: "background 0.8s ease-in-out"
     }} />
