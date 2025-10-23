@@ -1,4 +1,5 @@
 import type { StoryEvent, StoryChoice } from '../lib/story';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
   event: StoryEvent | null;
@@ -8,6 +9,7 @@ type Props = {
 };
 
 export function StoryModal({ event, onChoose, onClose, isDay = true }: Props) {
+  const { t } = useTranslation('ui');
   if (!event) return null;
   const bg = isDay ? 'white' : '#0f172a';
   const fg = isDay ? '#0f172a' : '#e5e7eb';
@@ -28,7 +30,7 @@ export function StoryModal({ event, onChoose, onClose, isDay = true }: Props) {
               {c.label}
             </button>
           ))}
-          <button onClick={onClose} style={{ padding: '8px 10px', borderRadius: 10, border: `1px solid ${border}`, background: closeBg, color: closeFg, marginLeft: 'auto', cursor: 'pointer' }}>Zamknij</button>
+          <button onClick={onClose} style={{ padding: '8px 10px', borderRadius: 10, border: `1px solid ${border}`, background: closeBg, color: closeFg, marginLeft: 'auto', cursor: 'pointer' }}>{t('ui.close')}</button>
         </div>
       </div>
     </div>

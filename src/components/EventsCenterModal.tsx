@@ -18,7 +18,7 @@ type Props = {
 };
 
 export default function EventsCenterModal({ open, events, discount, onClose, onChoose, isDay = true }: Props) {
-  const { t } = useTranslation('story');
+  const { t } = useTranslation(['story', 'ui']);
   if (!open) return null;
   const tr = (keyOrText: string) => t(keyOrText, { ns: 'story', defaultValue: keyOrText });
   return (
@@ -26,7 +26,7 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
       className="events-modal-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="Centrum wydarzeń"
+      aria-label={t('events.altText', { ns: 'ui' })}
       onClick={(e) => {
         if (e.currentTarget === e.target) onClose();
       }}
@@ -38,7 +38,7 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
       >
         <div className="events-modal__header">
           <div className="events-modal__title">{t('eventsCenterTitle', { defaultValue: 'Centrum wydarzeń' })}</div>
-          <button type="button" className="events-modal__close" onClick={onClose} aria-label="Zamknij">
+          <button type="button" className="events-modal__close" onClick={onClose} aria-label={t('ui.close', { ns: 'ui' })}>
             ✕
           </button>
         </div>
