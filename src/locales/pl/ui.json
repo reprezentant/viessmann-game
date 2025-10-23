@@ -2,7 +2,11 @@
   "profile": {
     "achievements": "Osiągnięcia",
     "journal": "Dziennik",
-    "compendium": "Kompedium wiedzy"
+    "compendium": "Kompedium wiedzy",
+    "achievementPrefix": "Osiągnięcie:",
+    "newAchievement": "Nowe osiągnięcie: {{name}}",
+    "achievementsProgress": "Postęp: {{completed}}/{{total}}",
+    "achievementsPercent": "{{pct}}% ukończono"
   },
   "settings": {
     "title": "Ustawienia",
@@ -16,5 +20,69 @@
   },
   "header": {
     "myProfile": "Mój profil"
+  }
+  ,
+  "tile": {
+    "home": "Dom",
+    "empty": "Pusty kafelek",
+    "placePrefix": "Postaw: ",
+    "cannotHere": "Nie można tutaj: "
+  }
+  ,
+  "controls": {
+    "escCancel": "Esc: anuluj"
+  }
+  ,
+  "shop": {
+    "owned": "Posiadane",
+    "cost": "Koszt",
+    "done": "Zrobione",
+    "buy": "Kup",
+    "outOfResources": "Brak zasobów",
+    "missing": "Brak zasobów",
+    "clickTile": "Kliknij kafelek…",
+    "forestEdge": "Tylko na obrzeżach",
+    "forestEdgeTitle": "Las można sadzić wyłącznie na skraju mapy (zewnętrzny pierścień).",
+    "forestPriceScaleTitle": "Każdy kolejny las jest droższy o +8 ☀️ i +8 💧.",
+    "forestPriceScale": "Cena rośnie: +8 ☀️ +8 💧 za każdy posiadany las",
+    "youHave": "masz {{count}}",
+    "solarPriceScaleTitle": "Każdy kolejny panel PV drożeje geometrycznie (+15% od bazowej ceny za każdą posiadaną sztukę).",
+    "solarPriceScale": "Cena rośnie: ~+15% względem bazowej za każdy posiadany panel.",
+    "eChargerPriceScaleTitle": "Każdy kolejny E‑Charger drożeje geometrycznie (+18% od bazowej ceny za każdą posiadaną sztukę).",
+    "eChargerPriceScale": "Cena rośnie: ~+18% względem bazowej za każdy posiadany E‑Charger."
+  },
+  "missions": {
+    "completedAlt": "ukończone",
+    "completed": "Ukończono misję: {{title}}"
+  },
+  "build": {
+    "started": "Rozpoczęto budowę: {{name}}",
+    "startedShort": "Budowa rozpoczęta: {{name}}",
+    "finished": "Budowa ukończona: {{name}}",
+    "finishedPrefix": "Ukończono:"
+  },
+  "smog": {
+    "low": "Smog niski – pełna produkcja.",
+    "warning": "Uwaga: wzrost smogu – niewielka kara produkcji.",
+    "high": "Wysoki smog – silna kara produkcji.",
+    "critical": "Krytyczny smog – produkcja mocno ograniczona.",
+    "levelChanged": "Poziom smogu zmieniony"
+  },
+  "eco": {
+    "title": "Eko‑reputacja",
+    "level": "Poziom: {{value}}/100",
+    "formula": "Formuła: 100 − smog ({{smog}}) + min(20, 5×lasy={{forestBonus}})",
+    "coinBonus": "Bonus monet: +{{pct}}% (czyste powietrze)",
+    "coinBonusZero": "Bonus monet: 0% (smog zbyt wysoki)",
+    "howToImprove": "Jak poprawić: sadź lasy 🌲, wymień kocioł na czystszy, ogranicz smog.",
+    "effect": "Efekt: wpływa na wydarzenia i premię do ViCoins.",
+    "low": "Niska eko‑reputacja – rozważ sadzenie lasów i czystsze źródła.",
+    "mid": "Średnia eko‑reputacja – idzie ku lepszemu.",
+    "high": "Wysoka eko‑reputacja – społeczność jest zachwycona!",
+    "changed": "Zmiana eko‑reputacji"
+  },
+  "milestone": {
+    "title": "Kamień milowy: {{label}} {{value}}",
+    "description": "Osiągnięto poziom {{value}} dla {{label}}."
   }
 }

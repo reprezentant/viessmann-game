@@ -2,7 +2,11 @@
   "profile": {
     "achievements": "Achievements",
     "journal": "Journal",
-    "compendium": "Compendium"
+    "compendium": "Compendium",
+    "achievementPrefix": "Achievement:",
+    "newAchievement": "New achievement: {{name}}",
+    "achievementsProgress": "Progress: {{completed}}/{{total}}",
+    "achievementsPercent": "{{pct}}% completed"
   },
   "settings": {
     "title": "Settings",
@@ -16,5 +20,70 @@
   },
   "header": {
     "myProfile": "My profile"
+  }
+  ,
+  "tile": {
+    "home": "House",
+    "empty": "Empty tile",
+    "placePrefix": "Place: ",
+    "cannotHere": "Cannot place here: "
+  }
+  ,
+  "controls": {
+    "escCancel": "Esc: cancel"
+  }
+  ,
+  "shop": {
+    "owned": "Owned",
+    "cost": "Cost",
+    "done": "Done",
+    "buy": "Buy",
+    "outOfResources": "Out of resources",
+    "missing": "Missing resources",
+    "clickTile": "Click a tile…",
+    "forestEdge": "Only on edges",
+    "forestEdgeTitle": "Forests can only be planted on the map edge (outer ring).",
+    "forestPriceScaleTitle": "Each additional forest increases price by +8 ☀️ and +8 💧.",
+    "forestPriceScale": "Price increases: +8 ☀️ +8 💧 per owned forest",
+    "youHave": "you have {{count}}",
+    "solarPriceScaleTitle": "Each additional PV panel scales price geometrically (~+15% per owned unit).",
+    "solarPriceScale": "Price increases: ~+15% vs base per owned panel.",
+    "eChargerPriceScaleTitle": "Each additional E‑Charger scales price geometrically (~+18% per owned unit).",
+    "eChargerPriceScale": "Price increases: ~+18% vs base per owned E‑Charger."
+  }
+  ,
+  "missions": {
+    "completedAlt": "completed",
+    "completed": "Mission completed: {{title}}"
+  },
+  "build": {
+    "started": "Construction started: {{name}}",
+    "startedShort": "Build started: {{name}}",
+    "finished": "Construction complete: {{name}}",
+    "finishedPrefix": "Completed:"
+  },
+  "smog": {
+    "low": "Low smog – full production.",
+    "warning": "Warning: smog rising – slight production penalty.",
+    "high": "High smog – severe production penalty.",
+    "critical": "Critical smog – production heavily limited.",
+    "levelChanged": "Smog level changed"
+  },
+  "eco": {
+    "title": "Eco-reputation",
+    "level": "Level: {{value}}/100",
+    "formula": "Formula: 100 − smog ({{smog}}) + min(20, 5×forests={{forestBonus}})",
+    "coinBonus": "Coin bonus: +{{pct}}% (clean air)",
+    "coinBonusZero": "Coin bonus: 0% (smog too high)",
+    "howToImprove": "How to improve: plant forests 🌲, upgrade to cleaner boiler, reduce smog.",
+    "effect": "Effect: influences events and ViCoin bonus.",
+    "low": "Low eco-reputation – consider planting forests and cleaner sources.",
+    "mid": "Medium eco-reputation – improving.",
+    "high": "High eco-reputation – community is thrilled!",
+    "changed": "Eco-reputation changed"
+  },
+  "milestone": {
+    "title": "Milestone: {{label}} {{value}}",
+    "description": "Reached level {{value}} for {{label}}."
   }
 }

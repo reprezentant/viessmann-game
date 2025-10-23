@@ -1,0 +1,235 @@
+{
+  "aid-package": {
+    "title": "Aid package",
+    "text": "Local partners offer emergency support. Choose what you need most.",
+    "choices": {
+      "aid-sun": "Test panel kit (+12 ☀️)",
+      "aid-water": "Emergency tanks (+12 💧)",
+      "aid-wind": "Service turbine (+12 🌬️)",
+      "aid-coins": "Budget voucher (+10 ViCoins)"
+    },
+    "toasts": {
+      "aid-sun": "Received emergency panels: +12 ☀️",
+      "aid-water": "Tanks delivered: +12 💧",
+      "aid-wind": "Temporary turbine: +12 🌬️",
+      "aid-coins": "Received 10 ViCoins."
+    }
+  },
+  "community-garden-proposal": {
+    "title": "Community garden",
+    "text": "Residents propose creating a community garden by the forest. It'll strengthen local ties and ecological awareness.",
+    "choices": {
+      "support-garden": "Support initiative (−4 pollution, +community opinion)",
+      "no-budget": "No budget (+8 ViCoins, −community opinion)"
+    },
+    "toasts": {
+      "support-garden": "A community garden is coming.",
+      "no-budget": "Garden support declined."
+    }
+  },
+  "eco-champion-award": {
+    "title": "Green Leader Award",
+    "text": "Your pro-environment actions were recognized. You can allocate the award to a modernization promo or to the budget.",
+    "choices": {
+      "award-promo": "Modernization promo (−18% prices for 75 s)",
+      "award-coins": "Add to budget (+20 ViCoins)"
+    },
+    "toasts": {
+      "award-promo": "Green Leader: −18% prices for 75 seconds.",
+      "award-coins": "Award granted: +20 ViCoins."
+    }
+  }
+  ,
+  "supplier-mou": {
+    "title": "Supplier memorandum",
+    "text": "A supplier proposes a memorandum of understanding. In exchange for brand promotion – better terms on modernizations.",
+    "choices": {
+      "sign": "Sign (−10% prices for 75 s, +supplier opinion)",
+      "decline": "Decline (+10 ViCoins, −supplier opinion)"
+    },
+    "toasts": {
+      "sign": "Signed memorandum with supplier.",
+      "decline": "Maintained independence."
+    }
+  },
+  "supplier-mou-commitment": {
+    "title": "Commitment from memorandum",
+    "text": "The partner asks for campaign support according to the memorandum terms. You can contribute now or risk cooling relations.",
+    "choices": {
+      "commit-pay": "Support campaign (−12 ViCoins, +supplier opinion)",
+      "commit-defer": "Defer (−supplier opinion, +8% price for 45 s)"
+    },
+    "toasts": {
+      "commit-pay": "Fulfilled commitment (−12 ViCoins).",
+      "commit-defer": "Delay temporarily worsens conditions (+8% prices)."
+    }
+  },
+  "community-protest": {
+    "title": "Residents' discontent",
+    "text": "Some residents criticize recent decisions. You can organize consultations or ignore the dissenting voices.",
+    "choices": {
+      "hold-consult": "Consultations and small fixes (−8 ViCoins, −3 pollution)",
+      "ignore": "Ignore (+5 ViCoins now, +6 pollution)"
+    },
+    "toasts": {
+      "hold-consult": "Consultations held: small improvements.",
+      "ignore": "Ignored residents – short-term gains."
+    }
+  },
+  "press-critique": {
+    "title": "Press critique",
+    "text": "Media point to poor air quality and lack of action. Shops raise parts and service prices.",
+    "choices": {
+      "accept": "Keep going (+8% price for 45 s)",
+      "counter": "Counter campaign (−10 ViCoins, −4 pollution)"
+    },
+    "toasts": {
+      "accept": "Temporarily higher prices (+8%).",
+      "counter": "Counter campaign: quick corrective actions."
+    }
+  },
+  "supplier-delay": {
+    "title": "Delivery delays",
+    "text": "Suppliers signal logistic issues. Poor relations don't help. You have two options.",
+    "choices": {
+      "pay-expedite": "Pay to expedite (−10 ViCoins)",
+      "wait-longer": "Wait it out (−6% prices for 30 s later)"
+    },
+    "toasts": {
+      "pay-expedite": "Paid to expedite deliveries.",
+      "wait-longer": "Delay compensation active: a small discount."
+    }
+  },
+  "municipal-partnership": {
+    "title": "Municipal partnership",
+    "text": "The municipality proposes cooperation on a modernization campaign. You can focus on education or obtain co-funding for upgrades.",
+    "choices": {
+      "education": "Educate residents (−6 pollution)",
+      "cofund": "Co-funding (−12% prices for 60 s)"
+    },
+    "toasts": {
+      "education": "Education campaign reduced pollution (−6).",
+      "cofund": "Co-funding: −12% prices for 60 seconds."
+    }
+  },
+  "compliance-plan": {
+    "title": "Compliance plan",
+    "text": "High pollution levels attract regulator attention. They propose a remediation plan or you can defer actions at the risk of further air quality decline.",
+    "choices": {
+      "accept-plan": "Implement plan (−8 pollution, −8% prices for 45 s)",
+      "defer-actions": "Defer actions (+10 ViCoins, +3 pollution)"
+    },
+    "toasts": {
+      "accept-plan": "Compliance plan activated: −8 pollution, −8% prices.",
+      "defer-actions": "Actions deferred: +10 ViCoins, +3 pollution."
+    }
+  },
+  "winter-prep-supplies": {
+    "title": "Winter supplies",
+    "text": "Frost is coming. You can secure supplies and negotiate discounts for upgrades or gamble and save now.",
+    "choices": {
+      "secure-deal": "Secure supplies (−12% prices for 60 s)",
+      "save-now": "Save now (+10 ViCoins, +0.02 pollution/s for 20 s)"
+    },
+    "toasts": {
+      "secure-deal": "Winter supplies: −12% prices for 60 seconds.",
+      "save-now": "Received 10 ViCoins. Watch out for short-term emissions."
+    }
+  },
+  "retrofit-fair-invite": {
+    "title": "Invitation to retrofit fair",
+    "text": "You receive an invitation to a local retrofit fair. Participating may bring benefits.",
+    "choices": {
+      "attend": "Attend (−5 pollution, set flag)",
+      "skip": "Skip (+6 ViCoins)"
+    },
+    "toasts": {
+      "attend": "You attended the retrofit fair.",
+      "skip": "Invitation skipped."
+    }
+  },
+  "retrofit-fair-followup": {
+    "title": "Follow-up after fair",
+    "text": "Organizers propose a joint info campaign in your area.",
+    "choices": {
+      "campaign": "Let's do it! (−8% prices for 60 s)",
+      "later": "Maybe later (+5 ViCoins)"
+    },
+    "toasts": {
+      "campaign": "Info campaign launched.",
+      "later": "Campaign postponed: +5 ViCoins."
+    }
+  },
+  "winter-audit-check": {
+    "title": "Winter audit",
+    "text": "Authorities check frost preparedness. Order and clean combustion can bring a small bonus, neglect – reprimand.",
+    "choices": {
+      "pass-audit": "Present savings plan (+12 ViCoins)",
+      "skip-audit": "Do not provide information (−3 pollution now)"
+    },
+    "toasts": {
+      "pass-audit": "Positive winter audit: +12 ViCoins.",
+      "skip-audit": "Minor clean-up reduced pollution (−3)."
+    }
+  },
+  "grant-boiler-exchange": {
+    "title": "Boiler exchange program",
+    "text": "The municipality launches subsidies for greener heating sources. For a limited time you can benefit and modernize more cheaply.",
+    "choices": {
+      "accept": "Take subsidy (−20% prices for 2 min)",
+      "decline": "Decline (keep independence)"
+    },
+    "toasts": {
+      "accept": "Subsidy activated: −20% prices for 2 minutes.",
+      "decline": "Received 10 ViCoins for independence."
+    }
+  },
+  "summer-solar-push": {
+    "title": "Solar summer",
+    "text": "Exceptionally sunny forecast for the coming days. It's a great time to invest in renewables and cut bills.",
+    "choices": {
+      "promo": "Renewables campaign (−15% prices for 90 s)",
+      "awareness": "Educate residents (−5 pollution)"
+    },
+    "toasts": {
+      "promo": "Renewables campaign: −15% prices for 90 seconds.",
+      "awareness": "Local actions reduced pollution (−5)."
+    }
+  },
+  "pellet-supply-crunch": {
+    "title": "Pellet logistics",
+    "text": "Seasonal demand spike drives pellet prices and extends deliveries. A supplier offers a discount on other upgrades in exchange for a long-term contract.",
+    "choices": {
+      "deal": "Sign contract (−10% prices for 60 s)",
+      "wait": "Wait out the season (+8 ViCoins)"
+    },
+    "toasts": {
+      "deal": "Logistics deal: −10% prices for 60 seconds.",
+      "wait": "You chose to wait – +8 ViCoins."
+    }
+  },
+  "frost-warning": {
+    "title": "Frost warning",
+    "text": "Forecasters predict severe frost. You can prepare your installation now or risk higher wear during cooling.",
+    "choices": {
+      "prepare": "Installation check (−4 pollution)",
+      "bulk-buy": "Buy materials (−12% prices for 45 s)"
+    },
+    "toasts": {
+      "prepare": "Check reduced losses and emissions (−4).",
+      "bulk-buy": "Winter stock: −12% prices for 45 seconds."
+    }
+  },
+  "tech-expo-audit": {
+    "title": "Tech‑Expo audit",
+    "text": "Your installation was singled out as an example of modernization. Organizers offer a research grant or promo campaign.",
+    "choices": {
+      "grant": "Research grant (+15 ViCoins)",
+      "promo-discount": "Brand promo (−18% prices for 60 s)"
+    },
+    "toasts": {
+      "grant": "Received grant: +15 ViCoins.",
+      "promo-discount": "Promo: −18% prices for 60 seconds."
+    }
+  }
+}

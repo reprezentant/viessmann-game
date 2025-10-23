@@ -1,0 +1,14 @@
+{
+  "first-steps": { "name": "Pierwsze kroki", "desc": "Postaw swój pierwszy budynek" },
+  "heat-source": { "name": "Źródło ciepła", "desc": "Posiadaj urządzenie grzewcze" },
+  "going-green": { "name": "Zielona energia", "desc": "Zainstaluj odnawialne źródło energii" },
+  "power-up": { "name": "Moc w sieci", "desc": "Zbuduj infrastrukturę energetyczną" },
+  "coal-installed": { "name": "Tradycja na dachu", "desc": "Zainstaluj kocioł węglowy" },
+  "pellet-installed": { "name": "Pelletowy upgrade", "desc": "Zainstaluj kocioł na pellet" },
+  "gas-installed": { "name": "Gazowe ogrzewanie", "desc": "Zainstaluj kocioł gazowy" },
+  "heatpump-installed": { "name": "Pompa ciepła", "desc": "Zainstaluj pompę ciepła" },
+  "solar-starter": { "name": "Pierwszy panel", "desc": "Postaw panel fotowoltaiczny" },
+  "solar-farm": { "name": "Mała farma", "desc": "Postaw 3 panele fotowoltaiczne" },
+  "forest-planted": { "name": "Zielony zakątek", "desc": "Posadź las" },
+  "ev-ready": { "name": "EV ready", "desc": "Zainstaluj E‑Charger" }
+}

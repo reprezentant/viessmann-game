@@ -1,5 +1,6 @@
 import type { StoryChoice, StoryEvent } from '../lib/story';
 import './events.css';
+import { useTranslation } from 'react-i18next';
 
 type DiscountSummary = {
   title: string;
@@ -17,7 +18,9 @@ type Props = {
 };
 
 export default function EventsCenterModal({ open, events, discount, onClose, onChoose, isDay = true }: Props) {
+  const { t } = useTranslation('story');
   if (!open) return null;
+  const tr = (keyOrText: string) => t(keyOrText, { ns: 'story', defaultValue: keyOrText });
   return (
     <div
       className="events-modal-overlay"
@@ -34,7 +37,7 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
         onClick={(e) => e.stopPropagation()}
       >
         <div className="events-modal__header">
-          <div className="events-modal__title">Centrum wydarzeń</div>
+          <div className="events-modal__title">{t('eventsCenterTitle', { defaultValue: 'Centrum wydarzeń' })}</div>
           <button type="button" className="events-modal__close" onClick={onClose} aria-label="Zamknij">
             ✕
           </button>
@@ -49,12 +52,12 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
           </section>
         )}
         {events.length === 0 ? (
-          <div className="events-modal__empty">Brak oczekujących eventów. Wszystko pod kontrolą.</div>
+          <div className="events-modal__empty">{t('noPendingEvents', { defaultValue: 'Brak oczekujących eventów. Wszystko pod kontrolą.' })}</div>
         ) : (
           events.map((event) => (
             <article key={event.id} className="events-modal__event">
-              <div className="events-modal__event-title">{event.title}</div>
-              <p className="events-modal__event-text">{event.text}</p>
+              <div className="events-modal__event-title">{tr(event.title)}</div>
+              <p className="events-modal__event-text">{tr(event.text)}</p>
               <div className="events-modal__choices">
                 {event.choices.map((choice) => (
                   <button
@@ -63,7 +66,7 @@ export default function EventsCenterModal({ open, events, discount, onClose, onC
                     className="events-modal__choice"
                     onClick={() => onChoose(event, choice)}
                   >
-                    {choice.label}
+                    {tr(choice.label)}
                   </button>
                 ))}
               </div>

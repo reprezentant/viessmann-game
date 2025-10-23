@@ -1,0 +1,22 @@
+{
+  "coal": { "name": "Kocioł tradycyjny żeliwny", "desc": "Duże zanieczyszczenie, wysoka wydajność. Umieść na domu, aby go ogrzać." },
+  "pellet": { "name": "Stalowy kocioł grzewczy (1917–1928)", "desc": "Trwalszy, szybciej się nagrzewa, mniejsze zużycie paliwa." },
+  "gas": { "name": "Kocioł Triola (1957)", "desc": "Stalowy piec z podgrzewaczem. Konwersja z koksu na olej." },
+  "parola1965": { "name": "Kocioł na olej Parola (1965)", "desc": "Niższe emisje i wysoka sprawność." },
+  "stainless1972": { "name": "Pierwszy kocioł ze stali nierdzewnej (1972)", "desc": "Lżejszy i wydajniejszy; prekursor kondensacji." },
+  "heatpump1978": { "name": "Pierwsza pompa ciepła (1978)", "desc": "Wykorzystuje energię z otoczenia." },
+  "vitola1978": { "name": "Kocioł niskotemperaturowy Vitola (1978)", "desc": "Praca przy niższej temp. wody (większa efektywność)." },
+  "vitodens1989": { "name": "Kocioł gazowy Vitodens (1989)", "desc": "Kondensacja pary, wyższa sprawność, niższe emisje." },
+  "heatpump": { "name": "Pompa ciepła (Vitocal)", "desc": "Wysoka efektywność i OZE. Odblokowuje zielone instalacje." },
+  "forest": { "name": "Las", "desc": "Silnie redukuje zanieczyszczenie (−0.5/s). Każdy kolejny jest droższy." },
+  "collector1972": { "name": "Pierwszy kolektor słoneczny (1972)", "desc": "Więcej ☀️, mniej zanieczyszczeń, krótszy Mróz." },
+  "inoxRadial": { "name": "Technologia kondensacyjna (Inox‑Radial)", "desc": "Zmniejsza generowanie zanieczyszczeń." },
+  "floor": { "name": "Ogrzewanie podłogowe", "desc": "Komfort. Skraca czas trwania Mrozu." },
+  "thermostat": { "name": "Termostaty SRC", "desc": "Inteligentna regulacja – więcej zasobów." },
+  "solar": { "name": "Fotowoltaika (Vitovolt)", "desc": "Więcej ☀️." },
+  "inverter": { "name": "Inverter / magazyn (Vitocharge)", "desc": "Lepsza monetyzacja – więcej 💰." },
+  "grid": { "name": "Grid", "desc": "Wymiana energii – więcej 💰." },
+  "vitovalor2014": { "name": "Vitovalor (2014)", "desc": "Ogniwo paliwowe – silnie redukuje zanieczyszczenie." },
+  "echarger": { "name": "E-Charger", "desc": "+5 💰/min." },
+  "lab": { "name": "Laboratorium R&D", "desc": "Trwale zwiększa produkcję zasobów (+0.02 ☀️/💧/🌬️, +0.01 💰). Tylko jedno – ale bardzo drogie." }
+}

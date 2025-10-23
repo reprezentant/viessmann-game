@@ -1,0 +1,235 @@
+{
+  "aid-package": {
+    "title": "Paczka pomocowa",
+    "text": "Lokalni partnerzy oferują awaryjne wsparcie. Wybierz, czego najbardziej potrzebujesz.",
+    "choices": {
+      "aid-sun": "Zestaw testowych paneli (+12 ☀️)",
+      "aid-water": "Awaryjne zbiorniki (+12 💧)",
+      "aid-wind": "Serwisowy wiatrak (+12 🌬️)",
+      "aid-coins": "Bon budżetowy (+10 ViCoins)"
+    },
+    "toasts": {
+      "aid-sun": "Otrzymano awaryjne panele: +12 ☀️",
+      "aid-water": "Dostawa zbiorników: +12 💧",
+      "aid-wind": "Tymczasowy wiatrak: +12 🌬️",
+      "aid-coins": "Otrzymano 10 ViCoins."
+    }
+  },
+  "community-garden-proposal": {
+    "title": "Ogród społeczny",
+    "text": "Mieszkańcy proponują utworzenie ogrodu społecznego przy lesie. To wzmocni lokalną więź i świadomość ekologiczną.",
+    "choices": {
+      "support-garden": "Wspieraj inicjatywę (−4 smogu, +opinia społeczność)",
+      "no-budget": "Nie ma budżetu (+8 ViCoins, −opinia społeczność)"
+    },
+    "toasts": {
+      "support-garden": "Powstaje ogród społeczny.",
+      "no-budget": "Odmowa wsparcia ogrodu."
+    }
+  },
+  "eco-champion-award": {
+    "title": "Nagroda „Zielony Lider”",
+    "text": "Twoje działania proekologiczne zostały wyróżnione. Możesz przeznaczyć nagrodę na promocję modernizacji albo na budżet.",
+    "choices": {
+      "award-promo": "Promocja modernizacji (−18% cen przez 75 s)",
+      "award-coins": "Przeznacz na budżet (+20 ViCoins)"
+    },
+    "toasts": {
+      "award-promo": "Zielony Lider: −18% cen przez 75 sekund.",
+      "award-coins": "Nagroda przyznana: +20 ViCoins."
+    }
+  }
+  ,
+  "supplier-mou": {
+    "title": "Porozumienie z dostawcą",
+    "text": "Dostawca proponuje memorandum o współpracy. W zamian za promocję marki – lepsze warunki na modernizacje.",
+    "choices": {
+      "sign": "Podpisz (−10% cen przez 75 s, +opinia dostawcy)",
+      "decline": "Odrzuć (+10 ViCoins, −opinia dostawcy)"
+    },
+    "toasts": {
+      "sign": "Podpisano porozumienie z dostawcą.",
+      "decline": "Utrzymano niezależność."
+    }
+  },
+  "supplier-mou-commitment": {
+    "title": "Zobowiązanie z porozumienia",
+    "text": "Partner prosi o wsparcie kampanii według warunków porozumienia. Możesz dołożyć środki teraz lub zaryzykować ochłodzenie relacji.",
+    "choices": {
+      "commit-pay": "Wesprzyj kampanię (−12 ViCoins, +opinia dostawcy)",
+      "commit-defer": "Odraczamy (−opinia dostawcy, +8% ceny przez 45 s)"
+    },
+    "toasts": {
+      "commit-pay": "Wywiązano się z zobowiązania (−12 ViCoins).",
+      "commit-defer": "Opóźnienie pogarsza warunki chwilowo (+8% cen)."
+    }
+  },
+  "community-protest": {
+    "title": "Głos niezadowolenia mieszkańców",
+    "text": "Część mieszkańców krytykuje dotychczasowe decyzje. Możesz zorganizować konsultacje lub zignorować głosy niezadowolenia.",
+    "choices": {
+      "hold-consult": "Konsultacje i drobne usprawnienia (−8 ViCoins, −3 smogu)",
+      "ignore": "Zignoruj (+5 ViCoins teraz, +6 smogu)"
+    },
+    "toasts": {
+      "hold-consult": "Konsultacje przeprowadzone: drobne usprawnienia.",
+      "ignore": "Zignorowano głosy – krótkotrwałe korzyści."
+    }
+  },
+  "press-critique": {
+    "title": "Krytyka prasowa",
+    "text": "Media zwracają uwagę na niską jakość powietrza i brak działań. Sklepy podnoszą ceny części i usług.",
+    "choices": {
+      "accept": "Pracujmy dalej (+8% ceny przez 45 s)",
+      "counter": "Kontrkampania (−10 ViCoins, −4 smogu)"
+    },
+    "toasts": {
+      "accept": "Czasowo wyższe ceny (+8%).",
+      "counter": "Kontrkampania: szybkie działania naprawcze."
+    }
+  },
+  "supplier-delay": {
+    "title": "Opóźnienia dostaw",
+    "text": "Dostawcy sygnalizują problemy logistyczne. Gorsze relacje nie pomagają. Masz dwie opcje.",
+    "choices": {
+      "pay-expedite": "Dopłać za przyspieszenie (−10 ViCoins)",
+      "wait-longer": "Przeczekaj (−6% cen przez 30 s później)"
+    },
+    "toasts": {
+      "pay-expedite": "Zapłacono za przyspieszenie dostaw.",
+      "wait-longer": "Kompensacja opóźnień aktywna: drobny rabat."
+    }
+  },
+  "municipal-partnership": {
+    "title": "Współpraca z gminą",
+    "text": "Gmina proponuje współpracę przy kampanii modernizacji. Możesz postawić na edukację lub uzyskać współfinansowanie modernizacji.",
+    "choices": {
+      "education": "Edukacja mieszkańców (−6 smogu)",
+      "cofund": "Współfinansowanie (−12% cen przez 60 s)"
+    },
+    "toasts": {
+      "education": "Kampania edukacyjna ograniczyła smog (−6).",
+      "cofund": "Współfinansowanie: −12% cen przez 60 sekund."
+    }
+  },
+  "compliance-plan": {
+    "title": "Plan naprawczy",
+    "text": "Wysoki poziom zanieczyszczeń zwraca uwagę urzędników. Proponują plan naprawczy lub możesz odłożyć działania, ryzykując pogorszenie jakości powietrza.",
+    "choices": {
+      "accept-plan": "Wdrażamy plan (−8 smogu, −8% cen przez 45 s)",
+      "defer-actions": "Odłóż działania (+10 ViCoins, +3 smogu)"
+    },
+    "toasts": {
+      "accept-plan": "Plan naprawczy aktywowany: −8 smogu, −8% cen.",
+      "defer-actions": "Działania odłożone: +10 ViCoins, +3 smogu."
+    }
+  },
+  "winter-prep-supplies": {
+    "title": "Zapas przed zimą",
+    "text": "Mróz tuż tuż. Możesz zabezpieczyć dostawy i wynegocjować rabat na modernizacje albo zaryzykować i liczyć na oszczędności teraz.",
+    "choices": {
+      "secure-deal": "Zabezpiecz dostawy (−12% cen przez 60 s)",
+      "save-now": "Oszczędzaj teraz (+10 ViCoins, +0.02 smog/s na 20 s)"
+    },
+    "toasts": {
+      "secure-deal": "Zapas przed zimą: −12% cen przez 60 sekund.",
+      "save-now": "Otrzymano 10 ViCoins. Uwaga na krótkotrwałe emisje."
+    }
+  },
+  "retrofit-fair-invite": {
+    "title": "Zaproszenie na targi modernizacji",
+    "text": "Otrzymujesz zaproszenie na lokalne targi modernizacji. Udział może przynieść korzyści.",
+    "choices": {
+      "attend": "Weź udział (−5 smogu, ustaw flagę)",
+      "skip": "Pomiń (+6 ViCoins)"
+    },
+    "toasts": {
+      "attend": "Wziąłeś udział w targach modernizacji.",
+      "skip": "Pominięto zaproszenie."
+    }
+  },
+  "retrofit-fair-followup": {
+    "title": "Follow‑up po targach",
+    "text": "Organizatorzy proponują wspólną kampanię informacyjną w Twojej okolicy.",
+    "choices": {
+      "campaign": "Zróbmy to! (−8% cen przez 60 s)",
+      "later": "Może później (+5 ViCoins)"
+    },
+    "toasts": {
+      "campaign": "Kampania informacyjna ruszyła.",
+      "later": "Odkładamy kampanię: +5 ViCoins."
+    }
+  },
+  "winter-audit-check": {
+    "title": "Kontrola zimowa",
+    "text": "Urząd sprawdza przygotowanie do mrozów. Porządek i czyste spalanie mogą przynieść drobny bonus, zaniedbania – reprymendę.",
+    "choices": {
+      "pass-audit": "Przedstaw plan oszczędności (+12 ViCoins)",
+      "skip-audit": "Nie udzielaj informacji (−3 smogu teraz)"
+    },
+    "toasts": {
+      "pass-audit": "Pozytywny audyt zimowy: +12 ViCoins.",
+      "skip-audit": "Drobne uporządkowanie: −3 smogu."
+    }
+  },
+  "grant-boiler-exchange": {
+    "title": "Program wymiany kotłów",
+    "text": "Gmina rusza z dopłatami do bardziej ekologicznych źródeł ciepła. Przez ograniczony czas możesz skorzystać z programu i taniej modernizować instalację.",
+    "choices": {
+      "accept": "Skorzystaj z dopłaty (−20% ceny przez 2 min)",
+      "decline": "Zrezygnuj (zachowaj niezależność)"
+    },
+    "toasts": {
+      "accept": "Aktywowano dotację: −20% cen przez 2 minuty.",
+      "decline": "Otrzymano 10 ViCoins za niezależność."
+    }
+  },
+  "summer-solar-push": {
+    "title": "Solarne lato",
+    "text": "Wyjątkowo słoneczna prognoza na najbliższe dni. To świetny moment, by zainwestować w OZE i obniżyć rachunki.",
+    "choices": {
+      "promo": "Kampania OZE (−15% cen przez 90 s)",
+      "awareness": "Edukacja mieszkańców (−5 smogu)"
+    },
+    "toasts": {
+      "promo": "Kampania OZE: −15% cen przez 90 sekund.",
+      "awareness": "Lokalne działania ograniczyły smog (−5)."
+    }
+  },
+  "pellet-supply-crunch": {
+    "title": "Logistyka pelletu",
+    "text": "Sezonowy szczyt popytu winduje ceny pelletu i wydłuża dostawy. Dostawca proponuje rabat na inne modernizacje w zamian za długoterminową umowę.",
+    "choices": {
+      "deal": "Podpisz umowę (−10% cen przez 60 s)",
+      "wait": "Przeczekaj sezon (+8 ViCoins)"
+    },
+    "toasts": {
+      "deal": "Umowa logistyczna: −10% cen przez 60 sekund.",
+      "wait": "Zdecydowałeś się przeczekać – +8 ViCoins."
+    }
+  },
+  "frost-warning": {
+    "title": "Ostrzeżenie o mrozie",
+    "text": "Synoptycy zapowiadają silny mróz. Możesz przygotować instalację teraz lub zaryzykować większe zużycie podczas ochłodzenia.",
+    "choices": {
+      "prepare": "Przegląd instalacji (−4 smogu)",
+      "bulk-buy": "Zakup materiałów (−12% cen przez 45 s)"
+    },
+    "toasts": {
+      "prepare": "Przegląd ograniczył straty i emisje (−4).",
+      "bulk-buy": "Zapas przed mrozem: −12% cen przez 45 sekund."
+    }
+  },
+  "tech-expo-audit": {
+    "title": "Audyt na targach Tech‑Expo",
+    "text": "Twoja instalacja została wyróżniona jako przykład modernizacji. Organizatorzy oferują grant badawczy lub kampanię promocyjną.",
+    "choices": {
+      "grant": "Grant badawczy (+15 ViCoins)",
+      "promo-discount": "Promocja marki (−18% cen przez 60 s)"
+    },
+    "toasts": {
+      "grant": "Otrzymano grant: +15 ViCoins.",
+      "promo-discount": "Promocja: −18% cen przez 60 sekund."
+    }
+  }
+}

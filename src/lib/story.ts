@@ -54,9 +54,8 @@ export function getSampleEvents(): StoryEvent[] {
     // Emergency aid when resources are low
     {
       id: 'aid-package',
-      title: 'Paczka pomocowa',
-      text:
-        'Lokalni partnerzy oferują awaryjne wsparcie. Wybierz, czego najbardziej potrzebujesz.',
+        title: 'aid-package.title',
+        text: 'aid-package.text',
       once: false,
       cooldownSec: 90,
       condition: (ctx) => {
@@ -69,35 +68,35 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'aid-sun',
-          label: 'Zestaw testowych paneli (+12 ☀️)',
+          label: 'aid-package.choices.aid-sun',
           apply: (api) => {
             api.grantResources?.({ sun: 12 });
-            api.toast('☀️', 'Otrzymano awaryjne panele: +12 ☀️');
+            api.toast('☀️', 'aid-package.toasts.aid-sun');
             api.adjustFaction?.('suppliers', +3);
           },
         },
         {
           id: 'aid-water',
-          label: 'Awaryjne zbiorniki (+12 💧)',
+          label: 'aid-package.choices.aid-water',
           apply: (api) => {
             api.grantResources?.({ water: 12 });
-            api.toast('💧', 'Dostawa zbiorników: +12 💧');
+            api.toast('💧', 'aid-package.toasts.aid-water');
           },
         },
         {
           id: 'aid-wind',
-          label: 'Serwisowy wiatrak (+12 🌬️)',
+          label: 'aid-package.choices.aid-wind',
           apply: (api) => {
             api.grantResources?.({ wind: 12 });
-            api.toast('🌬️', 'Tymczasowy wiatrak: +12 🌬️');
+            api.toast('🌬️', 'aid-package.toasts.aid-wind');
           },
         },
         {
           id: 'aid-coins',
-          label: 'Bon budżetowy (+10 ViCoins)',
+          label: 'aid-package.choices.aid-coins',
           apply: (api) => {
-            api.grantCoins(10, 'Bon budżetowy');
-            api.toast('💰', 'Otrzymano 10 ViCoins.');
+            api.grantCoins(10, 'aid-package.toasts.aid-coins');
+            api.toast('💰', 'aid-package.toasts.aid-coins');
           },
         },
       ],
@@ -105,9 +104,8 @@ export function getSampleEvents(): StoryEvent[] {
     // Community arc (multi-step, faction effects)
     {
       id: 'community-garden-proposal',
-      title: 'Ogród społeczny',
-      text:
-        'Mieszkańcy proponują utworzenie ogrodu społecznego przy lesie. To wzmocni lokalną więź i świadomość ekologiczną.',
+        title: 'community-garden-proposal.title',
+        text: 'community-garden-proposal.text',
       once: true,
       arc: 'community',
       cooldownSec: 120,
@@ -115,21 +113,21 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'support-garden',
-          label: 'Wspieraj inicjatywę (−4 smogu, +opinia społeczność)',
+          label: 'community-garden-proposal.choices.support-garden',
           apply: (api) => {
-            api.addPollutionInstant(-4, 'Ogród społeczny');
+            api.addPollutionInstant(-4, 'community-garden-proposal');
             api.adjustFaction?.('community', +10);
             api.setFlag?.('community_garden', true);
-            api.toast('🌿', 'Powstaje ogród społeczny.');
+            api.toast('🌿', 'community-garden-proposal.toasts.support-garden');
           },
         },
         {
           id: 'no-budget',
-          label: 'Nie ma budżetu (+8 ViCoins, −opinia społeczność)',
+          label: 'community-garden-proposal.choices.no-budget',
           apply: (api) => {
-            api.grantCoins(8, 'Oszczędności');
+            api.grantCoins(8, 'community-garden-proposal.toasts.no-budget');
             api.adjustFaction?.('community', -6);
-            api.toast('💰', 'Odmowa wsparcia ogrodu.');
+            api.toast('💰', 'community-garden-proposal.toasts.no-budget');
           },
         },
       ],
@@ -137,26 +135,25 @@ export function getSampleEvents(): StoryEvent[] {
     // High eco reputation reward
     {
       id: 'eco-champion-award',
-      title: 'Nagroda „Zielony Lider”',
-      text:
-        'Twoje działania proekologiczne zostały wyróżnione. Możesz przeznaczyć nagrodę na promocję modernizacji albo na budżet.',
+        title: 'eco-champion-award.title',
+        text: 'eco-champion-award.text',
       once: true,
       condition: (ctx) => (ctx.ecoRep ?? 0) >= 75 && ctx.renewablesUnlocked && ctx.elapsed > 120,
       choices: [
         {
           id: 'award-promo',
-          label: 'Promocja modernizacji (−18% cen przez 75 s)',
+          label: 'eco-champion-award.choices.award-promo',
           apply: (api) => {
-            api.setGlobalDiscount(18, 75, 'Zielony Lider');
-            api.toast('🌿', 'Zielony Lider: −18% cen przez 75 sekund.');
+            api.setGlobalDiscount(18, 75, 'eco-champion-award');
+            api.toast('🌿', 'eco-champion-award.toasts.award-promo');
           },
         },
         {
           id: 'award-coins',
-          label: 'Przeznacz na budżet (+20 ViCoins)',
+          label: 'eco-champion-award.choices.award-coins',
           apply: (api) => {
-            api.grantCoins(20, 'Nagroda Zielony Lider');
-            api.toast('💰', 'Nagroda przyznana: +20 ViCoins.');
+            api.grantCoins(20, 'eco-champion-award.toasts.award-coins');
+            api.toast('💰', 'eco-champion-award.toasts.award-coins');
           },
         },
       ],
@@ -164,9 +161,8 @@ export function getSampleEvents(): StoryEvent[] {
     // Supplier relation (faction)
     {
       id: 'supplier-mou',
-      title: 'Porozumienie z dostawcą',
-      text:
-        'Dostawca proponuje memorandum o współpracy. W zamian za promocję marki – lepsze warunki na modernizacje.',
+        title: 'supplier-mou.title',
+        text: 'supplier-mou.text',
       once: true,
       arc: 'suppliers',
       cooldownSec: 90,
@@ -174,21 +170,21 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'sign',
-          label: 'Podpisz (−10% cen przez 75 s, +opinia dostawcy)',
+          label: 'supplier-mou.choices.sign',
           apply: (api) => {
-            api.setGlobalDiscount(10, 75, 'Współpraca z dostawcą');
+            api.setGlobalDiscount(10, 75, 'supplier-mou');
             api.adjustFaction?.('suppliers', +8);
             api.setFlag?.('supplier_mou', true);
-            api.toast('📜', 'Podpisano porozumienie z dostawcą.');
+            api.toast('📜', 'supplier-mou.toasts.sign');
           },
         },
         {
           id: 'decline',
-          label: 'Odrzuć (+10 ViCoins, −opinia dostawcy)',
+          label: 'supplier-mou.choices.decline',
           apply: (api) => {
-            api.grantCoins(10, 'Niezależność');
+            api.grantCoins(10, 'supplier-mou.toasts.decline');
             api.adjustFaction?.('suppliers', -8);
-            api.toast('⚖️', 'Utrzymano niezależność.');
+            api.toast('⚖️', 'supplier-mou.toasts.decline');
           },
         },
       ],
@@ -196,9 +192,8 @@ export function getSampleEvents(): StoryEvent[] {
     // Follow-up obligation if MoU was signed
     {
       id: 'supplier-mou-commitment',
-      title: 'Zobowiązanie z porozumienia',
-      text:
-        'Partner prosi o wsparcie kampanii według warunków porozumienia. Możesz dołożyć środki teraz lub zaryzykować ochłodzenie relacji.',
+        title: 'supplier-mou-commitment.title',
+        text: 'supplier-mou-commitment.text',
       once: true,
       arc: 'suppliers',
       cooldownSec: 120,
@@ -206,20 +201,20 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'commit-pay',
-          label: 'Wesprzyj kampanię (−12 ViCoins, +opinia dostawcy)',
+          label: 'supplier-mou-commitment.choices.commit-pay',
           apply: (api) => {
-            api.grantCoins(-12, 'Wsparcie kampanii');
+            api.grantCoins(-12, 'supplier-mou-commitment.toasts.commit-pay');
             api.adjustFaction?.('suppliers', +6);
-            api.toast('🤝', 'Wywiązano się z zobowiązania (−12 ViCoins).');
+            api.toast('🤝', 'supplier-mou-commitment.toasts.commit-pay');
           },
         },
         {
           id: 'commit-defer',
-          label: 'Odraczamy (−opinia dostawcy, +8% ceny przez 45 s)',
+          label: 'supplier-mou-commitment.choices.commit-defer',
           apply: (api) => {
             api.adjustFaction?.('suppliers', -10);
-            api.setGlobalDiscount(-8, 45, 'Opóźniona realizacja');
-            api.toast('⏳', 'Opóźnienie pogarsza warunki chwilowo (+8% cen).');
+            api.setGlobalDiscount(-8, 45, 'supplier-mou-commitment');
+            api.toast('⏳', 'supplier-mou-commitment.toasts.commit-defer');
           },
         },
       ],
@@ -227,9 +222,8 @@ export function getSampleEvents(): StoryEvent[] {
     // Community backlash when opinion is low
     {
       id: 'community-protest',
-      title: 'Głos niezadowolenia mieszkańców',
-      text:
-        'Część mieszkańców krytykuje dotychczasowe decyzje. Możesz zorganizować konsultacje lub zignorować głosy niezadowolenia.',
+        title: 'community-protest.title',
+        text: 'community-protest.text',
       once: true,
       arc: 'community',
       cooldownSec: 120,
@@ -237,19 +231,19 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'hold-consult',
-          label: 'Konsultacje i drobne usprawnienia (−8 ViCoins, −3 smogu)',
+          label: 'community-protest.choices.hold-consult',
           apply: (api) => {
-            api.grantCoins(-8, 'Konsultacje społeczne');
-            api.addPollutionInstant(-3, 'Usprawnienia po konsultacjach');
+            api.grantCoins(-8, 'community-protest.toasts.hold-consult');
+            api.addPollutionInstant(-3, 'community-protest');
             api.adjustFaction?.('community', +8);
           },
         },
         {
           id: 'ignore',
-          label: 'Zignoruj (+5 ViCoins teraz, +6 smogu)',
+          label: 'community-protest.choices.ignore',
           apply: (api) => {
-            api.grantCoins(5, 'Oszczędności krótkoterminowe');
-            api.addPollutionInstant(+6, 'Zaniedbania');
+            api.grantCoins(5, 'community-protest.toasts.ignore');
+            api.addPollutionInstant(+6, 'community-protest');
             api.adjustFaction?.('community', -6);
           },
         },
@@ -258,27 +252,26 @@ export function getSampleEvents(): StoryEvent[] {
     // Press critique when ecoRep is low: temporary price malus
     {
       id: 'press-critique',
-      title: 'Krytyka prasowa',
-      text:
-        'Media zwracają uwagę na niską jakość powietrza i brak działań. Sklepy podnoszą ceny części i usług.',
+        title: 'press-critique.title',
+        text: 'press-critique.text',
       once: true,
       cooldownSec: 90,
       condition: (ctx) => (ctx.ecoRep ?? 0) < 30 && ctx.elapsed > 80,
       choices: [
         {
           id: 'accept',
-          label: 'Pracujmy dalej (+8% ceny przez 45 s)',
+          label: 'press-critique.choices.accept',
           apply: (api) => {
-            api.setGlobalDiscount(-8, 45, 'Krytyka prasowa');
-            api.toast('📰', 'Czasowo wyższe ceny (+8%).');
+            api.setGlobalDiscount(-8, 45, 'press-critique');
+            api.toast('📰', 'press-critique.toasts.accept');
           },
         },
         {
           id: 'counter',
-          label: 'Kontrkampania (−10 ViCoins, −4 smogu)',
+          label: 'press-critique.choices.counter',
           apply: (api) => {
-            api.grantCoins(-10, 'Kontrkampania PR');
-            api.addPollutionInstant(-4, 'Szybkie działania naprawcze');
+            api.grantCoins(-10, 'press-critique.toasts.counter');
+            api.addPollutionInstant(-4, 'press-critique');
           },
         },
       ],
@@ -286,27 +279,26 @@ export function getSampleEvents(): StoryEvent[] {
     // Supplier delays when relations are poor
     {
       id: 'supplier-delay',
-      title: 'Opóźnienia dostaw',
-      text:
-        'Dostawcy sygnalizują problemy logistyczne. Gorsze relacje nie pomagają. Masz dwie opcje.',
+        title: 'supplier-delay.title',
+        text: 'supplier-delay.text',
       once: true,
       cooldownSec: 90,
       condition: (ctx) => (ctx.factions?.['suppliers'] ?? 0) < -20 && ctx.elapsed > 100,
       choices: [
         {
           id: 'pay-expedite',
-          label: 'Dopłać za przyspieszenie (−10 ViCoins)',
+          label: 'supplier-delay.choices.pay-expedite',
           apply: (api) => {
-            api.grantCoins(-10, 'Przyspieszenie dostaw');
+            api.grantCoins(-10, 'supplier-delay.toasts.pay-expedite');
           },
         },
         {
           id: 'wait-longer',
-          label: 'Przeczekaj (−6% cen przez 30 s później)',
+          label: 'supplier-delay.choices.wait-longer',
           apply: (api) => {
             // Modelujemy jako drobny, opóźniony rabat: ustawiamy krótki cooldown i rabat teraz,
             // bo nie mamy zegara do opóźniania – efekt: mała kompensacja po stratach czasu.
-            api.setGlobalDiscount(6, 30, 'Kompensacja opóźnień');
+            api.setGlobalDiscount(6, 30, 'supplier-delay');
           },
         },
       ],
@@ -314,26 +306,25 @@ export function getSampleEvents(): StoryEvent[] {
     // Mid eco reputation cooperation
     {
       id: 'municipal-partnership',
-      title: 'Współpraca z gminą',
-      text:
-        'Gmina proponuje współpracę przy kampanii modernizacji. Możesz postawić na edukację lub uzyskać współfinansowanie modernizacji.',
+        title: 'municipal-partnership.title',
+        text: 'municipal-partnership.text',
       once: true,
       condition: (ctx) => (ctx.ecoRep ?? 0) >= 40 && (ctx.ecoRep ?? 0) < 75 && ctx.elapsed > 80,
       choices: [
         {
           id: 'education',
-          label: 'Edukacja mieszkańców (−6 smogu)',
+          label: 'municipal-partnership.choices.education',
           apply: (api) => {
-            api.addPollutionInstant(-6, 'Edukacja mieszkańców');
-            api.toast('📘', 'Kampania edukacyjna ograniczyła smog (−6).');
+            api.addPollutionInstant(-6, 'municipal-partnership');
+            api.toast('📘', 'municipal-partnership.toasts.education');
           },
         },
         {
           id: 'cofund',
-          label: 'Współfinansowanie (−12% cen przez 60 s)',
+          label: 'municipal-partnership.choices.cofund',
           apply: (api) => {
-            api.setGlobalDiscount(12, 60, 'Współpraca z gminą');
-            api.toast('🤝', 'Współfinansowanie: −12% cen przez 60 sekund.');
+            api.setGlobalDiscount(12, 60, 'municipal-partnership');
+            api.toast('🤝', 'municipal-partnership.toasts.cofund');
           },
         },
       ],
@@ -341,56 +332,54 @@ export function getSampleEvents(): StoryEvent[] {
     // Low eco reputation corrective plan
     {
       id: 'compliance-plan',
-      title: 'Plan naprawczy',
-      text:
-        'Wysoki poziom zanieczyszczeń zwraca uwagę urzędników. Proponują plan naprawczy lub możesz odłożyć działania, ryzykując pogorszenie jakości powietrza.',
+        title: 'compliance-plan.title',
+        text: 'compliance-plan.text',
       once: true,
       condition: (ctx) => (ctx.ecoRep ?? 0) < 30 && ctx.pollution >= 50 && ctx.elapsed > 70,
       choices: [
         {
           id: 'accept-plan',
-          label: 'Wdrażamy plan (−8 smogu, −8% cen przez 45 s)',
+          label: 'compliance-plan.choices.accept-plan',
           apply: (api) => {
-            api.addPollutionInstant(-8, 'Plan naprawczy');
-            api.setGlobalDiscount(8, 45, 'Plan naprawczy');
-            api.toast('🧹', 'Plan naprawczy: −8 smogu, −8% cen (45 s).');
+            api.addPollutionInstant(-8, 'compliance-plan');
+            api.setGlobalDiscount(8, 45, 'compliance-plan');
+            api.toast('🧹', 'compliance-plan.toasts.accept-plan');
           },
         },
         {
           id: 'defer-actions',
-          label: 'Odłóż działania (+10 ViCoins, +3 smogu)',
+          label: 'compliance-plan.choices.defer-actions',
           apply: (api) => {
-            api.grantCoins(10, 'Oszczędności krótkoterminowe');
-            api.addPollutionInstant(+3, 'Odłożono działania');
-            api.toast('⏳', 'Działania odłożone: +10 ViCoins, +3 smogu.');
+            api.grantCoins(10, 'compliance-plan.toasts.defer-actions');
+            api.addPollutionInstant(+3, 'compliance-plan');
+            api.toast('⏳', 'compliance-plan.toasts.defer-actions');
           },
         },
       ],
     },
     {
       id: 'winter-prep-supplies',
-      title: 'Zapas przed zimą',
-      text:
-        'Mróz tuż tuż. Możesz zabezpieczyć dostawy i wynegocjować rabat na modernizacje albo zaryzykować i liczyć na oszczędności teraz.',
+        title: 'winter-prep-supplies.title',
+        text: 'winter-prep-supplies.text',
       once: true,
       condition: (ctx) => ctx.season === 'winter' && ctx.elapsed > 60,
       choices: [
         {
           id: 'secure-deal',
-          label: 'Zabezpiecz dostawy (−12% cen przez 60 s)',
+          label: 'winter-prep-supplies.choices.secure-deal',
           apply: (api) => {
-            api.setGlobalDiscount(12, 60, 'Zapas przed zimą');
-            api.toast('❄️', 'Zapas przed zimą: −12% cen przez 60 sekund.');
+            api.setGlobalDiscount(12, 60, 'winter-prep-supplies');
+            api.toast('❄️', 'winter-prep-supplies.toasts.secure-deal');
           },
         },
         {
           id: 'save-now',
-          label: 'Oszczędzaj teraz (+10 ViCoins, +0.02 smog/s na 20 s)',
+          label: 'winter-prep-supplies.choices.save-now',
           apply: (api) => {
-            api.grantCoins(10, 'Szybkie oszczędności');
-            api.toast('💰', 'Otrzymano 10 ViCoins. Uwaga na krótkotrwałe emisje.');
+            api.grantCoins(10, 'winter-prep-supplies.toasts.save-now');
+            api.toast('💰', 'winter-prep-supplies.toasts.save-now');
             // Modelujemy krótkotrwały skok smogu jako impuls natychmiastowy
-            api.addPollutionInstant(0.4, 'Krótkotrwałe emisje');
+            api.addPollutionInstant(0.4, 'winter-prep-supplies');
           },
         },
       ],
@@ -398,9 +387,8 @@ export function getSampleEvents(): StoryEvent[] {
     // Retrofit fair arc (two steps)
     {
       id: 'retrofit-fair-invite',
-      title: 'Zaproszenie na targi modernizacji',
-      text:
-        'Otrzymujesz zaproszenie na lokalne targi modernizacji. Udział może przynieść korzyści.',
+        title: 'retrofit-fair-invite.title',
+        text: 'retrofit-fair-invite.text',
       once: true,
       arc: 'retrofit-fair',
       cooldownSec: 120,
@@ -408,27 +396,26 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'attend',
-          label: 'Weź udział (−5 smogu, ustaw flagę)',
+          label: 'retrofit-fair-invite.choices.attend',
           apply: (api) => {
-            api.addPollutionInstant(-5, 'Dobre praktyki z targów');
+            api.addPollutionInstant(-5, 'retrofit-fair-invite');
             api.setFlag?.('fair_attended', true);
-            api.toast('🎪', 'Wziąłeś udział w targach modernizacji.');
+            api.toast('🎪', 'retrofit-fair-invite.toasts.attend');
           },
         },
         {
           id: 'skip',
-          label: 'Pomiń (+6 ViCoins)',
+          label: 'retrofit-fair-invite.choices.skip',
           apply: (api) => {
-            api.grantCoins(6, 'Oszczędność czasu');
+            api.grantCoins(6, 'retrofit-fair-invite.toasts.skip');
           },
         },
       ],
     },
     {
       id: 'retrofit-fair-followup',
-      title: 'Follow‑up po targach',
-      text:
-        'Organizatorzy proponują wspólną kampanię informacyjną w Twojej okolicy.',
+        title: 'retrofit-fair-followup.title',
+        text: 'retrofit-fair-followup.text',
       once: true,
       arc: 'retrofit-fair',
       cooldownSec: 90,
@@ -436,172 +423,166 @@ export function getSampleEvents(): StoryEvent[] {
       choices: [
         {
           id: 'campaign',
-          label: 'Zróbmy to! (−8% cen przez 60 s)',
+          label: 'retrofit-fair-followup.choices.campaign',
           apply: (api) => {
-            api.setGlobalDiscount(8, 60, 'Kampania posprzedażowa');
-            api.toast('📣', 'Kampania informacyjna ruszyła.');
+            api.setGlobalDiscount(8, 60, 'retrofit-fair-followup');
+            api.toast('📣', 'retrofit-fair-followup.toasts.campaign');
           },
         },
         {
           id: 'later',
-          label: 'Może później (+5 ViCoins)',
-          apply: (api) => api.grantCoins(5, 'Priorytety'),
+          label: 'retrofit-fair-followup.choices.later',
+          apply: (api) => api.grantCoins(5, 'retrofit-fair-followup.toasts.later'),
         },
       ],
     },
     {
       id: 'winter-audit-check',
-      title: 'Kontrola zimowa',
-      text:
-        'Urząd sprawdza przygotowanie do mrozów. Porządek i czyste spalanie mogą przynieść drobny bonus, zaniedbania – reprymendę.',
+        title: 'winter-audit-check.title',
+        text: 'winter-audit-check.text',
       once: true,
       condition: (ctx) => ctx.season === 'winter' && ctx.elapsed > 90,
       choices: [
         {
           id: 'pass-audit',
-          label: 'Przedstaw plan oszczędności (+12 ViCoins)',
+          label: 'winter-audit-check.choices.pass-audit',
           apply: (api) => {
-            api.grantCoins(12, 'Pozytywny audyt');
-            api.toast('📋', 'Pozytywny audyt zimowy: +12 ViCoins.');
+            api.grantCoins(12, 'winter-audit-check.toasts.pass-audit');
+            api.toast('📋', 'winter-audit-check.toasts.pass-audit');
           },
         },
         {
           id: 'skip-audit',
-          label: 'Nie udzielaj informacji (−3 smogu teraz)',
+          label: 'winter-audit-check.choices.skip-audit',
           apply: (api) => {
-            api.addPollutionInstant(-3, 'Czystsze praktyki');
-            api.toast('🌿', 'Drobne uporządkowanie: −3 smogu.');
+            api.addPollutionInstant(-3, 'winter-audit-check');
+            api.toast('🌿', 'winter-audit-check.toasts.skip-audit');
           },
         },
       ],
     },
     {
       id: 'grant-boiler-exchange',
-      title: 'Program wymiany kotłów',
-      text:
-        'Gmina rusza z dopłatami do bardziej ekologicznych źródeł ciepła. Przez ograniczony czas możesz skorzystać z programu i taniej modernizować instalację.',
+        title: 'grant-boiler-exchange.title',
+        text: 'grant-boiler-exchange.text',
       once: true,
       condition: (ctx) => ctx.hasCoal && ctx.elapsed > 30,
       choices: [
         {
           id: 'accept',
-          label: 'Skorzystaj z dopłaty (−20% ceny przez 2 min)',
+          label: 'grant-boiler-exchange.choices.accept',
           apply: (api) => {
-            api.setGlobalDiscount(20, 120, 'Dotacja gminna');
-            api.toast('🎯', 'Aktywowano dotację: −20% cen przez 2 minuty.');
-            api.log('Dotacja aktywna', 'Ceny obniżone o 20% na ograniczony czas.', '🎯');
+            api.setGlobalDiscount(20, 120, 'grant-boiler-exchange');
+            api.toast('🎯', 'grant-boiler-exchange.toasts.accept');
+            api.log('grant-boiler-exchange.toasts.accept', 'grant-boiler-exchange.toasts.accept', '🎯');
           },
         },
         {
           id: 'decline',
-          label: 'Zrezygnuj (zachowaj niezależność)',
+          label: 'grant-boiler-exchange.choices.decline',
           apply: (api) => {
-            api.grantCoins(10, 'Premia za niezależność');
-            api.toast('💰', 'Otrzymano 10 ViCoins za niezależność.');
+            api.grantCoins(10, 'grant-boiler-exchange.toasts.decline');
+            api.toast('💰', 'grant-boiler-exchange.toasts.decline');
           },
         },
       ],
     },
     {
       id: 'summer-solar-push',
-      title: 'Solarne lato',
-      text:
-        'Wyjątkowo słoneczna prognoza na najbliższe dni. To świetny moment, by zainwestować w OZE i obniżyć rachunki.',
+      title: 'summer-solar-push.title',
+      text: 'summer-solar-push.text',
       once: true,
       condition: (ctx) => ctx.renewablesUnlocked && ctx.season === 'summer' && ctx.elapsed > 60,
       choices: [
         {
           id: 'promo',
-          label: 'Kampania OZE (−15% cen przez 90 s)',
+          label: 'summer-solar-push.choices.promo',
           apply: (api) => {
-            api.setGlobalDiscount(15, 90, 'Kampania OZE');
-            api.toast('☀️', 'Kampania OZE: −15% cen przez 90 sekund.');
+            api.setGlobalDiscount(15, 90, 'summer-solar-push');
+            api.toast('☀️', 'summer-solar-push.toasts.promo');
           },
         },
         {
           id: 'awareness',
-          label: 'Edukacja mieszkańców (−5 smogu)',
+          label: 'summer-solar-push.choices.awareness',
           apply: (api) => {
-            api.addPollutionInstant(-5, 'Edukacja mieszkańców');
-            api.toast('🌿', 'Lokalne działania ograniczyły smog (−5).');
+            api.addPollutionInstant(-5, 'summer-solar-push');
+            api.toast('🌿', 'summer-solar-push.toasts.awareness');
           },
         },
       ],
     },
     {
       id: 'pellet-supply-crunch',
-      title: 'Logistyka pelletu',
-      text:
-        'Sezonowy szczyt popytu winduje ceny pelletu i wydłuża dostawy. Dostawca proponuje rabat na inne modernizacje w zamian za długoterminową umowę.',
+      title: 'pellet-supply-crunch.title',
+      text: 'pellet-supply-crunch.text',
       once: true,
       condition: (ctx) => ctx.elapsed > 45 && (ctx.season === 'autumn' || ctx.season === 'winter') && !ctx.hasCoal,
       choices: [
         {
           id: 'deal',
-          label: 'Podpisz umowę (−10% cen przez 60 s)',
+          label: 'pellet-supply-crunch.choices.deal',
           apply: (api) => {
-            api.setGlobalDiscount(10, 60, 'Umowa z dostawcą');
-            api.toast('📦', 'Umowa logistyczna: −10% cen przez 60 sekund.');
+            api.setGlobalDiscount(10, 60, 'pellet-supply-crunch');
+            api.toast('📦', 'pellet-supply-crunch.toasts.deal');
           },
         },
         {
           id: 'wait',
-          label: 'Przeczekaj sezon (+8 ViCoins)',
+          label: 'pellet-supply-crunch.choices.wait',
           apply: (api) => {
-            api.grantCoins(8, 'Oszczędności');
-            api.toast('🕒', 'Zdecydowałeś się przeczekać – +8 ViCoins.');
+            api.grantCoins(8, 'pellet-supply-crunch.toasts.wait');
+            api.toast('🕒', 'pellet-supply-crunch.toasts.wait');
           },
         },
       ],
     },
     {
       id: 'frost-warning',
-      title: 'Ostrzeżenie o mrozie',
-      text:
-        'Synoptycy zapowiadają silny mróz. Możesz przygotować instalację teraz lub zaryzykować większe zużycie podczas ochłodzenia.',
+      title: 'frost-warning.title',
+      text: 'frost-warning.text',
       once: true,
       condition: (ctx) => ctx.elapsed > 75 && (ctx.season === 'autumn' || ctx.season === 'winter'),
       choices: [
         {
           id: 'prepare',
-          label: 'Przegląd instalacji (−4 smogu)',
+          label: 'frost-warning.choices.prepare',
           apply: (api) => {
-            api.addPollutionInstant(-4, 'Przegląd instalacji');
-            api.toast('🧰', 'Przegląd ograniczył straty i emisje (−4).');
+            api.addPollutionInstant(-4, 'frost-warning');
+            api.toast('🧰', 'frost-warning.toasts.prepare');
           },
         },
         {
           id: 'bulk-buy',
-          label: 'Zakup materiałów (−12% cen przez 45 s)',
+          label: 'frost-warning.choices.bulk-buy',
           apply: (api) => {
-            api.setGlobalDiscount(12, 45, 'Zakupy przed mrozem');
-            api.toast('❄️', 'Zapas przed mrozem: −12% cen przez 45 sekund.');
+            api.setGlobalDiscount(12, 45, 'frost-warning');
+            api.toast('❄️', 'frost-warning.toasts.bulk-buy');
           },
         },
       ],
     },
     {
       id: 'tech-expo-audit',
-      title: 'Audyt na targach Tech‑Expo',
-      text:
-        'Twoja instalacja została wyróżniona jako przykład modernizacji. Organizatorzy oferują grant badawczy lub kampanię promocyjną.',
+      title: 'tech-expo-audit.title',
+      text: 'tech-expo-audit.text',
       once: true,
   condition: (ctx) => ctx.elapsed > 110 && ctx.pollution <= 25 && ctx.renewablesUnlocked && (ctx.ecoRep ?? 0) >= 50,
       choices: [
         {
           id: 'grant',
-          label: 'Grant badawczy (+15 ViCoins)',
+          label: 'tech-expo-audit.choices.grant',
           apply: (api) => {
-            api.grantCoins(15, 'Grant badawczy');
-            api.toast('🏅', 'Otrzymano grant: +15 ViCoins.');
+            api.grantCoins(15, 'tech-expo-audit.toasts.grant');
+            api.toast('🏅', 'tech-expo-audit.toasts.grant');
           },
         },
         {
           id: 'promo-discount',
-          label: 'Promocja marki (−18% cen przez 60 s)',
+          label: 'tech-expo-audit.choices.promo-discount',
           apply: (api) => {
-            api.setGlobalDiscount(18, 60, 'Promocja na Tech‑Expo');
-            api.toast('📣', 'Promocja: −18% cen przez 60 sekund.');
+            api.setGlobalDiscount(18, 60, 'tech-expo-audit');
+            api.toast('📣', 'tech-expo-audit.toasts.promo-discount');
           },
         },
       ],

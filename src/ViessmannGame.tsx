@@ -96,6 +96,19 @@ type TooltipContent = {
   footer?: string;
 };
 
+// --- Achievements types ---
+type AchCtx = { owned: Record<EntityType, number>; resources?: Record<ResKey, number> };
+type AchievementDef = { id: string; icon: string; check: (ctx: AchCtx) => boolean };
+type Achievement = { id: string; icon: string; unlocked: boolean; unlockedAt?: Date };
+
+// --- Moved shared types to module scope ---
+type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter';
+type SeasonState = { type: SeasonType; duration: number; remaining: number };
+type WeatherEventType = 'none' | 'clouds' | 'sunny' | 'rain' | 'wind' | 'storm' | 'frost';
+type WeatherEvent = { type: WeatherEventType; duration: number; remaining: number };
+type LogType = 'purchase' | 'placement' | 'mission' | 'weather' | 'achievement' | 'milestone' | 'other';
+type LogEntry = { id: string; at: number; icon?: string; title?: string; description?: string; type: LogType };
+
 // --- Klucze pomocnicze ---
 const houseUpgradeKeys: EntityType[] = [
   "coal",
@@ -172,144 +185,123 @@ const productionItems: ShopItem[] = [
 const itemByKey: Record<EntityType, ShopItem> = Object.fromEntries(
   [...deviceItems, ...productionItems].map(i => [i.key, i])
 ) as Record<EntityType, ShopItem>;
+
 const instanceFor = (k: EntityType): EntityInstance => {
-  const it = itemByKey[k];
-  return { type: k, label: it?.name || k, icon: it?.icon || "" };
+  const item = itemByKey[k];
+  const label = i18n.t(`items.${k}.name`, { ns: 'items', defaultValue: String(k) });
+  return { type: k, label, icon: item?.icon ?? '❓' };
 };
-
-// --- Typy wydarzeń pogodowych ---
-type WeatherEventType = "none" | "clouds" | "sunny" | "rain" | "frost" | "wind" | "storm";
-type WeatherEvent = {
-  type: WeatherEventType;
-  duration: number; // sekundy
-  remaining: number; // sekundy
-};
-
-// --- Sezony ---
-type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter';
-type SeasonState = { type: SeasonType; duration: number; remaining: number };
-
-// --- Profile system types ---
-type Achievement = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  unlocked: boolean;
-  unlockedAt?: Date;
-};
-
-// --- Log types ---
-type LogType = 'purchase' | 'placement' | 'mission' | 'weather' | 'achievement' | 'milestone' | 'other';
-type LogEntry = {
-  id: string;
-  at: number; // timestamp ms
-  icon?: string;
-  title: string;
-  description?: string;
-  type?: LogType;
-};
-
-// --- Achievements: definitions outside component for stability ---
-type AchievementDef = {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  check: (ctx: AchCtx) => boolean;
-};
-type AchCtx = { owned: Record<EntityType | "coal", number> };
-
-const achievementDefs: AchievementDef[] = [
-  {
-    id: "first-steps",
-  name: "Pierwsze kroki",
-  description: "Postaw swój pierwszy budynek",
-    icon: "🏠",
-    check: ({ owned }) => Object.values(owned).reduce((a, b) => a + (b || 0), 0) >= 1,
-  },
-  {
-    id: "heat-source",
-  name: "Źródło ciepła",
-  description: "Posiadaj urządzenie grzewcze",
-    icon: "🔥",
-    check: ({ owned }) => (owned.coal ?? 0) > 0 || (owned.pellet ?? 0) > 0 || (owned.gas ?? 0) > 0 || (owned.heatpump ?? 0) > 0,
-  },
-  {
-    id: "going-green",
-  name: "Zielona energia",
-  description: "Zainstaluj odnawialne źródło energii",
-    icon: "🌿",
-    check: ({ owned }) => (owned.solar ?? 0) > 0 || (owned.forest ?? 0) > 0 || (owned.heatpump ?? 0) > 0,
-  },
-  {
-    id: "power-up",
-  name: "Moc w sieci",
-  description: "Zbuduj infrastrukturę energetyczną",
-    icon: "⚡",
-    check: ({ owned }) => (owned.inverter ?? 0) > 0 && (owned.grid ?? 0) > 0,
-  },
-  // New, more granular goals
-  {
-    id: "coal-installed",
-    name: "Tradycja na dachu",
-    description: "Zainstaluj kocioł węglowy",
-    icon: "🧱",
-    check: ({ owned }) => (owned.coal ?? 0) > 0,
-  },
-  {
-    id: "pellet-installed",
-    name: "Pelletowy upgrade",
-    description: "Zainstaluj kocioł na pellet",
-    icon: "🔩",
-    check: ({ owned }) => (owned.pellet ?? 0) > 0,
-  },
-  {
-    id: "gas-installed",
-    name: "Gazowe ogrzewanie",
-    description: "Zainstaluj kocioł gazowy",
-    icon: "🔥",
-    check: ({ owned }) => (owned.gas ?? 0) > 0,
-  },
-  {
-    id: "heatpump-installed",
-    name: "Pompa ciepła",
-    description: "Zainstaluj pompę ciepła",
-    icon: "🌀",
-    check: ({ owned }) => (owned.heatpump ?? 0) > 0,
-  },
-  {
-    id: "solar-starter",
-    name: "Pierwszy panel",
-    description: "Postaw panel fotowoltaiczny",
-    icon: "☀️",
-    check: ({ owned }) => (owned.solar ?? 0) > 0,
-  },
-  {
-    id: "solar-farm",
-    name: "Mała farma",
-    description: "Postaw 3 panele fotowoltaiczne",
-    icon: "☀️",
-    check: ({ owned }) => (owned.solar ?? 0) >= 3,
-  },
-  {
-    id: "forest-planted",
-    name: "Zielony zakątek",
-    description: "Posadź las",
-    icon: "🌳",
-    check: ({ owned }) => (owned.forest ?? 0) > 0,
-  },
-  {
-    id: "ev-ready",
-    name: "EV ready",
-    description: "Zainstaluj E‑Charger",
-    icon: "🔌",
-    check: ({ owned }) => (owned.echarger ?? 0) > 0,
-  },
-];
 
 export default function ViessmannGame() {
   const { t } = useTranslation('ui');
+  // helper to resolve story translation keys if present
+  const resolveStoryText = useCallback((keyOrText: string) => {
+    try {
+      if (i18n.exists(`story.${keyOrText}`, { ns: 'story' })) {
+        return t(`story.${keyOrText}`, { ns: 'story' });
+      }
+    } catch { /* ignore */ }
+    return keyOrText;
+  }, [t]);
+  // (shared types are declared at module scope)
+
+  // --- Minimal map/grid helper state (restored) ---
+  const SIZE = 7; // fallback map size (NxN)
+  const createInitialTiles = useCallback((): Tile[] => {
+    const out: Tile[] = [];
+    let id = 1;
+    for (let y = 0; y < SIZE; y++) {
+      for (let x = 0; x < SIZE; x++) {
+        out.push({ id: `tile-${id++}`, x, y, entity: null, isHome: false });
+      }
+    }
+    // mark center tile as home
+    const center = Math.floor(out.length / 2);
+    out[center].isHome = true;
+    return out;
+  }, []);
+
+  const homeTileId = createInitialTiles().find(t => t.isHome)!.id;
+
+  // Core game state that was removed earlier — restore with sensible defaults
+  const [tiles, setTiles] = useState<Tile[]>(() => createInitialTiles());
+  const [owned, setOwned] = useState<Record<EntityType, number>>(() => makeOwnedInit());
+  const placedCounts = useMemo(() => ({ ...owned }), [owned]);
+
+  const [pendingPlacement, setPendingPlacement] = useState<ShopItem | null>(null);
+  const [lastPlacedKey, setLastPlacedKey] = useState<string | null>(null);
+
+  const [buildQueue, setBuildQueue] = useState<BuildTask[]>([]);
+  const [buildHistoryCount, setBuildHistoryCount] = useState<number>(0);
+
+  const [hasECharger, setHasECharger] = useState(false);
+  const echargerBonusRef = useRef(0);
+
+  const housePollutionRef = useRef<number>(0);
+
+  // Activity log (hoisted so effects can reference pushLog/pushToast earlier)
+  const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
+    if (e.type) return e.type;
+    const t = (e.title || "").toLowerCase();
+    if (t.startsWith("zakupiono:")) return 'purchase';
+    if (t.startsWith("ustawiono:")) return 'placement';
+    if (t.startsWith("ukończono misję:") || t.startsWith("ukonczono misję:") || t.startsWith("ukonczono misje:")) return 'mission';
+    if (t.startsWith("zdarzenie pogodowe:")) return 'weather';
+    if (t.startsWith("osiągnięcie:") || t.startsWith("osiagniecie:")) return 'achievement';
+    if (t.startsWith("kamień milowy:") || t.startsWith("kamien milowy:")) return 'milestone';
+    return 'other';
+  };
+  const [log, setLog] = useState<LogEntry[]>([]);
+  const logDedupRef = useRef<Record<string, number>>({});
+  const pushLog = useCallback((entry: Omit<LogEntry, "id" | "at"> & { at?: number }) => {
+    const now = Date.now();
+    const key = `${entry.type}|${entry.title}`;
+    const last = logDedupRef.current[key] || 0;
+    if (now - last < 1500) return;
+    logDedupRef.current[key] = now;
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const at = entry.at ?? now;
+    setLog(prev => [
+      { id, at, icon: entry.icon, title: entry.title, description: entry.description, type: entry.type },
+      ...prev
+    ].slice(0, 200));
+  }, [setLog]);
+
+  // Toasts (hoisted)
+  type Toast = { id: string; icon?: string; text: string };
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastDedupRef = useRef<Record<string, number>>({});
+  const pushToast = useCallback(({ icon, text }: { icon?: string; text: string }) => {
+    const now = Date.now();
+    const last = toastDedupRef.current[text] || 0;
+    if (now - last < 1200) return; // ignore duplicates fired too quickly
+    toastDedupRef.current[text] = now;
+    const id = `${now}-${Math.random().toString(36).slice(2, 6)}`;
+    setToasts((prev) => [...prev, { id, icon, text }]);
+    setTimeout(() => setToasts((prev) => prev.filter(t => t.id !== id)), 3500);
+  }, [setToasts]);
+
+  // Story / events scaffolding
+  const [storyFlags, setStoryFlags] = useState<Record<string, boolean>>({});
+  const [factions, setFactions] = useState<Record<string, number>>({ community: 0, suppliers: 0 });
+  const storyEventsRef = useRef<StoryEvent[] | null>(getSampleEvents());
+  const [pendingEvents, setPendingEvents] = useState<StoryEvent[]>([]);
+  const pendingEventsRef = useRef<StoryEvent[]>([]);
+  const [isEventsCenterOpen, setIsEventsCenterOpen] = useState(false);
+  const storyCooldownsRef = useRef<Record<string, number>>({});
+  const storyShownRef = useRef<Set<string>>(new Set());
+
+  // Discounts / temporary promos
+  const [priceDiscountPct, setPriceDiscountPct] = useState(0);
+  const [storyDiscountPct, setStoryDiscountPct] = useState(0);
+  const [storyDiscountTimer, setStoryDiscountTimer] = useState(0);
+  const [storyDiscountLabel, setStoryDiscountLabel] = useState<string | null>(null);
+
+  // Effective production rates derived from baseRates and multipliers
+  // (initialized later after multipliers is available)
+
+  const isSinglePurchase = (k: EntityType) => houseUpgradeKeys.includes(k) || k === 'lab';
+  const [shopTab, setShopTab] = useState<'devices' | 'production'>('devices');
   // --- Wszystkie stany i stałe na początek ---
   // Pogoda
   const [weatherEvent, setWeatherEvent] = useState<WeatherEvent>({ type: "none", duration: 0, remaining: 0 });
@@ -475,17 +467,17 @@ export default function ViessmannGame() {
     if (!smogHydratedRef.current) { smogHydratedRef.current = true; smogStageRef.current = s; return; }
     if (s !== smogStageRef.current) {
       const map = [
-        { icon: '🌿', msg: 'Smog niski – pełna produkcja.' },
-        { icon: '⚠️', msg: 'Uwaga: wzrost smogu – niewielka kara produkcji.' },
-        { icon: '🛑', msg: 'Wysoki smog – silna kara produkcji.' },
-        { icon: '⛔', msg: 'Krytyczny smog – produkcja mocno ograniczona.' },
+        { icon: '🌿', msg: t('smog.low', { ns: 'ui' }) },
+        { icon: '⚠️', msg: t('smog.warning', { ns: 'ui' }) },
+        { icon: '🛑', msg: t('smog.high', { ns: 'ui' }) },
+        { icon: '⛔', msg: t('smog.critical', { ns: 'ui' }) },
       ];
       const info = map[s];
       pushToast({ icon: info.icon, text: info.msg });
-      pushLog({ type: 'other', icon: info.icon, title: 'Poziom smogu zmieniony', description: info.msg });
+      pushLog({ type: 'other', icon: info.icon, title: t('smog.levelChanged', { ns: 'ui' }), description: info.msg });
       smogStageRef.current = s;
     }
-  }, [pollution]);
+  }, [pollution, pushLog, pushToast, t]);
   // Mnożniki sezonowe
   const seasonMultipliers: Record<ResKey, number> = useMemo(() => {
     switch (season.type) {
@@ -577,92 +569,77 @@ export default function ViessmannGame() {
     coins: dayNightMultipliers.coins * seasonMultipliers.coins * weatherMultipliers.coins * smogMultiplier * ecoBonusMultiplier,
     };
   }, [dayNightMultipliers, seasonMultipliers, weatherMultipliers, smogMultiplier, ecoBonusMultiplier]);
+  const effectiveRates = useMemo(() => ({
+    sun: (baseRates.sun ?? 0) * (multipliers.sun ?? 1),
+    water: (baseRates.water ?? 0) * (multipliers.water ?? 1),
+    wind: (baseRates.wind ?? 0) * (multipliers.wind ?? 1),
+    coins: (baseRates.coins ?? 0) * (multipliers.coins ?? 1),
+  }), [baseRates, multipliers]);
   const [renewablesUnlocked, setRenewablesUnlocked] = useState(false);
-  const effectiveRates = useMemo(
-    () => ({
-      sun: +(baseRates.sun * multipliers.sun),
-      wind: +(baseRates.wind * multipliers.wind),
-      water: +(baseRates.water * multipliers.water),
-      coins: +(baseRates.coins * multipliers.coins),
-    }),
-    [baseRates, multipliers]
-  );
-  // (Ekonomia panel removed)
+  const achievementDefs: AchievementDef[] = useMemo(() => ([
+    {
+      id: "first-steps",
+      icon: "\ud83c\udfe0",
+      check: ({ owned }) => Object.values(owned).reduce((a, b) => a + (b || 0), 0) >= 1,
+    },
+    {
+      id: "heat-source",
+      icon: "\ud83d\udd25",
+      check: ({ owned }) => (owned.coal ?? 0) > 0 || (owned.pellet ?? 0) > 0 || (owned.gas ?? 0) > 0 || (owned.heatpump ?? 0) > 0,
+    },
+    {
+      id: "going-green",
+      icon: "\ud83c\udf3f",
+      check: ({ owned }) => (owned.solar ?? 0) > 0 || (owned.forest ?? 0) > 0 || (owned.heatpump ?? 0) > 0,
+    },
+    {
+      id: "power-up",
+      icon: "\u26a1",
+      check: ({ owned }) => (owned.inverter ?? 0) > 0 && (owned.grid ?? 0) > 0,
+    },
+    // New, more granular goals
+    {
+      id: "coal-installed",
+      icon: "\ud83e\uddf1",
+      check: ({ owned }) => (owned.coal ?? 0) > 0,
+    },
+    {
+      id: "pellet-installed",
+      icon: "\ud83d\udd29",
+      check: ({ owned }) => (owned.pellet ?? 0) > 0,
+    },
+    {
+      id: "gas-installed",
+      icon: "\ud83d\udd25",
+      check: ({ owned }) => (owned.gas ?? 0) > 0,
+    },
+    {
+      id: "heatpump-installed",
+      icon: "\ud83c\udf00",
+      check: ({ owned }) => (owned.heatpump ?? 0) > 0,
+    },
+    {
+      id: "solar-starter",
+      icon: "\u2600\ufe0f",
+      check: ({ owned }) => (owned.solar ?? 0) > 0,
+    },
+    {
+      id: "solar-farm",
+      icon: "\u2600\ufe0f",
+      check: ({ owned }) => (owned.solar ?? 0) >= 3,
+    },
+    {
+      id: "forest-planted",
+      icon: "\ud83c\udf33",
+      check: ({ owned }) => (owned.forest ?? 0) > 0,
+    },
+    {
+      id: "ev-ready",
+      icon: "\ud83d\udd0c",
+      check: ({ owned }) => (owned.echarger ?? 0) > 0,
+    },
+  ]), []);
 
-  // ---------- Map ----------
-  const SIZE = 7;
-  const CENTER = Math.floor(SIZE / 2);
-  const createInitialTiles = useCallback((): Tile[] => {
-    const list: Tile[] = [];
-    for (let y = 0; y < SIZE; y++) for (let x = 0; x < SIZE; x++) {
-      list.push({ id: `${x},${y}`, x, y, entity: null, isHome: x === CENTER && y === CENTER });
-    }
-    return list;
-  }, [SIZE, CENTER]);
-  const [tiles, setTiles] = useState<Tile[]>(() => createInitialTiles());
-  const homeTileId = `${CENTER},${CENTER}`;
-  // Liczba faktycznie postawionych obiektów (z mapy), do misji i osiągnięć
-  const placedCounts: Record<EntityType | 'coal', number> = useMemo(() => {
-    const counts: Record<EntityType | 'coal', number> = {
-      coal: 0, pellet: 0, gas: 0, floor: 0, thermostat: 0, heatpump: 0, inverter: 0, grid: 0, solar: 0, echarger: 0, forest: 0, lab: 0,
-    } as Record<EntityType | 'coal', number>;
-    for (const t of tiles) {
-      if (t.entity) {
-        const k = t.entity.type as EntityType;
-        counts[k] = (counts[k] ?? 0) + 1;
-      }
-    }
-    return counts;
-  }, [tiles]);
-
-  // ---------- Shop ----------
-  const [priceDiscountPct, setPriceDiscountPct] = useState(0);
-  // Story system state
-  const [pendingEvents, setPendingEvents] = useState<StoryEvent[]>([]);
-  const pendingEventsRef = useRef<StoryEvent[]>([]);
-  const [isEventsCenterOpen, setIsEventsCenterOpen] = useState(false);
-  const storyShownRef = useRef<Set<string>>(new Set());
-  const storyEventsRef = useRef<ReturnType<typeof getSampleEvents> | null>(null);
-  const storyCooldownsRef = useRef<Record<string, number>>({});
-  useEffect(() => { pendingEventsRef.current = pendingEvents; }, [pendingEvents]);
-  const [storyFlags, setStoryFlags] = useState<Record<string, boolean>>(() => {
-    try { return JSON.parse(localStorage.getItem('vm_story_flags') || '{}') as Record<string, boolean>; } catch { return {}; }
-  });
-  useEffect(() => { try { localStorage.setItem('vm_story_flags', JSON.stringify(storyFlags)); } catch { /* ignore */ } }, [storyFlags]);
-  const [factions, setFactions] = useState<Record<string, number>>(() => {
-    try { return JSON.parse(localStorage.getItem('vm_factions') || '{}') as Record<string, number>; } catch { return {}; }
-  });
-  useEffect(() => { try { localStorage.setItem('vm_factions', JSON.stringify(factions)); } catch { /* ignore */ } }, [factions]);
-  if (!storyEventsRef.current) storyEventsRef.current = getSampleEvents();
-  // Time-limited global discount driven by story/events (separate from priceDiscountPct)
-  const [storyDiscountPct, setStoryDiscountPct] = useState(0);
-  const [storyDiscountTimer, setStoryDiscountTimer] = useState(0);
-  const [storyDiscountLabel, setStoryDiscountLabel] = useState<string | null>(null);
-  // Keep TS/ESLint aware that timer is observed (affects UI via pricing even if we don't render it)
-  useEffect(() => { /* timer tick observed */ }, [storyDiscountTimer]);
-  const [owned, setOwned] = useState<Record<EntityType | "coal", number>>(() => makeOwnedInit());
-
-
-  const [shopTab, setShopTab] = useState<"devices" | "production">("devices");
-  // Multiple-purchase items: allow buying more than one (thermostat joins solar/echarger/forest)
-  const isSinglePurchase = (k: EntityType) => !["solar", "echarger", "forest", "thermostat"].includes(k);
-
-  const [hasECharger, setHasECharger] = useState(false);
-  const echargerBonusRef = useRef(0);
-  // Track house device's pollution contribution to adjust cleanly on upgrades
-  const housePollutionRef = useRef(0);
-  const [buildQueue, setBuildQueue] = useState<BuildTask[]>([]);
-  const [buildHistoryCount, setBuildHistoryCount] = useState(0);
-  const [pendingPlacement, setPendingPlacement] = useState<ShopItem | null>(null);
-  const [lastPlacedKey, setLastPlacedKey] = useState<string | null>(null);
-
-  // Keep renewables unlocked in sync based on current tiles (heatpump presence)
-  useEffect(() => {
-    const anyHeatpump = tiles.some(t => t.entity?.type === 'heatpump');
-    if (anyHeatpump !== renewablesUnlocked) setRenewablesUnlocked(anyHeatpump);
-  }, [tiles, renewablesUnlocked]);
-
-  // -------- Save system v2 (extends v1 with ecoRepHistory and storyDecisions) --------
   type SaveV1 = {
     v: 1;
     resources: Record<ResKey, number>;
@@ -670,6 +647,7 @@ export default function ViessmannGame() {
     tiles: Array<{ id: string; x: number; y: number; isHome?: boolean; entity?: EntityType | null }>;
     season?: { type: SeasonType; remaining: number };
   };
+
   type SaveV2 = Omit<SaveV1, 'v'> & {
     v: 2;
     ecoRepHistory?: Array<{ t: number; v: number }>;
@@ -938,7 +916,7 @@ export default function ViessmannGame() {
 
   // Reset game (Nowa gra)
   const resetGame = useCallback(() => {
-    const ok = window.confirm('Na pewno rozpocząć nową grę? Spowoduje to utratę postępów.');
+    const ok = window.confirm(t('settings.resetConfirm', { ns: 'ui', defaultValue: 'Na pewno rozpocząć nową grę? Spowoduje to utratę postępów.' }));
     if (!ok) return;
     try {
       localStorage.removeItem(SAVE_KEY);
@@ -976,7 +954,7 @@ export default function ViessmannGame() {
   setStoryDiscountPct(0);
   setStoryDiscountTimer(0);
     setStoryDiscountLabel(null);
-  }, [createInitialTiles]);
+  }, [createInitialTiles, t]);
 
   // mission progress is shown inline per mission card now; earlier aggregated progress logic removed
   // Allow canceling placement with Escape
@@ -1045,22 +1023,22 @@ export default function ViessmannGame() {
     const forests = tiles.filter(t => t.entity?.type === 'forest').length;
     const subtitleTone: TooltipTone = ecoRep >= 70 ? 'positive' : (ecoRep < 40 ? 'warning' : 'muted');
     return {
-      title: 'Eko‑reputacja',
-      subtitle: `Poziom: ${ecoRep}/100`,
+      title: t('eco.title', { ns: 'ui' }),
+      subtitle: t('eco.level', { ns: 'ui', value: ecoRep }),
       subtitleTone,
       lines: [
-        { text: `Formuła: 100 − smog (${Math.round(pollution)}) + min(20, 5×lasy=${5 * forests})`, tone: 'muted' },
+        { text: t('eco.formula', { ns: 'ui', smog: Math.round(pollution), forestBonus: 5 * forests }), tone: 'muted' },
         {
           text: coinBonusPct > 0
-            ? `Bonus monet: +${coinBonusPct}% (czyste powietrze)`
-            : 'Bonus monet: 0% (smog zbyt wysoki)',
+            ? t('eco.coinBonus', { ns: 'ui', pct: coinBonusPct })
+            : t('eco.coinBonusZero', { ns: 'ui' }),
           tone: coinBonusPct > 0 ? 'positive' : 'warning'
         },
-        { text: 'Jak poprawić: sadź lasy 🌲, wymień kocioł na czystszy, ogranicz smog.' },
-        { text: 'Efekt: wpływa na wydarzenia i premię do ViCoins.', tone: 'muted' }
+        { text: t('eco.howToImprove', { ns: 'ui' }) },
+        { text: t('eco.effect', { ns: 'ui' }), tone: 'muted' }
       ]
     };
-  }, [ecoRep, pollution, tiles, coinBonusPct]);
+  }, [ecoRep, pollution, tiles, coinBonusPct, t]);
 
   // EcoReputation history (ring buffer, persisted) sampled ~every 5s
   type EcoSample = { t: number; v: number };
@@ -1093,16 +1071,16 @@ export default function ViessmannGame() {
     if (!ecoHydratedRef.current) { ecoHydratedRef.current = true; ecoStageRef.current = s; return; }
     if (s !== ecoStageRef.current) {
       const map = [
-        { icon: '🚫', msg: 'Niska eko‑reputacja – rozważ sadzenie lasów i czystsze źródła.' },
-        { icon: '⚖️', msg: 'Średnia eko‑reputacja – idzie ku lepszemu.' },
-        { icon: '🌟', msg: 'Wysoka eko‑reputacja – społeczność jest zachwycona!' },
+        { icon: '🚫', msg: t('eco.low', { ns: 'ui' }) },
+        { icon: '⚖️', msg: t('eco.mid', { ns: 'ui' }) },
+        { icon: '🌟', msg: t('eco.high', { ns: 'ui' }) },
       ];
       const info = map[s];
       pushToast({ icon: info.icon, text: info.msg });
-      pushLog({ type: 'other', icon: info.icon, title: 'Zmiana eko‑reputacji', description: info.msg });
+      pushLog({ type: 'other', icon: info.icon, title: t('eco.changed', { ns: 'ui' }), description: info.msg });
       ecoStageRef.current = s;
     }
-  }, [ecoRep]);
+  }, [ecoRep, pushLog, pushToast, t]);
 
   // EcoRep short trend for UI (delta over ~last 5 samples)
   const ecoRepTrend = useMemo(() => {
@@ -1112,19 +1090,6 @@ export default function ViessmannGame() {
     return +(ecoRepHistory[n - 1].v - ecoRepHistory[prevIdx].v).toFixed(0);
   }, [ecoRepHistory]);
 
-  // Activity log
-  const inferLogType = (e: { title?: string; type?: LogType }): LogType => {
-    if (e.type) return e.type;
-    const t = (e.title || "").toLowerCase();
-    if (t.startsWith("zakupiono:")) return 'purchase';
-    if (t.startsWith("ustawiono:")) return 'placement';
-    if (t.startsWith("ukończono misję:") || t.startsWith("ukonczono misję:") || t.startsWith("ukonczono misje:")) return 'mission';
-    if (t.startsWith("zdarzenie pogodowe:")) return 'weather';
-    if (t.startsWith("osiągnięcie:") || t.startsWith("osiagniecie:")) return 'achievement';
-    if (t.startsWith("kamień milowy:") || t.startsWith("kamien milowy:")) return 'milestone';
-    return 'other';
-  };
-  const [log, setLog] = useState<LogEntry[]>([]);
   // Story decisions log (compact)
   type Decision = { id: string; ts: number; eventId: string; eventTitle: string; choiceId: string; choiceLabel: string };
   const [storyDecisions, setStoryDecisions] = useState<Decision[]>(() => {
@@ -1137,22 +1102,7 @@ export default function ViessmannGame() {
   useEffect(() => {
     try { localStorage.setItem('vm_story_decisions', JSON.stringify(storyDecisions)); } catch { /* ignore */ }
   }, [storyDecisions]);
-  // Dedup map for logs: key => last timestamp
-  const logDedupRef = useRef<Record<string, number>>({});
-  const pushLog = (entry: Omit<LogEntry, "id" | "at"> & { at?: number }) => {
-    const now = Date.now();
-    const key = `${entry.type}|${entry.title}`;
-    const last = logDedupRef.current[key] || 0;
-    // Skip if a same-type+title log was added very recently (dev StrictMode double effects)
-    if (now - last < 1500) return;
-    logDedupRef.current[key] = now;
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-    const at = entry.at ?? now;
-    setLog(prev => [
-      { id, at, icon: entry.icon, title: entry.title, description: entry.description, type: entry.type },
-      ...prev
-    ].slice(0, 200));
-  };
+  // Dedup map for logs and pushLog are declared earlier (hoisted)
   // Load log from localStorage on mount
   useEffect(() => {
     try {
@@ -1191,7 +1141,7 @@ export default function ViessmannGame() {
         const key = `${k}-${t}`;
         if (!loggedMilestones[key] && (resources[k] ?? 0) >= t) {
           updates[key] = true;
-          toLog.push({ type: 'milestone', icon, title: `Kamień milowy: ${label} ${t}`, description: `Osiągnięto poziom ${t} dla ${label}.` });
+          toLog.push({ type: 'milestone', icon, title: i18n.t('milestone.title', { ns: 'ui', label, value: t }), description: i18n.t('milestone.description', { ns: 'ui', label, value: t }) });
         }
       }
     }
@@ -1199,7 +1149,7 @@ export default function ViessmannGame() {
       setLoggedMilestones(prev => ({ ...prev, ...updates }));
   toLog.forEach(e => pushLog(e));
     }
-  }, [resources, loggedMilestones]);
+  }, [resources, loggedMilestones, pushLog]);
 
   // Achievements state: unlocked map with timestamps
   const [achUnlocked, setAchUnlocked] = useState<Record<string, number>>({});
@@ -1225,25 +1175,23 @@ export default function ViessmannGame() {
       newly.forEach((def, i) => { n[def.id] = now + i; });
       return n;
     });
-  }, [placedCounts, achUnlocked]);
+  }, [placedCounts, achUnlocked, achievementDefs]);
 
   // Derived achievements for UI
   const achievements: Achievement[] = useMemo(() => (
     achievementDefs
       .map(def => ({
         id: def.id,
-        name: def.name,
-        description: def.description,
         icon: def.icon,
         unlocked: !!achUnlocked[def.id],
         unlockedAt: achUnlocked[def.id] ? new Date(achUnlocked[def.id]) : undefined,
       }))
       .sort((a, b) => Number(b.unlocked) - Number(a.unlocked) || ((b.unlockedAt?.getTime?.() || 0) - (a.unlockedAt?.getTime?.() || 0)))
-  ), [achUnlocked]);
+  ), [achUnlocked, achievementDefs]);
   // Persist achievements map
   useEffect(() => {
     try { localStorage.setItem('vm_achUnlocked', JSON.stringify(achUnlocked)); } catch { /* ignore */ }
-  }, [achUnlocked]);
+  }, [achUnlocked, t, achievementDefs, pushLog]);
 
   // Last seen times + badges (define after achUnlocked)
   const [lastSeenAchievements, setLastSeenAchievements] = useState<number>(() => Number(localStorage.getItem('vm_seen_ach') || 0));
@@ -1268,28 +1216,17 @@ export default function ViessmannGame() {
       added.forEach(id => {
         const def = achievementDefs.find(d => d.id === id);
         if (def) {
-          pushLog({ type: 'achievement', icon: def.icon, title: `Osiągnięcie: ${def.name}`, description: def.description });
-          pushToast({ icon: '🔔', text: `Nowe osiągnięcie: ${def.name}` });
+          const name = t(`achievements.${id}.name`, { ns: 'achievements' });
+          const desc = t(`achievements.${id}.desc`, { ns: 'achievements' });
+          pushLog({ type: 'achievement', icon: def.icon, title: `${t('ui:profile.achievementPrefix', { defaultValue: 'Osiągnięcie:' })} ${name}`, description: desc });
+          pushToast({ icon: '🔔', text: t('ui:profile.newAchievement', { name }) });
         }
       });
       prevAchRef.current = { ...achUnlocked };
     }
-  }, [achUnlocked]);
+  }, [achUnlocked, t, achievementDefs, pushLog, pushToast]);
 
-  // Toasts
-  type Toast = { id: string; icon?: string; text: string };
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  // Dedup map for toasts: text => last timestamp
-  const toastDedupRef = useRef<Record<string, number>>({});
-  const pushToast = ({ icon, text }: { icon?: string; text: string }) => {
-    const now = Date.now();
-    const last = toastDedupRef.current[text] || 0;
-    if (now - last < 1200) return; // ignore duplicates fired too quickly
-    toastDedupRef.current[text] = now;
-    const id = `${now}-${Math.random().toString(36).slice(2, 6)}`;
-    setToasts((prev) => [...prev, { id, icon, text }]);
-    setTimeout(() => setToasts((prev) => prev.filter(t => t.id !== id)), 3500);
-  };
+  // removeToast is defined with hoisted toasts/pushToast above
   const removeToast = (id: string) => setToasts(prev => prev.filter(t => t.id !== id));
 
   // Helpers
@@ -1385,7 +1322,8 @@ export default function ViessmannGame() {
           }
           setPendingEvents(prev => {
             if (prev.some(evt => evt.id === picked.id)) return prev;
-            pushToast({ icon: '📣', text: `Nowe wydarzenie: ${picked.title}` });
+            const title = resolveStoryText(picked.title ?? picked.id);
+            pushToast({ icon: '📣', text: `${t('ui:shop.newEvent', { defaultValue: 'Nowe wydarzenie:' })} ${title}` });
             return [...prev, picked];
           });
         }
@@ -1431,7 +1369,7 @@ export default function ViessmannGame() {
       });
     }, TICK_MS);
     return () => clearInterval(id);
-  }, [effectiveRates, hasECharger, pollutionRate, clamp, tiles, placedCounts, season.type, weatherEvent.type, pollution, renewablesUnlocked, ecoRep, storyFlags, factions, resources]);
+  }, [effectiveRates, hasECharger, pollutionRate, clamp, tiles, placedCounts, season.type, weatherEvent.type, pollution, renewablesUnlocked, ecoRep, storyFlags, factions, resources, resolveStoryText, t, pushLog, pushToast]);
 
   // Sync body class with day/night for tooltip theming
   useEffect(() => {
@@ -1461,13 +1399,13 @@ export default function ViessmannGame() {
       setStoryDiscountTimer(t => Math.max(t, Math.floor(seconds)));
   if (label) { setStoryDiscountLabel(label); pushToast({ icon: '🏷️', text: `${label}: −${Math.round(pct)}% przez ${seconds}s` }); }
     },
-    toast: (icon, text) => pushToast({ icon, text }),
-    log: (title, description, icon) => pushLog({ type: 'other', icon: icon ?? '🗞️', title, description }),
+  toast: (icon, text) => pushToast({ icon, text: resolveStoryText(text) }),
+  log: (title, description, icon) => pushLog({ type: 'other', icon: icon ?? '🗞️', title: resolveStoryText(title), description: resolveStoryText(description) }),
     unlockRenewables: () => setRenewablesUnlocked(true),
     setFlag: (key, value) => setStoryFlags(prev => ({ ...prev, [key]: value })),
     adjustFaction: (name, delta) => setFactions(prev => ({ ...prev, [name]: clamp((prev[name] ?? 0) + delta) })),
     setEventCooldown: (eventId, seconds) => { storyCooldownsRef.current[eventId] = Date.now() + seconds * 1000; },
-  }), [clamp]);
+  }), [clamp, resolveStoryText, pushLog, pushToast]);
 
   const handleStoryChoice = useCallback((event: StoryEvent, choice: StoryChoice) => {
     try { choice.apply(storyApi); } catch { /* ignore */ }
@@ -1534,7 +1472,7 @@ export default function ViessmannGame() {
   const handleBuy = (item: ShopItem) => {
     const alreadyQueued = buildQueue.some(task => task.itemKey === item.key);
     if (isSinglePurchase(item.key) && ((owned[item.key] ?? 0) > 0 || alreadyQueued)) {
-      if (alreadyQueued) pushToast({ icon: '⏳', text: `${item.name} już w kolejce` });
+  if (alreadyQueued) pushToast({ icon: '⏳', text: `${i18n.t(`items.${item.key}.name`, { ns: 'items' })} już w kolejce` });
       return;
     }
     const cost = dynamicCost(item);
@@ -1546,7 +1484,7 @@ export default function ViessmannGame() {
   const finalizeBuild = useCallback((task: BuildTask) => {
     const placingItem = itemByKey[task.itemKey];
     if (!placingItem) return;
-    const instance: EntityInstance = { type: placingItem.key, label: placingItem.name, icon: placingItem.icon };
+    const instance = instanceFor(placingItem.key);
     setTiles(ts => ts.map(t => t.id === task.tileId ? { ...t, entity: instance } : t));
     if (task.isHouse) {
       setOwned(o => {
@@ -1584,11 +1522,11 @@ export default function ViessmannGame() {
       task.cost.wind ? `${task.cost.wind} 🌬️` : null,
       task.cost.coins ? `${task.cost.coins} 💰` : null,
     ].filter(Boolean).join(' + ') || '—';
-    pushLog({ type: 'placement', icon: instance.icon, title: `Ukończono: ${instance.label}`, description: `Kafelek: ${task.tileId} • Koszt: ${costStr}` });
-    pushToast({ icon: '🏗️', text: `Budowa ukończona: ${placingItem.name}` });
+    pushLog({ type: 'placement', icon: instance.icon, title: `${t('ui:build.finishedPrefix', { defaultValue: 'Ukończono:' })} ${instance.label}`, description: `Kafelek: ${task.tileId} • Koszt: ${costStr}` });
+  pushToast({ icon: '🏗️', text: t('ui:build.finished', { ns: 'ui', name: i18n.t(`items.${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Budowa ukończona: ${i18n.t(`items.${placingItem.key}.name`, { ns: 'items' })}` }) });
     setLastPlacedKey(task.tileId);
     setBuildHistoryCount(c => c + 1);
-  }, [setTiles, housePollutionFor, addPollutionRate, setOwned, setRenewablesUnlocked, setBaseRates, setResources, setHasECharger, effectsCtx]);
+  }, [setTiles, housePollutionFor, addPollutionRate, setOwned, setRenewablesUnlocked, setBaseRates, setResources, setHasECharger, effectsCtx, pushLog, pushToast, t]);
 
   // Place currently pending item on a tile
   const placeOnTile = useCallback((tile: Tile) => {
@@ -1627,12 +1565,13 @@ export default function ViessmannGame() {
   const baseDuration = houseUpgradeKeys.includes(placingItem.key) ? 45 : 60;
   const congestion = buildHistoryCount + buildQueue.length;
   const duration = Math.max(15, Math.round(baseDuration * (1 + Math.min(2, congestion * 0.12))));
+    const instance = instanceFor(placingItem.key);
     const task: BuildTask = {
       id: `${now}-${Math.random().toString(36).slice(2, 7)}`,
       tileId: tile.id,
       itemKey: placingItem.key,
-      label: placingItem.name,
-      icon: placingItem.icon,
+      label: instance.label,
+      icon: instance.icon,
       duration,
       startedAt: 0,
       completesAt: 0,
@@ -1655,11 +1594,11 @@ export default function ViessmannGame() {
       placeCost.wind ? `${placeCost.wind} 🌬️` : null,
       placeCost.coins ? `${placeCost.coins} 💰` : null,
     ].filter(Boolean).join(' + ') || '—';
-    pushLog({ type: 'placement', icon: placingItem.icon, title: `Rozpoczęto budowę: ${placingItem.name}`, description: `Kafelek: ${tile.id} • Czas: ${formatShortDuration(duration)} • Koszt: ${startCostStr}` });
-    pushToast({ icon: '🏗️', text: `Budowa rozpoczęta: ${placingItem.name}` });
+  pushLog({ type: 'placement', icon: placingItem.icon, title: t('ui:build.started', { ns: 'ui', name: i18n.t(`items.${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Rozpoczęto budowę: ${i18n.t(`items.${placingItem.key}.name`, { ns: 'items' })}` }), description: `Kafelek: ${tile.id} • Czas: ${formatShortDuration(duration)} • Koszt: ${startCostStr}` });
+  pushToast({ icon: '🏗️', text: t('ui:build.startedShort', { ns: 'ui', name: i18n.t(`items.${placingItem.key}.name`, { ns: 'items' }), defaultValue: `Budowa rozpoczęta: ${i18n.t(`items.${placingItem.key}.name`, { ns: 'items' })}` }) });
     setPendingPlacement(null);
     setLastPlacedKey(tile.id);
-  }, [pendingPlacement, dynamicCost, canAfford, setResources, tiles, homeTileId, buildQueue, buildHistoryCount]);
+  }, [pendingPlacement, dynamicCost, canAfford, setResources, tiles, homeTileId, buildQueue, buildHistoryCount, pushLog, pushToast, t]);
 
   useEffect(() => {
     if (!lastPlacedKey) return;
@@ -1866,32 +1805,32 @@ export default function ViessmannGame() {
   };
   const [missions, setMissions] = useState<Mission[]>([
     // Ścieżka domu (historyczna)
-    { key: "first-steps", title: "Rozpalamy dom", description: "Umieść kocioł żeliwny na domu.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-  { key: "eco-choice", title: "Stalowy krok naprzód", description: "Zastąp kocioł żeliwny stalowym (1917–1928).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "triola-gas", title: "Triola – wygoda gazu", description: "Ulepsz do kotła gazowego Triola (1957).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-  { key: "parola-1965", title: "Parola 1965", description: "Zainstaluj kocioł olejowy Parola (1965).", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "stainless-1972", title: "Nierdzewna rewolucja", description: "Pierwszy kocioł ze stali nierdzewnej (1972).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-  { key: "heatpump-1978", title: "Pierwsza pompa ciepła", description: "Uruchom pompę ciepła (1978).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "vitola-1978", title: "Niskotemperaturowy komfort", description: "Kocioł Vitola (1978) – niższa temp. zasilania.", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-  { key: "vitodens-1989", title: "Kondensacja po raz pierwszy", description: "Zainstaluj Vitodens (1989).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "vitocal-modern", title: "Nowoczesna pompa ciepła", description: "Przejdź na Vitocal (pompa ciepła).", completed: false, reward: "+30 ViCoins", accent: "emerald" },
+    { key: "first-steps", title: "missions.first-steps.title", description: "missions.first-steps.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+  { key: "eco-choice", title: "missions.eco-choice.title", description: "missions.eco-choice.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "triola-gas", title: "missions.triola-gas.title", description: "missions.triola-gas.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+  { key: "parola-1965", title: "missions.parola-1965.title", description: "missions.parola-1965.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "stainless-1972", title: "missions.stainless-1972.title", description: "missions.stainless-1972.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+  { key: "heatpump-1978", title: "missions.heatpump-1978.title", description: "missions.heatpump-1978.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "vitola-1978", title: "missions.vitola-1978.title", description: "missions.vitola-1978.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+  { key: "vitodens-1989", title: "missions.vitodens-1989.title", description: "missions.vitodens-1989.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "vitocal-modern", title: "missions.vitocal-modern.title", description: "missions.vitocal-modern.desc", completed: false, reward: "+30 ViCoins", accent: "emerald" },
 
     // Zielona energia
-  { key: "green-investment", title: "Zielona inwestycja", description: "Posadź las.", completed: false, reward: "+30 ViCoins", accent: "emerald" },
-    { key: "collector-1972", title: "Kolektor 1972", description: "Zainstaluj pierwszy kolektor słoneczny (1972).", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "pv-vitovolt", title: "Fotowoltaika na dachu", description: "Zainstaluj PV (Vitovolt).", completed: false, reward: "+20 ViCoins", accent: "emerald" },
-    { key: "vitocharge-inverter", title: "Magazyn energii", description: "Dodaj inverter/magazyn (Vitocharge).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-    { key: "grid-connect", title: "Do sieci!", description: "Podłącz instalację do sieci (Grid).", completed: false, reward: "+15 ViCoins", accent: "emerald" },
-  { key: "vitovalor-2014", title: "Ogniwo paliwowe", description: "Uruchom Vitovalor (2014).", completed: false, reward: "+25 ViCoins", accent: "emerald" },
+  { key: "green-investment", title: "missions.green-investment.title", description: "missions.green-investment.desc", completed: false, reward: "+30 ViCoins", accent: "emerald" },
+    { key: "collector-1972", title: "missions.collector-1972.title", description: "missions.collector-1972.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "pv-vitovolt", title: "missions.pv-vitovolt.title", description: "missions.pv-vitovolt.desc", completed: false, reward: "+20 ViCoins", accent: "emerald" },
+    { key: "vitocharge-inverter", title: "missions.vitocharge-inverter.title", description: "missions.vitocharge-inverter.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "grid-connect", title: "missions.grid-connect.title", description: "missions.grid-connect.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+  { key: "vitovalor-2014", title: "missions.vitovalor-2014.title", description: "missions.vitovalor-2014.desc", completed: false, reward: "+25 ViCoins", accent: "emerald" },
 
     // Komfort i sterowanie
-    { key: "floor-heat", title: "Ciepła podłoga", description: "Dodaj ogrzewanie podłogowe.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-    { key: "thermostats-src", title: "Mądre termostaty", description: "Zainstaluj termostaty SRC.", completed: false, reward: "+10 ViCoins", accent: "emerald" },
-  { key: "inox-radial", title: "Kondensacja Inox‑Radial", description: "Włącz technologię Inox‑Radial.", completed: false, reward: "+15 ViCoins", accent: "emerald" },
+    { key: "floor-heat", title: "missions.floor-heat.title", description: "missions.floor-heat.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+    { key: "thermostats-src", title: "missions.thermostats-src.title", description: "missions.thermostats-src.desc", completed: false, reward: "+10 ViCoins", accent: "emerald" },
+  { key: "inox-radial", title: "missions.inox-radial.title", description: "missions.inox-radial.desc", completed: false, reward: "+15 ViCoins", accent: "emerald" },
 
     // Integracja i cele łączone
-    { key: "future-home", title: "Dom przyszłości", description: "Miej pompę ciepła + PV + Grid jednocześnie.", completed: false, reward: "+40 ViCoins", accent: "emerald" },
-    { key: "zero-smog", title: "Zero smogu", description: "Obniż zanieczyszczenie do 10 lub mniej.", completed: false, reward: "+50 ViCoins", accent: "emerald" },
+    { key: "future-home", title: "missions.future-home.title", description: "missions.future-home.desc", completed: false, reward: "+40 ViCoins", accent: "emerald" },
+    { key: "zero-smog", title: "missions.zero-smog.title", description: "missions.zero-smog.desc", completed: false, reward: "+50 ViCoins", accent: "emerald" },
   ]);
 
   // Map mission keys to asset paths provided
@@ -1982,7 +1921,7 @@ export default function ViessmannGame() {
       }
       return m;
     }));
-  }, [missionChecks, applyMissionReward]);
+  }, [missionChecks, applyMissionReward, pushLog]);
 
   // Log start of weather events
   useEffect(() => {
@@ -1999,7 +1938,7 @@ export default function ViessmannGame() {
     };
   const meta = map[weatherEvent.type];
   pushLog({ type: 'weather', icon: meta.icon, title: `Zdarzenie pogodowe: ${meta.name}`, description: `Czas trwania: ${weatherEvent.duration}s` });
-  }, [weatherEvent]);
+  }, [weatherEvent, pushLog]);
   const card: React.CSSProperties = {
     borderRadius: 16,
     background: theme.cardBg,
@@ -3036,10 +2975,10 @@ export default function ViessmannGame() {
                     <span style={{ fontSize: 22 }}>{item.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{item.name}</span>
+                        <span className="font-bold font-sans text-base" style={{ fontWeight: 700 }}>{i18n.t(`items.${item.key}.name`, { ns: 'items' })}</span>
                         {isForest && (
                           <span
-                            title="Las można sadzić wyłącznie na skraju mapy (zewnętrzny pierścień)."
+                            title={t('ui:shop.forestEdgeTitle')}
                             style={{
                               fontSize: 10,
                               fontWeight: 800,
@@ -3051,33 +2990,34 @@ export default function ViessmannGame() {
                               color: isDay ? '#065f46' : '#d1fae5',
                               border: isDay ? '1px solid #bbf7d0' : '1px solid #065f46'
                             }}
-                          >Tylko na obrzeżach</span>
+                          >{t('ui:shop.forestEdge')}</span>
                         )}
                       </div>
-                      <div className="text-xs text-neutral-500 font-sans" style={{ fontSize: 11, marginTop: 2, marginBottom: 2 }}>Posiadane: {ownedCount}</div>
-                      <div className="font-normal text-xs text-neutral-600 font-sans" style={{ fontSize: 13 }}>{item.description}</div>
+                      <div className="text-xs text-neutral-500 font-sans" style={{ fontSize: 11, marginTop: 2, marginBottom: 2 }}>{t('ui:shop.owned')}: {ownedCount}</div>
+                      <div className="font-normal text-xs text-neutral-600 font-sans" style={{ fontSize: 13 }}>{i18n.t(`items.${item.key}.desc`, { ns: 'items' })}</div>
                       {isForest && (
                         <div
-                          title="Każdy kolejny las jest droższy o +8 ☀️ i +8 💧."
+                          title={t('ui:shop.forestPriceScaleTitle')}
                           style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
                         >
-                          Cena rośnie: +8 ☀️ +8 💧 za każdy posiadany las{forestOwned > 0 ? ` (masz ${forestOwned})` : ''}.
+                          {t('ui:shop.forestPriceScale', { count: forestOwned })}
+                          {forestOwned > 0 ? ` (${t('ui:shop.youHave', { count: forestOwned })})` : ''}.
                         </div>
                       )}
                       {isSolar && (
                         <div
-                          title="Każdy kolejny panel PV drożeje geometrycznie (+15% od bazowej ceny za każdą posiadaną sztukę)."
+                          title={t('ui:shop.solarPriceScaleTitle')}
                           style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
                         >
-                          Cena rośnie: ~+15% względem bazowej za każdy posiadany panel.
+                          {t('ui:shop.solarPriceScale')}
                         </div>
                       )}
                       {isECharger && (
                         <div
-                          title="Każdy kolejny E‑Charger drożeje geometrycznie (+18% od bazowej ceny za każdą posiadaną sztukę)."
+                          title={t('ui:shop.eChargerPriceScaleTitle')}
                           style={{ fontSize: 11, marginTop: 4, color: isDay ? '#64748b' : '#94a3b8' }}
                         >
-                          Cena rośnie: ~+18% względem bazowej za każdy posiadany E‑Charger.
+                          {t('ui:shop.eChargerPriceScale')}
                         </div>
                       )}
                     </div>
@@ -3085,12 +3025,12 @@ export default function ViessmannGame() {
           <div style={{ marginTop: 8, marginBottom: 36 }}>
                     {!done ? (
             <span className="text-sm font-semibold font-sans tabular-nums" style={{ fontSize: 12 }}>
-                        Koszt:&nbsp;
+                        {t('ui:shop.cost')}:&nbsp;
                         {cost.sun ? `${cost.sun} ☀️ ` : ""}{cost.water ? `+ ${cost.water} 💧 ` : ""}{cost.wind ? `+ ${cost.wind} 🌬️ ` : ""}{cost.coins ? `+ ${cost.coins} 💰` : ""}
                         {!cost.sun && !cost.water && !cost.wind && !cost.coins ? "—" : ""}
                       </span>
                     ) : (
-                      <span className="text-xs font-semibold font-sans text-emerald-600" style={{fontSize:12}}>Zrobione ✓</span>
+                      <span className="text-xs font-semibold font-sans text-emerald-600" style={{fontSize:12}}>{t('ui:shop.done')} ✓</span>
                     )}
                   </div>
           {!done && (
@@ -3107,9 +3047,9 @@ export default function ViessmannGame() {
                         transition: "transform 150ms ease",
                         minHeight: 36,
                       }}
-            title={!afford && missingParts.length ? `Brak zasobów: ${missingParts.join(" + ")}` : undefined}
+            title={!afford && missingParts.length ? `${t('ui:shop.missing')}: ${missingParts.join(' + ')}` : undefined}
                     >
-                      {afford ? (isPending ? "Kliknij kafelek…" : "Kup") : "Brak zasobów"}
+                      {afford ? (isPending ? t('ui:shop.clickTile') : t('ui:shop.buy')) : t('ui:shop.outOfResources')}
                     </button>
                   )}
                 </div>
@@ -3402,13 +3342,13 @@ export default function ViessmannGame() {
                       marginBottom: 4,
                       color: isDay ? (achievement.unlocked ? "#0f172a" : "#6b7280") : (achievement.unlocked ? "#e5e7eb" : "#94a3b8")
                     }}>
-                      {achievement.name}
+                      {t(`achievements.${achievement.id}.name`, { ns: 'achievements' })}
                     </div>
                     <div style={{ 
                       fontSize: 14, 
                       color: isDay ? (achievement.unlocked ? "#64748b" : "#9ca3af") : (achievement.unlocked ? "#94a3b8" : "#94a3b8")
                     }}>
-                      {achievement.description}
+                      {t(`achievements.${achievement.id}.desc`, { ns: 'achievements' })}
                     </div>
                     {achievement.id === 'solar-farm' && !achievement.unlocked && (
                       <div style={{ fontSize: 12, color: isDay ? '#6b7280' : '#94a3b8', marginTop: 4 }}>
@@ -3442,10 +3382,10 @@ export default function ViessmannGame() {
               color: isDay ? "#0f172a" : "#e5e7eb"
             }}>
               <div style={{ fontSize: 18, fontWeight: 600, marginBottom: 4 }}>
-                Postęp: {achievements.filter(a => a.unlocked).length}/{achievements.length}
+                {t('profile.achievementsProgress', { completed: achievements.filter(a => a.unlocked).length, total: achievements.length })}
               </div>
               <div style={{ fontSize: 14, color: isDay ? "#64748b" : "#94a3b8" }}>
-                {((achievements.filter(a => a.unlocked).length / achievements.length) * 100).toFixed(0)}% ukończono
+                {t('profile.achievementsPercent', { pct: ((achievements.filter(a => a.unlocked).length / achievements.length) * 100).toFixed(0) })}
               </div>
             </div>
           </div>
@@ -4208,15 +4148,15 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
           }}
         >
           {(() => {
-            const t = hoverInfo.tile;
-            const icon = t.isHome ? '🏠' : t.entity ? t.entity.icon : pendingItem ? pendingItem.icon : '⬜';
-            const text = t.isHome
-              ? (t.entity ? `Dom: ${t.entity.label}` : 'Dom')
-              : t.entity
-              ? t.entity.label
+            const htile = hoverInfo.tile;
+            const icon = htile.isHome ? '🏠' : htile.entity ? htile.entity.icon : pendingItem ? pendingItem.icon : '⬜';
+              const text = htile.isHome
+              ? (htile.entity ? `${i18n.t('tile.home')}: ${i18n.t(`items.${htile.entity.type}.name`, { ns: 'items' })}` : i18n.t('tile.home'))
+              : htile.entity
+              ? i18n.t(`items.${htile.entity.type}.name`, { ns: 'items' })
               : pendingItem
-              ? `${hoverInfo.placeable ? 'Postaw: ' : 'Nie można tutaj: '}${pendingItem.name}`
-              : 'Pusty kafelek';
+              ? `${hoverInfo.placeable ? i18n.t('tile.placePrefix') : i18n.t('tile.cannotHere')}${i18n.t(`items.${pendingItem.key}.name`, { ns: 'items' })}`
+              : i18n.t('tile.empty');
             return (
               <span style={{ display: 'inline-flex', flexDirection: 'column' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -4224,9 +4164,9 @@ const IsoGrid = React.forwardRef<IsoGridHandle, {
                   <span className="font-medium font-sans">{text}</span>
                 </span>
                 {pendingItem ? (
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, color: isDay ? '#64748b' : '#94a3b8' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11, color: isDay ? '#64748b' : '#94a3b8' }}>
                     <span style={{ fontSize: 12 }}>⎋</span>
-                    <span className="font-sans">Esc: anuluj</span>
+                    <span className="font-sans">{i18n.t('controls.escCancel')}</span>
                   </span>
                 ) : null}
               </span>
@@ -4246,7 +4186,8 @@ function IsoTile({
   tile: { id: string; entity?: { type: string; icon: string; label: string } | null };
   onClick: () => void;
   isHome: boolean;
-  pendingItem: { name: string; icon: string } | null;
+  // pendingItem may come from ShopItem (has key) or a lighter shape
+  pendingItem: { key?: string; name?: string; icon?: string } | null;
   left: number; top: number; w: number; h: number;
   placeable: boolean;
   isNewlyPlaced: boolean;
@@ -4285,7 +4226,7 @@ function IsoTile({
       onMouseLeave={() => { setHovered(false); setPressed(false); onHoverChange?.(false); }}
       onMouseDown={() => setPressed(true)}
       onMouseUp={() => setPressed(false)}
-  title={isHome ? (tile.entity ? `Dom: ${tile.entity.label}` : "Dom") : tile.entity ? tile.entity.label : pendingItem ? `Postaw: ${pendingItem.name}` : "Pusty kafelek"}
+  title={isHome ? (tile.entity ? `${i18n.t('tile.home')}: ${i18n.t(`items.${tile.entity.type}.name`, { ns: 'items' })}` : i18n.t('tile.home')) : tile.entity ? i18n.t(`items.${tile.entity.type}.name`, { ns: 'items' }) : pendingItem ? `${i18n.t('tile.placePrefix')}${i18n.t(`items.${(pendingItem.key ?? pendingItem.name) as string}.name`, { ns: 'items' })}` : i18n.t('tile.empty')}
       style={{
         position: "absolute", left, top, width: w, height: h,
         WebkitClipPath: "polygon(50% 0, 100% 50%, 50% 100%, 0 50%)",

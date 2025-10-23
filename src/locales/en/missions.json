@@ -1,0 +1,25 @@
+{
+  "first-steps": { "title": "First Steps", "desc": "Place a cast-iron boiler on a house." },
+  "eco-choice": { "title": "Steel Step Forward", "desc": "Replace the cast-iron boiler with a steel one (1917–1928)." },
+  "triola-gas": { "title": "Triola – Gas Convenience", "desc": "Upgrade to the Triola gas boiler (1957)." },
+  "parola-1965": { "title": "Parola 1965", "desc": "Install the Parola oil boiler (1965)." },
+  "stainless-1972": { "title": "Stainless Revolution", "desc": "First stainless steel boiler (1972)." },
+  "heatpump-1978": { "title": "First Heat Pump", "desc": "Power up a heat pump (1978)." },
+  "vitola-1978": { "title": "Low-temp Vitola", "desc": "Install the Vitola low-temperature boiler (1978)." },
+  "vitodens-1989": { "title": "Condensing for the First Time", "desc": "Install a Vitodens (1989)." },
+  "vitocal-modern": { "title": "Modern Heat Pump", "desc": "Switch to a Vitocal heat pump." },
+
+  "green-investment": { "title": "Green Investment", "desc": "Plant a forest." },
+  "collector-1972": { "title": "Collector 1972", "desc": "Install the first solar collector (1972)." },
+  "pv-vitovolt": { "title": "Roof Photovoltaics", "desc": "Install PV (Vitovolt)." },
+  "vitocharge-inverter": { "title": "Energy Storage", "desc": "Add an inverter/storage (Vitocharge)." },
+  "grid-connect": { "title": "To the Grid!", "desc": "Connect your installation to the Grid." },
+  "vitovalor-2014": { "title": "Fuel Cell", "desc": "Run the Vitovalor (2014)." },
+
+  "floor-heat": { "title": "Warm Floors", "desc": "Add underfloor heating." },
+  "thermostats-src": { "title": "Smart Thermostats", "desc": "Install SRC thermostats." },
+  "inox-radial": { "title": "Inox‑Radial Condensing", "desc": "Enable Inox‑Radial condensing technology." },
+
+  "future-home": { "title": "Future Home", "desc": "Have a heat pump + PV + Grid simultaneously." },
+  "zero-smog": { "title": "Zero Smog", "desc": "Lower pollution to 10 or less." }
+}

@@ -1,0 +1,22 @@
+{
+  "coal": { "name": "Cast-iron Boiler", "desc": "High pollution, high output. Place on a house to heat it." },
+  "pellet": { "name": "Steel Boiler (1917–1928)", "desc": "More durable, heats faster, lower fuel consumption." },
+  "gas": { "name": "Triola Boiler (1957)", "desc": "Steel boiler with preheater. Conversion from coke to oil." },
+  "parola1965": { "name": "Parola Oil Boiler (1965)", "desc": "Lower emissions and high efficiency." },
+  "stainless1972": { "name": "First Stainless Boiler (1972)", "desc": "Lighter and more efficient; precursor to condensing." },
+  "heatpump1978": { "name": "First Heat Pump (1978)", "desc": "Uses ambient energy." },
+  "vitola1978": { "name": "Low-temperature Vitola Boiler (1978)", "desc": "Operates at lower water temps (better efficiency)." },
+  "vitodens1989": { "name": "Vitodens Gas Boiler (1989)", "desc": "Steam condensing, higher efficiency, lower emissions." },
+  "heatpump": { "name": "Heat Pump (Vitocal)", "desc": "High efficiency and renewables. Unlocks green installs." },
+  "forest": { "name": "Forest", "desc": "Strongly reduces pollution (−0.5/s). Each additional is more expensive." },
+  "collector1972": { "name": "First Solar Collector (1972)", "desc": "More ☀️, less pollution, shorter Frost." },
+  "inoxRadial": { "name": "Condensing Tech (Inox‑Radial)", "desc": "Reduces pollution generation." },
+  "floor": { "name": "Underfloor Heating", "desc": "Comfort. Shortens Frost duration." },
+  "thermostat": { "name": "SRC Thermostats", "desc": "Smart regulation – more resources." },
+  "solar": { "name": "Photovoltaics (Vitovolt)", "desc": "More ☀️." },
+  "inverter": { "name": "Inverter / Storage (Vitocharge)", "desc": "Better monetization – more 💰." },
+  "grid": { "name": "Grid", "desc": "Energy exchange – more 💰." },
+  "vitovalor2014": { "name": "Vitovalor (2014)", "desc": "Fuel cell – strongly reduces pollution." },
+  "echarger": { "name": "E‑Charger", "desc": "+5 💰/min." },
+  "lab": { "name": "R&D Laboratory", "desc": "Permanently increases resource production (+0.02 ☀️/💧/🌬️, +0.01 💰). Only one – very expensive." }
+}

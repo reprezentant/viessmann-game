@@ -1,0 +1,14 @@
+{
+  "first-steps": { "name": "First Steps", "desc": "Place your first building" },
+  "heat-source": { "name": "Heat Source", "desc": "Own a heat-producing device" },
+  "going-green": { "name": "Going Green", "desc": "Install a renewable energy source" },
+  "power-up": { "name": "Power Up", "desc": "Build energy infrastructure" },
+  "coal-installed": { "name": "Coal Installed", "desc": "Install a coal boiler" },
+  "pellet-installed": { "name": "Pellet Upgrade", "desc": "Install a pellet boiler" },
+  "gas-installed": { "name": "Gas Heating", "desc": "Install a gas boiler" },
+  "heatpump-installed": { "name": "Heat Pump", "desc": "Install a heat pump" },
+  "solar-starter": { "name": "First Panel", "desc": "Place a photovoltaic panel" },
+  "solar-farm": { "name": "Small Farm", "desc": "Place 3 photovoltaic panels" },
+  "forest-planted": { "name": "Green Corner", "desc": "Plant a forest" },
+  "ev-ready": { "name": "EV Ready", "desc": "Install an E‑Charger" }
+}

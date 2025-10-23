@@ -1,0 +1,25 @@
+{
+  "first-steps": { "title": "Rozpalamy dom", "desc": "Umieść kocioł żeliwny na domu." },
+  "eco-choice": { "title": "Stalowy krok naprzód", "desc": "Zastąp kocioł żeliwny stalowym (1917–1928)." },
+  "triola-gas": { "title": "Triola – wygoda gazu", "desc": "Ulepsz do kotła gazowego Triola (1957)." },
+  "parola-1965": { "title": "Parola 1965", "desc": "Zainstaluj kocioł olejowy Parola (1965)." },
+  "stainless-1972": { "title": "Nierdzewna rewolucja", "desc": "Pierwszy kocioł ze stali nierdzewnej (1972)." },
+  "heatpump-1978": { "title": "Pierwsza pompa ciepła", "desc": "Uruchom pompę ciepła (1978)." },
+  "vitola-1978": { "title": "Niskotemperaturowy komfort", "desc": "Kocioł Vitola (1978) – niższa temp. zasilania." },
+  "vitodens-1989": { "title": "Kondensacja po raz pierwszy", "desc": "Zainstaluj Vitodens (1989)." },
+  "vitocal-modern": { "title": "Nowoczesna pompa ciepła", "desc": "Przejdź na Vitocal (pompa ciepła)." },
+
+  "green-investment": { "title": "Zielona inwestycja", "desc": "Posadź las." },
+  "collector-1972": { "title": "Kolektor 1972", "desc": "Zainstaluj pierwszy kolektor słoneczny (1972)." },
+  "pv-vitovolt": { "title": "Fotowoltaika na dachu", "desc": "Zainstaluj PV (Vitovolt)." },
+  "vitocharge-inverter": { "title": "Magazyn energii", "desc": "Dodaj inverter/magazyn (Vitocharge)." },
+  "grid-connect": { "title": "Do sieci!", "desc": "Podłącz instalację do sieci (Grid)." },
+  "vitovalor-2014": { "title": "Ogniwo paliwowe", "desc": "Uruchom Vitovalor (2014)." },
+
+  "floor-heat": { "title": "Ciepła podłoga", "desc": "Dodaj ogrzewanie podłogowe." },
+  "thermostats-src": { "title": "Mądre termostaty", "desc": "Zainstaluj termostaty SRC." },
+  "inox-radial": { "title": "Kondensacja Inox‑Radial", "desc": "Włącz technologię Inox‑Radial." },
+
+  "future-home": { "title": "Dom przyszłości", "desc": "Miej pompę ciepła + PV + Grid jednocześnie." },
+  "zero-smog": { "title": "Zero smogu", "desc": "Obniż zanieczyszczenie do 10 lub mniej." }
+}

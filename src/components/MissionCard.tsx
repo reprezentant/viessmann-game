@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import viCoin from '../assets/ui/ViCoin_LM.png';
 import checkImg from '../assets/ui/Check.png';
 
@@ -9,9 +10,14 @@ type Props = {
   imgSrc?: string | null;
   completed?: boolean;
   isDay?: boolean;
+  // optional flags: if true, treat title/description as translation keys in 'missions' namespace
+  titleIsKey?: boolean;
+  descIsKey?: boolean;
 };
 
-const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, completed, isDay = true }) => {
+const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, completed, isDay = true, titleIsKey, descIsKey }) => {
+  // need both namespaces: 'missions' for mission strings and 'ui' for small UI bits (alt text)
+  const { t } = useTranslation(['missions', 'ui']);
   const containerStyle: React.CSSProperties = isDay ? {
     borderRadius: 18,
     padding: 14,
@@ -88,14 +94,26 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
     (imgWrapperStyle as unknown as Record<string, string>)['border'] = '2px solid #7BB894';
   }
 
+  const renderTitle = () => {
+    if (titleIsKey && typeof title === 'string') return t(title.replace(/^missions\./, ''), { ns: 'missions' });
+    if (typeof title === 'string' && title.startsWith('missions.')) return t(title.replace(/^missions\./, ''), { ns: 'missions' });
+    return title;
+  };
+
+  const renderDescription = () => {
+    if (descIsKey && typeof description === 'string') return t(description.replace(/^missions\./, ''), { ns: 'missions' });
+    if (typeof description === 'string' && description.startsWith('missions.')) return t(description.replace(/^missions\./, ''), { ns: 'missions' });
+    return description;
+  };
+
   return (
     <div style={containerStyle}>
       <div style={imgWrapperStyle}>
         {imgSrc ? (
           <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-            <img src={imgSrc} alt={title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={imgSrc} alt={typeof title === 'string' && titleIsKey ? t(String(title).replace(/^missions\./, ''), { ns: 'missions' }) : String(title)} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             {completed && imgSrc !== checkImg && (
-              <img src={checkImg} alt="ukończone" style={{ position: 'absolute', right: -6, bottom: -6, width: 28, height: 28 }} />
+              <img src={checkImg} alt={t('ui:missions.completedAlt', { defaultValue: 'ukończone' })} style={{ position: 'absolute', right: -6, bottom: -6, width: 28, height: 28 }} />
             )}
           </div>
         ) : (
@@ -103,8 +121,8 @@ const MissionCard: React.FC<Props> = ({ title, description, reward, imgSrc, comp
         )}
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={titleStyle}>{title}{completed ? ' ✓' : ''}</div>
-        <div style={descStyle}>{description}</div>
+  <div style={titleStyle}>{renderTitle()}{completed ? ' ✓' : ''}</div>
+  <div style={descStyle}>{renderDescription()}</div>
         <div style={{ marginTop: 10, display: 'flex', alignItems: 'center', gap: 8 }}>
           <img src={viCoin} alt="ViCoin" style={{ width: 18, height: 18 }} />
           <div style={{ fontWeight: 700, fontSize: 13 }}>{reward}</div>
