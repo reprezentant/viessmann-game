@@ -146,34 +146,34 @@ const makeOwnedInit = (): Record<EntityType, number> => {
 // --- Shop items (module scope for stability) ---
 // Urządzenia (zakładka Urządzenia): wyłącznie łańcuch upgrade'ów na domu
 const deviceItems: ShopItem[] = [
-  { key: "coal", name: "Kocioł tradycyjny żeliwny", description: "Duże zanieczyszczenie, wysoka wydajność. Umieść na domu, aby go ogrzać.", icon: "🏚️", cost: { coins: 0 } },
-  { key: "pellet", name: "Stalowy kocioł grzewczy (1917–1928)", description: "Trwalszy, szybciej się nagrzewa, mniejsze zużycie paliwa.", icon: "🔩", cost: { coins: 10 }, requires: ["coal"] },
-  { key: "gas", name: "Kocioł Triola (1957)", description: "Stalowy piec z podgrzewaczem. Konwersja z koksu na olej.", icon: "🔥", cost: { sun: 15, water: 8, wind: 8 }, requires: ["pellet"] },
-  { key: "parola1965", name: "Kocioł na olej Parola (1965)", description: "Niższe emisje i wysoka sprawność.", icon: "🛢️", cost: { sun: 25, water: 15, wind: 15 }, requires: ["gas"] },
-  { key: "stainless1972", name: "Pierwszy kocioł ze stali nierdzewnej (1972)", description: "Lżejszy i wydajniejszy; prekursor kondensacji.", icon: "🧪", cost: { sun: 30, water: 20, wind: 20 }, requires: ["parola1965"] },
-  { key: "heatpump1978", name: "Pierwsza pompa ciepła (1978)", description: "Wykorzystuje energię z otoczenia.", icon: "🌀", cost: { sun: 35, water: 25, wind: 25 }, requires: ["stainless1972"] },
-  { key: "vitola1978", name: "Kocioł niskotemperaturowy Vitola (1978)", description: "Praca przy niższej temp. wody (większa efektywność).", icon: "♨️", cost: { sun: 15, water: 10, wind: 10 }, requires: ["heatpump1978"] },
-  { key: "vitodens1989", name: "Kocioł gazowy Vitodens (1989)", description: "Kondensacja pary, wyższa sprawność, niższe emisje.", icon: "🔥💧", cost: { sun: 40, water: 25, wind: 25 }, requires: ["vitola1978"] },
-  { key: "heatpump", name: "Pompa ciepła (Vitocal)", description: "Wysoka efektywność i OZE. Odblokowuje zielone instalacje.", icon: "🔋", cost: { sun: 60, water: 40, wind: 40 }, requires: ["vitodens1989"] },
+  { key: "coal", name: "", description: "", icon: "🏚️", cost: { coins: 0 } },
+  { key: "pellet", name: "", description: "", icon: "🔩", cost: { coins: 10 }, requires: ["coal"] },
+  { key: "gas", name: "", description: "", icon: "🔥", cost: { sun: 15, water: 8, wind: 8 }, requires: ["pellet"] },
+  { key: "parola1965", name: "", description: "", icon: "🛢️", cost: { sun: 25, water: 15, wind: 15 }, requires: ["gas"] },
+  { key: "stainless1972", name: "", description: "", icon: "🧪", cost: { sun: 30, water: 20, wind: 20 }, requires: ["parola1965"] },
+  { key: "heatpump1978", name: "", description: "", icon: "🌀", cost: { sun: 35, water: 25, wind: 25 }, requires: ["stainless1972"] },
+  { key: "vitola1978", name: "", description: "", icon: "♨️", cost: { sun: 15, water: 10, wind: 10 }, requires: ["heatpump1978"] },
+  { key: "vitodens1989", name: "", description: "", icon: "🔥💧", cost: { sun: 40, water: 25, wind: 25 }, requires: ["vitola1978"] },
+  { key: "heatpump", name: "", description: "", icon: "🔋", cost: { sun: 60, water: 40, wind: 40 }, requires: ["vitodens1989"] },
 ];
 
 const productionItems: ShopItem[] = [
-  { key: "forest", name: "Las", description: "Silnie redukuje zanieczyszczenie (−0.5/s). Każdy kolejny jest droższy.", icon: "🌲", cost: { sun: 10, water: 10 } },
-  { key: "collector1972", name: "Pierwszy kolektor słoneczny (1972)", description: "Więcej ☀️, mniej zanieczyszczeń, krótszy Mróz.", icon: "☀️", cost: { sun: 25, water: 10 }, requires: ["stainless1972"] },
-  { key: "inoxRadial", name: "Technologia kondensacyjna (Inox‑Radial)", description: "Zmniejsza generowanie zanieczyszczeń.", icon: "🧰", cost: { sun: 20, water: 10, wind: 10 }, requires: ["vitodens1989"] },
-  { key: "floor", name: "Ogrzewanie podłogowe", description: "Komfort. Skraca czas trwania Mrozu.", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["vitodens1989"] },
-  { key: "thermostat", name: "Termostaty SRC", description: "Inteligentna regulacja – więcej zasobów.", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["vitodens1989"], onPurchaseEffects: (ctx) => {
+  { key: "forest", name: "", description: "", icon: "🌲", cost: { sun: 10, water: 10 } },
+  { key: "collector1972", name: "", description: "", icon: "☀️", cost: { sun: 25, water: 10 }, requires: ["stainless1972"] },
+  { key: "inoxRadial", name: "", description: "", icon: "🧰", cost: { sun: 20, water: 10, wind: 10 }, requires: ["vitodens1989"] },
+  { key: "floor", name: "", description: "", icon: "🧱", cost: { sun: 10, water: 10, wind: 5 }, requires: ["vitodens1989"] },
+  { key: "thermostat", name: "", description: "", icon: "🌡️", cost: { sun: 5, water: 5, wind: 5 }, requires: ["vitodens1989"], onPurchaseEffects: (ctx) => {
     // Subtle boost to passive generation as a benefit of smart control
     ctx.addRate('sun', 0.05);
     ctx.addRate('water', 0.05);
     ctx.addRate('wind', 0.05);
   } },
-  { key: "solar", name: "Fotowoltaika (Vitovolt)", description: "Więcej ☀️.", icon: "🔆", cost: { sun: 20, wind: 10 }, requires: ["heatpump"] },
-  { key: "inverter", name: "Inverter / magazyn (Vitocharge)", description: "Lepsza monetyzacja – więcej 💰.", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
-  { key: "grid", name: "Grid", description: "Wymiana energii – więcej 💰.", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["heatpump"] },
-  { key: "vitovalor2014", name: "Vitovalor (2014)", description: "Ogniwo paliwowe – silnie redukuje zanieczyszczenie.", icon: "🧫", cost: { sun: 35, water: 20, wind: 20 }, requires: ["heatpump"] },
-  { key: "echarger", name: "E-Charger", description: "+5 💰/min.", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
-  { key: "lab", name: "Laboratorium R&D", description: "Trwale zwiększa produkcję zasobów (+0.02 ☀️/💧/🌬️, +0.01 💰). Tylko jedno – ale bardzo drogie.", icon: "🧪", cost: { coins: 500 }, onPurchaseEffects: (ctx) => {
+  { key: "solar", name: "", description: "", icon: "🔆", cost: { sun: 20, wind: 10 }, requires: ["heatpump"] },
+  { key: "inverter", name: "", description: "", icon: "🔶", cost: { sun: 20, water: 10, wind: 10 }, requires: ["heatpump"] },
+  { key: "grid", name: "", description: "", icon: "⚡", cost: { sun: 10, water: 10, wind: 20 }, requires: ["heatpump"] },
+  { key: "vitovalor2014", name: "", description: "", icon: "🧫", cost: { sun: 35, water: 20, wind: 20 }, requires: ["heatpump"] },
+  { key: "echarger", name: "", description: "", icon: "🔌", cost: { wind: 20, water: 20 }, requires: ["heatpump"] },
+  { key: "lab", name: "", description: "", icon: "🧪", cost: { coins: 500 }, onPurchaseEffects: (ctx) => {
     ctx.addRate('sun', 0.02);
     ctx.addRate('water', 0.02);
     ctx.addRate('wind', 0.02);
